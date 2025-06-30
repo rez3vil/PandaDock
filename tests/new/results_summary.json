@@ -1,0 +1,170 @@
+{
+  "metadata": {
+    "generated_by": "PandaDock",
+    "timestamp": "2025-06-30T06:19:17.851574",
+    "version": "2.0.0-refactored"
+  },
+  "configuration": {
+    "algorithm": "genetic",
+    "iterations": 100,
+    "exhaustiveness": 1,
+    "use_gpu": false,
+    "gpu_id": 0,
+    "cpu_workers": null,
+    "binding_site_radius": 10.0,
+    "detect_pockets": true,
+    "enhanced_scoring": false,
+    "physics_based": false,
+    "prepare_molecules": false,
+    "ph": 7.4,
+    "flexible_residues": null,
+    "auto_flex": false,
+    "max_flex_residues": 5,
+    "local_opt": false,
+    "population_size": 100,
+    "mc_steps": 1000,
+    "temperature": 300.0,
+    "reference_ligand": null,
+    "tethered_docking": false,
+    "exact_alignment": false,
+    "report_format": "all",
+    "detailed_energy": false,
+    "skip_plots": false
+  },
+  "statistics": {
+    "total_poses": 20,
+    "best_score": -9.987350422268133,
+    "worst_score": -7.741796032251914,
+    "mean_score": -8.796691583485016,
+    "std_score": 0.5565255310816992,
+    "score_range": 2.2455543900162187
+  },
+  "analysis": {
+    "clustering": {},
+    "interactions": {},
+    "binding_modes": {},
+    "energy_analysis": {}
+  },
+  "poses": [
+    {
+      "rank": 1,
+      "score": -9.987350422268133,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 2,
+      "score": -9.813335533812074,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 3,
+      "score": -9.361650833186392,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 4,
+      "score": -9.302158386339814,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 5,
+      "score": -9.284377382626412,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 6,
+      "score": -9.096617366918238,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 7,
+      "score": -9.08862281107106,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 8,
+      "score": -8.843101486875685,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 9,
+      "score": -8.794152283154432,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 10,
+      "score": -8.77298319569181,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 11,
+      "score": -8.76949341750333,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 12,
+      "score": -8.642388785311905,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 13,
+      "score": -8.580711651234346,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 14,
+      "score": -8.558294437756231,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 15,
+      "score": -8.417789746867909,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 16,
+      "score": -8.283063093966943,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 17,
+      "score": -8.273021165129737,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 18,
+      "score": -8.269363717986396,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 19,
+      "score": -8.053559919747542,
+      "n_atoms": 31,
+      "energy_components": {}
+    },
+    {
+      "rank": 20,
+      "score": -7.741796032251914,
+      "n_atoms": 31,
+      "energy_components": {}
+    }
+  ]
+}

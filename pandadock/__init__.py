@@ -1,56 +1,64 @@
 """
-PandaDock: Python Molecular Docking Tool Package
+PandaDock - Refactored Architecture
+
+This is the new modular, maintainable version of PandaDock with:
+- Clean separation of concerns
+- CPU/GPU transparency 
+- Robust error handling
+- Easy debugging and extensibility
 """
 
-# Core protein-ligand handling
-from .protein import Protein
-from .ligand import Ligand
+__version__ = "2.0.0-refactored"
 
-# Unified scoring functions
-from .unified_scoring import (
-    ScoringFunction,
-    CompositeScoringFunction,
-    EnhancedScoringFunction,
-    GPUScoringFunction,
-    EnhancedGPUScoringFunction,
-    TetheredScoringFunction,
-)
+# Core modules
+from .core import DockingEngine, PoseGenerator, ResultProcessor
 
-# Physics-based modules
-from .physics import (
-    MMFFMinimization,
-    MonteCarloSampling,
-    PhysicsBasedScoring,
-    GeneralizedBornSolvation
-)
+# Hardware abstraction
+from .hardware import DeviceManager, ComputeBackend, PerformanceMonitor
 
-# Search algorithms
-from .search import RandomSearch, GeneticAlgorithm
+# Algorithm system
+from .algorithms import BaseAlgorithm, AlgorithmFactory
 
-# Utilities
-from .utils import (
-    save_docking_results,
-    calculate_rmsd
-)
+# Scoring system  
+from .scoring import BaseScoringFunction, ScoringFunctionFactory
 
-# Molecule preparation
-from .preparation import (
-    prepare_protein,
-    prepare_ligand
-)
+# Molecule handling
+from .molecules import ProteinHandler, LigandHandler, StructurePreparation
 
-# Validation
-from .validation import (
-    validate_docking,
-    calculate_ensemble_rmsd
-)
+# I/O operations
+from .io import ResultWriters, ReportGenerators
 
-# Batch screening
-from .batch_screening import batch_screening
+# CLI interface
+from .cli import create_argument_parser, get_config_from_args
 
-# Package version
-__version__ = '2.0.0'
+# Virtual screening and batch processing
+from .screening import VirtualScreeningManager, BatchScreeningManager
 
-# Logging
-import logging
-logging.getLogger(__name__).addHandler(logging.NullHandler())
+__all__ = [
+    # Version
+    '__version__',
+    
+    # Core components
+    'DockingEngine', 'PoseGenerator', 'ResultProcessor',
+    
+    # Hardware abstraction
+    'DeviceManager', 'ComputeBackend', 'PerformanceMonitor',
+    
+    # Algorithm system
+    'BaseAlgorithm', 'AlgorithmFactory',
+    
+    # Scoring system
+    'BaseScoringFunction', 'ScoringFunctionFactory',
+    
+    # Molecule handling
+    'ProteinHandler', 'LigandHandler', 'StructurePreparation',
+    
+    # I/O operations
+    'ResultWriters', 'ReportGenerators',
+    
+    # CLI interface
+    'create_argument_parser', 'get_config_from_args',
+    
+    # Virtual screening and batch processing
+    'VirtualScreeningManager', 'BatchScreeningManager'
+]

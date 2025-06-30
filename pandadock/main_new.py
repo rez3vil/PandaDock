@@ -1,7 +1,7 @@
 """
 New main entry point for PandaDock with clean, modular architecture.
 
-This replaces the complex old main.py with a simple, clear interface that
+This replaces the complex main.py with a simple, clear interface that
 delegates to the appropriate modules.
 """
 
@@ -33,9 +33,9 @@ def main():
         logger.info("Starting PandaDock with new modular architecture")
         
         # Handle different commands
-        if hasattr(args, 'command') and args.command == 'analyze':
+        if args.command == 'analyze':
             return handle_analyze_command(args, logger)
-        elif hasattr(args, 'command') and args.command == 'prepare':
+        elif args.command == 'prepare':
             return handle_prepare_command(args, logger)
         else:
             # Default to docking
@@ -86,9 +86,26 @@ def handle_analyze_command(args, logger):
     
     logger.info(f"Analyzing results in: {args.results_dir}")
     
-    # Placeholder for analysis functionality
-    logger.info("✅ Analysis completed successfully!")
-    return 0
+    from .analysis import AnalysisEngine
+    
+    # Create analysis engine
+    analyzer = AnalysisEngine()
+    
+    # Run analysis
+    result = analyzer.analyze_results(
+        results_dir=args.results_dir,
+        cluster_poses=args.cluster_poses,
+        analyze_interactions=args.analyze_interactions,
+        energy_decomposition=args.energy_decomposition,
+        output_format=args.output_format
+    )
+    
+    if result['success']:
+        logger.info("✅ Analysis completed successfully!")
+        return 0
+    else:
+        logger.error(f"❌ Analysis failed: {result['error']}")
+        return 1
 
 
 def handle_prepare_command(args, logger):
@@ -96,9 +113,33 @@ def handle_prepare_command(args, logger):
     
     logger.info(f"Preparing molecule: {args.input_file}")
     
-    # Placeholder for preparation functionality  
-    logger.info("✅ Molecule preparation completed successfully!")
-    return 0
+    from .molecules import StructurePreparation
+    
+    # Create preparation engine
+    prep = StructurePreparation()
+    
+    # Prepare molecule
+    if args.molecule_type == 'protein':
+        result = prep.prepare_protein_file(
+            input_file=args.input_file,
+            output_file=args.output,
+            add_hydrogens=args.add_hydrogens,
+            remove_water=args.remove_water,
+            ph=args.ph
+        )
+    else:
+        result = prep.prepare_ligand_file(
+            input_file=args.input_file,
+            output_file=args.output,
+            add_hydrogens=args.add_hydrogens
+        )
+    
+    if result['success']:
+        logger.info("✅ Molecule preparation completed successfully!")
+        return 0
+    else:
+        logger.error(f"❌ Preparation failed: {result['error']}")
+        return 1
 
 
 def print_success_message(result):
@@ -128,6 +169,11 @@ def print_failure_message(result):
     print("=" * 30)
     print(f"Error: {result.get('error', 'Unknown error')}")
     print(f"Time elapsed: {result.get('elapsed_time', 0):.1f} seconds")
+    
+    # Print performance report if available
+    if 'performance_report' in result:
+        print("\nPerformance Information:")
+        print(result['performance_report'])
     
     print("\n💡 Troubleshooting tips:")
     print("• Check that input files are valid")

@@ -1,0 +1,32 @@
+{
+  "algorithm": "genetic",
+  "iterations": 100,
+  "exhaustiveness": 1,
+  "use_gpu": false,
+  "gpu_id": 0,
+  "cpu_workers": null,
+  "binding_site_center": [
+    -15.7,
+    -17.7,
+    8.1
+  ],
+  "binding_site_radius": 10.0,
+  "detect_pockets": false,
+  "enhanced_scoring": false,
+  "physics_based": false,
+  "prepare_molecules": false,
+  "ph": 7.4,
+  "flexible_residues": null,
+  "auto_flex": false,
+  "max_flex_residues": 5,
+  "local_opt": false,
+  "population_size": 100,
+  "mc_steps": 1000,
+  "temperature": 300.0,
+  "reference_ligand": null,
+  "tethered_docking": false,
+  "exact_alignment": false,
+  "report_format": "all",
+  "detailed_energy": false,
+  "skip_plots": false
+}
