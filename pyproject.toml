@@ -1,3 +1,131 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pandadock"
+version = "3.0.0"
+description = "A Python-based GPU/CPU-accelerated molecular docking tool for computational drug discovery"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Dr. Pritam Kumar Panda", email = "pritam@stanford.edu"}
+]
+keywords = ["molecular-docking", "drug-discovery", "computational-chemistry", "bioinformatics", "gpu", "cuda"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "numpy>=1.19.0",
+    "scipy>=1.5.0",
+    "matplotlib>=3.3.0",
+    "scikit-learn>=0.24.0",
+    "requests",
+    "packaging",
+    "pandas",
+    "tabulate",
+    "tqdm",
+    "seaborn",
+    "weasyprint",
+    "rich",
+    "rich-argparse",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+gpu = ["torch>=1.9.0"]
+dev = [
+    "pytest>=6.0.0",
+    "pytest-cov>=2.10.0",
+    "black>=20.8b1",
+    "flake8>=3.8.0",
+]
+rdkit = ["rdkit>=2020.09.1"]
+
+[project.urls]
+Homepage = "https://github.com/pritampanda15/PandaDock"
+"Bug Tracker" = "https://github.com/pritampanda15/PandaDock/issues"
+Documentation = "https://github.com/pritampanda15/PandaDock/wiki"
+Repository = "https://github.com/pritampanda15/PandaDock.git"
+
+[project.scripts]
+pandadock = "pandadock.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pandadock*"]
+exclude = ["pandadock.backup_old_architecture*", "tests*", "debug_scripts*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+    "-ra",
+]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+]
+# Exclude backup folder and other non-test directories
+norecursedirs = [
+    "pandadock/backup_old_architecture",
+    "debug_scripts",
+    ".git",
+    ".tox",
+    "dist",
+    "build",
+    "*.egg",
+    ".venv",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.venv
+  | \.tox
+  | \.pytest_cache
+  | __pycache__
+  | _build
+  | buck-out
+  | build
+  | dist
+  | pandadock/backup_old_architecture
+)/
+'''
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    ".tox",
+    "build",
+    "dist",
+    "*.egg-info",
+    "pandadock/backup_old_architecture",
+]
