@@ -29,13 +29,14 @@ class ResultWriters:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.logger = logging.getLogger(__name__)
     
-    def save_all_results(self, results: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, str]:
+    def save_all_results(self, results: Dict[str, Any], config: Dict[str, Any], protein=None) -> Dict[str, str]:
         """
         Save results in all available formats.
         
         Args:
             results: Processed docking results
             config: Configuration parameters
+            protein: Protein structure object (optional)
             
         Returns:
             Dictionary mapping format names to file paths
@@ -68,6 +69,18 @@ class ResultWriters:
         saved_files['text_report'] = str(text_file)
         self._save_text_report(results, config, text_file)
         
+        # Generate plots
+        plots_dir = self.output_dir / "plots"
+        plots_dir.mkdir(exist_ok=True)
+        plot_files = self._generate_plots(results, plots_dir)
+        saved_files.update(plot_files)
+        
+        # Save binding site sphere if protein provided
+        if protein and hasattr(protein, 'active_site') and protein.active_site:
+            sphere_file = self.output_dir / "sphere.pdb"
+            saved_files['sphere'] = str(sphere_file)
+            self._save_binding_site_sphere(protein, sphere_file)
+        
         # Save configuration file
         config_file = self.output_dir / "docking_config.json"
         saved_files['config'] = str(config_file)
@@ -76,6 +89,75 @@ class ResultWriters:
         self.logger.info(f"Saved results to {len(saved_files)} files in {self.output_dir}")
         
         return saved_files
+    
+    def _save_binding_site_sphere(self, protein, output_file: Path) -> None:
+        """Save binding site sphere for visualization."""
+        try:
+            from ..molecules import ProteinHandler
+            
+            handler = ProteinHandler()
+            handler.save_binding_site_sphere(protein, output_file)
+            
+        except Exception as e:
+            self.logger.warning(f"Failed to save binding site sphere: {e}")
+    
+    def _generate_plots(self, results: Dict[str, Any], plots_dir: Path) -> Dict[str, str]:
+        """Generate plots for docking results."""
+        plot_files = {}
+        
+        try:
+            import matplotlib
+            matplotlib.use('Agg')  # Use non-interactive backend
+            import matplotlib.pyplot as plt
+            
+            poses = results.get('poses', [])
+            if not poses:
+                return plot_files
+            
+            scores = [pose['score'] for pose in poses]
+            
+            # 1. Score distribution histogram
+            plt.figure(figsize=(10, 6))
+            plt.hist(scores, bins=min(20, len(scores)//2), alpha=0.7, edgecolor='black')
+            plt.title('Docking Score Distribution', fontsize=14, fontweight='bold')
+            plt.xlabel('Docking Score')
+            plt.ylabel('Frequency')
+            plt.grid(True, alpha=0.3)
+            
+            score_dist_file = plots_dir / 'score_distribution.png'
+            plt.savefig(score_dist_file, dpi=300, bbox_inches='tight')
+            plt.close()
+            plot_files['score_distribution'] = str(score_dist_file)
+            
+            # 2. Score vs Rank plot
+            plt.figure(figsize=(10, 6))
+            ranks = [pose['rank'] for pose in poses]
+            plt.plot(ranks, scores, 'o-', linewidth=2, markersize=4)
+            plt.title('Docking Scores by Rank', fontsize=14, fontweight='bold')
+            plt.xlabel('Pose Rank')
+            plt.ylabel('Docking Score')
+            plt.grid(True, alpha=0.3)
+            
+            # Highlight best poses
+            if len(scores) > 0:
+                best_score_idx = np.argmin(scores)
+                plt.plot(ranks[best_score_idx], scores[best_score_idx], 
+                        'ro', markersize=10, label=f'Best Score: {scores[best_score_idx]:.3f}')
+                plt.legend()
+            
+            score_rank_file = plots_dir / 'score_vs_rank.png'
+            plt.savefig(score_rank_file, dpi=300, bbox_inches='tight')
+            plt.close()
+            plot_files['score_vs_rank'] = str(score_rank_file)
+            
+            self.logger.info(f"Generated {len(plot_files)} plots")
+            
+        except ImportError:
+            self.logger.warning("Matplotlib not available, skipping plot generation")
+        except Exception as e:
+            self.logger.warning(f"Failed to generate plots: {e}")
+        
+        return plot_files
     
     def _save_pose_pdb(self, pose_data: Dict[str, Any], output_file: Path) -> None:
         """Save a single pose in PDB format using proper PDB writer."""

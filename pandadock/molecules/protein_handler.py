@@ -87,59 +87,31 @@ class ProteinStructure:
             f"residues={len(site_residues)}"
         )
     
-    def detect_pockets(self, min_volume: float = 50.0) -> List[Dict[str, Any]]:
+    def detect_pockets(self, min_volume: float = 50.0, probe_radius: float = 1.4) -> List[Dict[str, Any]]:
         """
-        Detect potential binding pockets.
+        Detect potential binding pockets using cavity detection.
         
         Args:
             min_volume: Minimum pocket volume
+            probe_radius: Probe radius for cavity detection
             
         Returns:
             List of detected pockets
         """
-        # Simplified pocket detection using coordinate clustering
         pockets = []
         
         try:
-            from sklearn.cluster import DBSCAN
+            # Method 1: Grid-based cavity detection
+            pockets = self._detect_pockets_grid_based(min_volume, probe_radius)
             
-            # Cluster coordinates to find dense regions
-            clustering = DBSCAN(eps=8.0, min_samples=5).fit(self.coords)
-            
-            unique_labels = set(clustering.labels_)
-            
-            for label in unique_labels:
-                if label == -1:  # Noise points
-                    continue
-                
-                cluster_coords = self.coords[clustering.labels_ == label]
-                
-                # Calculate pocket center and radius
-                center = np.mean(cluster_coords, axis=0)
-                distances = np.linalg.norm(cluster_coords - center, axis=1)
-                radius = np.max(distances) + 2.0  # Add some padding
-                
-                pocket = {
-                    'center': center,
-                    'radius': radius,
-                    'volume': (4/3) * np.pi * radius**3,
-                    'n_atoms': len(cluster_coords)
-                }
-                
-                if pocket['volume'] >= min_volume:
-                    pockets.append(pocket)
+            if not pockets:
+                # Method 2: Fallback to geometric approach
+                pockets = self._detect_pockets_geometric(min_volume)
         
-        except ImportError:
-            # Fallback: use geometric center as single pocket
-            center = np.mean(self.coords, axis=0)
-            radius = np.max(np.linalg.norm(self.coords - center, axis=1)) * 0.5
-            
-            pockets = [{
-                'center': center,
-                'radius': radius,
-                'volume': (4/3) * np.pi * radius**3,
-                'n_atoms': self.n_atoms
-            }]
+        except Exception as e:
+            logging.getLogger(__name__).warning(f"Pocket detection failed: {e}")
+            # Final fallback: single pocket at center
+            pockets = self._detect_pockets_simple()
         
         # Sort by volume (largest first)
         pockets.sort(key=lambda p: p['volume'], reverse=True)
@@ -147,6 +119,162 @@ class ProteinStructure:
         logging.getLogger(__name__).info(f"Detected {len(pockets)} potential pockets")
         
         return pockets
+    
+    def _detect_pockets_grid_based(self, min_volume: float, probe_radius: float) -> List[Dict[str, Any]]:
+        """Grid-based cavity detection."""
+        # Create a 3D grid around the protein
+        min_coords, max_coords = self.get_bounding_box()
+        
+        # Expand bounding box
+        padding = 5.0
+        min_coords -= padding
+        max_coords += padding
+        
+        # Grid resolution
+        grid_spacing = 1.0
+        nx = int((max_coords[0] - min_coords[0]) / grid_spacing) + 1
+        ny = int((max_coords[1] - min_coords[1]) / grid_spacing) + 1
+        nz = int((max_coords[2] - min_coords[2]) / grid_spacing) + 1
+        
+        # Find grid points that are in cavities
+        cavity_points = []
+        
+        for i in range(nx):
+            for j in range(ny):
+                for k in range(nz):
+                    point = np.array([
+                        min_coords[0] + i * grid_spacing,
+                        min_coords[1] + j * grid_spacing,
+                        min_coords[2] + k * grid_spacing
+                    ])
+                    
+                    # Check if point is in a cavity
+                    if self._is_cavity_point(point, probe_radius):
+                        cavity_points.append(point)
+        
+        if not cavity_points:
+            return []
+        
+        # Cluster cavity points to find pockets
+        try:
+            from sklearn.cluster import DBSCAN
+            
+            cavity_points = np.array(cavity_points)
+            clustering = DBSCAN(eps=3.0, min_samples=8).fit(cavity_points)
+            
+            pockets = []
+            unique_labels = set(clustering.labels_)
+            
+            for label in unique_labels:
+                if label == -1:  # Noise points
+                    continue
+                
+                cluster_points = cavity_points[clustering.labels_ == label]
+                
+                # Calculate pocket properties
+                center = np.mean(cluster_points, axis=0)
+                distances = np.linalg.norm(cluster_points - center, axis=1)
+                radius = np.max(distances) + probe_radius
+                
+                # Estimate volume (rough approximation)
+                volume = len(cluster_points) * (grid_spacing ** 3)
+                
+                if volume >= min_volume:
+                    pocket = {
+                        'center': center,
+                        'radius': radius,
+                        'volume': volume,
+                        'n_atoms': len(cluster_points),
+                        'cavity_points': cluster_points
+                    }
+                    pockets.append(pocket)
+            
+            return pockets
+            
+        except ImportError:
+            # Fallback without sklearn
+            return self._detect_pockets_geometric(min_volume)
+    
+    def _is_cavity_point(self, point: np.ndarray, probe_radius: float) -> bool:
+        """Check if a point is in a cavity (not too close to protein atoms)."""
+        min_dist = np.min(np.linalg.norm(self.coords - point, axis=1))
+        
+        # Point is in cavity if it's at least probe_radius away from any atom
+        # but not too far (should be within reasonable distance)
+        return probe_radius < min_dist < 15.0
+    
+    def _detect_pockets_geometric(self, min_volume: float) -> List[Dict[str, Any]]:
+        """Geometric approach to pocket detection."""
+        # Find surface atoms (atoms with fewer neighbors)
+        surface_atoms = self._find_surface_atoms()
+        
+        if not surface_atoms:
+            return self._detect_pockets_simple()
+        
+        # Group surface atoms into potential pockets
+        try:
+            from sklearn.cluster import DBSCAN
+            
+            surface_coords = self.coords[surface_atoms]
+            clustering = DBSCAN(eps=6.0, min_samples=3).fit(surface_coords)
+            
+            pockets = []
+            unique_labels = set(clustering.labels_)
+            
+            for label in unique_labels:
+                if label == -1:  # Noise points
+                    continue
+                
+                cluster_indices = np.where(clustering.labels_ == label)[0]
+                cluster_coords = surface_coords[cluster_indices]
+                
+                # Calculate pocket center and radius
+                center = np.mean(cluster_coords, axis=0)
+                distances = np.linalg.norm(cluster_coords - center, axis=1)
+                radius = np.max(distances) + 3.0
+                
+                # Estimate volume
+                volume = (4/3) * np.pi * radius**3 * 0.3  # Reduce by factor for cavity
+                
+                if volume >= min_volume:
+                    pocket = {
+                        'center': center,
+                        'radius': radius,
+                        'volume': volume,
+                        'n_atoms': len(cluster_coords)
+                    }
+                    pockets.append(pocket)
+            
+            return pockets
+            
+        except ImportError:
+            return self._detect_pockets_simple()
+    
+    def _find_surface_atoms(self, neighbor_cutoff: float = 8.0, min_neighbors: int = 8) -> List[int]:
+        """Find surface atoms (atoms with fewer neighbors)."""
+        surface_atoms = []
+        
+        for i, coord in enumerate(self.coords):
+            distances = np.linalg.norm(self.coords - coord, axis=1)
+            n_neighbors = np.sum(distances < neighbor_cutoff) - 1  # Exclude self
+            
+            if n_neighbors < min_neighbors:
+                surface_atoms.append(i)
+        
+        return surface_atoms
+    
+    def _detect_pockets_simple(self) -> List[Dict[str, Any]]:
+        """Simple fallback pocket detection."""
+        center = np.mean(self.coords, axis=0)
+        distances = np.linalg.norm(self.coords - center, axis=1)
+        radius = np.percentile(distances, 75)  # Use 75th percentile as radius
+        
+        return [{
+            'center': center,
+            'radius': radius,
+            'volume': (4/3) * np.pi * radius**3,
+            'n_atoms': self.n_atoms
+        }]
     
     def define_flexible_residues(self, residue_ids: List[str], 
                                max_rotatable_bonds: int = 3) -> None:
@@ -298,6 +426,64 @@ class ProteinHandler:
             self._save_pdb(protein, output_path)
         else:
             raise ValueError(f"Unsupported output format: {output_path.suffix}")
+    
+    def save_binding_site_sphere(self, protein: ProteinStructure, output_path: str) -> None:
+        """
+        Save binding site visualization as sphere.pdb file.
+        
+        Args:
+            protein: Protein structure object
+            output_path: Output file path for sphere.pdb
+        """
+        output_path = Path(output_path)
+        
+        if not protein.active_site:
+            self.logger.warning("No active site defined, cannot generate sphere.pdb")
+            return
+        
+        center = protein.active_site['center']
+        radius = protein.active_site['radius']
+        
+        # Generate sphere points
+        n_points = max(50, int(radius * 10))  # More points for larger spheres
+        sphere_coords = self._generate_sphere_points(center, radius, n_points)
+        
+        # Save as PDB file
+        with open(output_path, 'w') as f:
+            f.write(f"REMARK  Binding site sphere centered at {center[0]:.3f} {center[1]:.3f} {center[2]:.3f}\n")
+            f.write(f"REMARK  Radius: {radius:.3f} Angstroms\n")
+            f.write(f"REMARK  Generated by PandaDock for visualization\n")
+            
+            for i, coord in enumerate(sphere_coords):
+                line = (
+                    f"HETATM{i+1:5d}  SPH SPH A   1    "
+                    f"{coord[0]:8.3f}{coord[1]:8.3f}{coord[2]:8.3f}  1.00 20.00           C  \n"
+                )
+                f.write(line)
+            
+            f.write("END\n")
+        
+        self.logger.info(f"Saved binding site sphere to {output_path}")
+    
+    def _generate_sphere_points(self, center: np.ndarray, radius: float, n_points: int) -> np.ndarray:
+        """Generate points on a sphere surface for visualization."""
+        points = []
+        
+        # Use Fibonacci spiral for even distribution
+        golden_ratio = (1 + 5**0.5) / 2
+        
+        for i in range(n_points):
+            # Fibonacci spiral on sphere
+            theta = 2 * np.pi * i / golden_ratio
+            phi = np.arccos(1 - 2 * i / n_points)
+            
+            x = radius * np.sin(phi) * np.cos(theta)
+            y = radius * np.sin(phi) * np.sin(theta)
+            z = radius * np.cos(phi)
+            
+            points.append(center + np.array([x, y, z]))
+        
+        return np.array(points)
     
     def _save_pdb(self, protein: ProteinStructure, pdb_path: Path) -> None:
         """Save protein to PDB file."""

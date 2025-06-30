@@ -119,7 +119,7 @@ class DockingEngine:
             
             # Step 9: Save results
             with self.performance_monitor.start_operation("save_results"):
-                self._save_results(processed_results, output_dir)
+                self._save_results(processed_results, output_dir, protein)
             
             # Generate final report
             elapsed_time = time.time() - start_time
@@ -404,13 +404,13 @@ class DockingEngine:
         except Exception as e:
             raise DockingEngineError(f"Result post-processing failed: {e}")
     
-    def _save_results(self, results: Dict[str, Any], output_dir: str) -> None:
+    def _save_results(self, results: Dict[str, Any], output_dir: str, protein=None) -> None:
         """Save docking results to files."""
         try:
             from ..io import ResultWriters
             
             writers = ResultWriters(output_dir)
-            writers.save_all_results(results, self.config)
+            writers.save_all_results(results, self.config, protein)
             
             self.logger.info(f"Results saved to {output_dir}")
             
