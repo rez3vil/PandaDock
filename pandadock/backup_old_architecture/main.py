@@ -597,7 +597,7 @@ def main():
         add_hardware_options(parser)
         add_advanced_search_options(parser)
         add_analysis_options(parser)
-        print_pandadock_ascii()
+        # print_pandadock_ascii()  # Function not defined - commented out
         args = parser.parse_args()
         
         # Define kwargs before use

@@ -7,10 +7,16 @@ across different compute devices, with automatic error handling and fallback.
 
 import numpy as np
 import logging
-from typing import Union, Optional, Any, Dict
+from typing import Union, Optional, Any, Dict, TYPE_CHECKING
 from abc import ABC, abstractmethod
 
 from .device_manager import DeviceManager, DeviceInfo
+
+if TYPE_CHECKING:
+    try:
+        import torch
+    except ImportError:
+        pass
 
 
 class ComputeBackendError(Exception):
