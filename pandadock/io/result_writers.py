@@ -150,6 +150,182 @@ class ResultWriters:
             plt.close()
             plot_files['score_vs_rank'] = str(score_rank_file)
             
+            # 3. Generate binding affinity plots
+            try:
+                from ..analysis.binding_affinity import BindingAffinityCalculator
+                
+                # Calculate binding affinities
+                affinity_calc = BindingAffinityCalculator()
+                affinities = []
+                
+                for i, pose in enumerate(poses):
+                    affinity = affinity_calc.calculate_binding_affinity(pose['score'], i + 1)
+                    affinities.append(affinity)
+                
+                # Extract values for plotting
+                delta_gs = [aff.delta_g for aff in affinities]
+                kds = [aff.kd for aff in affinities]
+                ic50s = [aff.ic50 for aff in affinities]
+                
+                # IC50 vs Rank plot
+                plt.figure(figsize=(10, 6))
+                plt.semilogy(ranks, ic50s, 'o-', linewidth=2, markersize=6, color='purple')
+                plt.title('IC50 vs Pose Rank', fontsize=14, fontweight='bold')
+                plt.xlabel('Pose Rank')
+                plt.ylabel('IC50 (M)')
+                plt.grid(True, alpha=0.3)
+                
+                ic50_rank_file = plots_dir / 'ic50_vs_rank.png'
+                plt.savefig(ic50_rank_file, dpi=300, bbox_inches='tight')
+                plt.close()
+                plot_files['ic50_vs_rank'] = str(ic50_rank_file)
+                
+                # Kd vs Rank plot
+                plt.figure(figsize=(10, 6))
+                plt.semilogy(ranks, kds, 'o-', linewidth=2, markersize=6, color='orange')
+                plt.title('Kd vs Pose Rank', fontsize=14, fontweight='bold')
+                plt.xlabel('Pose Rank')
+                plt.ylabel('Kd (M)')
+                plt.grid(True, alpha=0.3)
+                
+                kd_rank_file = plots_dir / 'kd_vs_rank.png'
+                plt.savefig(kd_rank_file, dpi=300, bbox_inches='tight')
+                plt.close()
+                plot_files['kd_vs_rank'] = str(kd_rank_file)
+                
+                # IC50 vs ΔG correlation plot
+                plt.figure(figsize=(10, 6))
+                plt.semilogy(delta_gs, ic50s, 'o', markersize=6, color='blue', alpha=0.7)
+                plt.title('IC50 vs ΔG Correlation', fontsize=14, fontweight='bold')
+                plt.xlabel('ΔG (kcal/mol)')
+                plt.ylabel('IC50 (M)')
+                plt.grid(True, alpha=0.3)
+                
+                ic50_deltag_file = plots_dir / 'ic50_vs_deltag.png'
+                plt.savefig(ic50_deltag_file, dpi=300, bbox_inches='tight')
+                plt.close()
+                plot_files['ic50_vs_deltag'] = str(ic50_deltag_file)
+                
+                # Kd vs ΔG correlation plot
+                plt.figure(figsize=(10, 6))
+                plt.semilogy(delta_gs, kds, 'o', markersize=6, color='red', alpha=0.7)
+                plt.title('Kd vs ΔG Correlation', fontsize=14, fontweight='bold')
+                plt.xlabel('ΔG (kcal/mol)')
+                plt.ylabel('Kd (M)')
+                plt.grid(True, alpha=0.3)
+                
+                kd_deltag_file = plots_dir / 'kd_vs_deltag.png'
+                plt.savefig(kd_deltag_file, dpi=300, bbox_inches='tight')
+                plt.close()
+                plot_files['kd_vs_deltag'] = str(kd_deltag_file)
+                
+                # Combined metrics plot (dual y-axis)
+                fig, ax1 = plt.subplots(figsize=(12, 8))
+                
+                color1 = 'tab:orange'
+                ax1.set_xlabel('Pose Rank')
+                ax1.set_ylabel('Kd (M)', color=color1)
+                ax1.semilogy(ranks, kds, 'o-', color=color1, label='Kd', linewidth=2, markersize=4)
+                ax1.tick_params(axis='y', labelcolor=color1)
+                ax1.grid(True, alpha=0.3)
+                
+                ax2 = ax1.twinx()
+                color2 = 'tab:purple'
+                ax2.set_ylabel('IC50 (M)', color=color2)
+                ax2.semilogy(ranks, ic50s, 's-', color=color2, label='IC50', linewidth=2, markersize=4)
+                ax2.tick_params(axis='y', labelcolor=color2)
+                
+                plt.title('Combined Binding Metrics vs Pose Rank', fontsize=14, fontweight='bold')
+                
+                # Add legends
+                lines1, labels1 = ax1.get_legend_handles_labels()
+                lines2, labels2 = ax2.get_legend_handles_labels()
+                ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+                
+                combined_file = plots_dir / 'combined_metrics_vs_rank.png'
+                plt.savefig(combined_file, dpi=300, bbox_inches='tight')
+                plt.close()
+                plot_files['combined_metrics'] = str(combined_file)
+                
+            except ImportError:
+                self.logger.warning("Binding affinity calculator not available")
+            except Exception as e:
+                self.logger.warning(f"Failed to generate binding affinity plots: {e}")
+            
+            # 4. Energy component breakdown plots
+            try:
+                # Check if any poses have energy components
+                energy_poses = [pose for pose in poses if pose.get('energy_components')]
+                
+                if energy_poses:
+                    # Extract energy components
+                    components = ['van_der_waals', 'hydrogen_bonds', 'electrostatic', 
+                                'desolvation', 'hydrophobic', 'entropy', 'clash']
+                    
+                    energy_data = {comp: [] for comp in components}
+                    
+                    for pose in energy_poses[:10]:  # Top 10 poses
+                        for comp in components:
+                            value = pose['energy_components'].get(comp, 0.0)
+                            energy_data[comp].append(value)
+                    
+                    if any(any(values) for values in energy_data.values()):
+                        # Energy breakdown bar chart
+                        fig, ax = plt.subplots(figsize=(12, 8))
+                        
+                        x_pos = np.arange(len(energy_poses[:10]))
+                        width = 0.1
+                        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
+                                '#FFEAA7', '#DDA0DD', '#FFB347']
+                        
+                        for i, comp in enumerate(components):
+                            values = energy_data[comp]
+                            ax.bar(x_pos + i*width, values, width, 
+                                  label=comp.replace('_', ' ').title(), 
+                                  color=colors[i % len(colors)])
+                        
+                        ax.set_xlabel('Pose Rank')
+                        ax.set_ylabel('Energy (kcal/mol)')
+                        ax.set_title('Energy Component Breakdown (Top 10 Poses)', 
+                                   fontsize=14, fontweight='bold')
+                        ax.set_xticks(x_pos + width * 3)
+                        ax.set_xticklabels([f'Pose {i+1}' for i in range(len(energy_poses[:10]))])
+                        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+                        ax.grid(True, alpha=0.3)
+                        
+                        energy_breakdown_file = plots_dir / 'energy_breakdown.png'
+                        plt.savefig(energy_breakdown_file, dpi=300, bbox_inches='tight')
+                        plt.close()
+                        plot_files['energy_breakdown'] = str(energy_breakdown_file)
+                        
+                        # Stacked energy plot
+                        fig, ax = plt.subplots(figsize=(12, 8))
+                        
+                        bottom = np.zeros(len(energy_poses[:10]))
+                        for i, comp in enumerate(components):
+                            values = np.array(energy_data[comp])
+                            ax.bar(range(len(energy_poses[:10])), values, bottom=bottom,
+                                  label=comp.replace('_', ' ').title(),
+                                  color=colors[i % len(colors)])
+                            bottom += values
+                        
+                        ax.set_xlabel('Pose Rank')
+                        ax.set_ylabel('Cumulative Energy (kcal/mol)')
+                        ax.set_title('Stacked Energy Components (Top 10 Poses)', 
+                                   fontsize=14, fontweight='bold')
+                        ax.set_xticks(range(len(energy_poses[:10])))
+                        ax.set_xticklabels([f'Pose {i+1}' for i in range(len(energy_poses[:10]))])
+                        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+                        ax.grid(True, alpha=0.3)
+                        
+                        energy_stacked_file = plots_dir / 'energy_stacked.png'
+                        plt.savefig(energy_stacked_file, dpi=300, bbox_inches='tight')
+                        plt.close()
+                        plot_files['energy_stacked'] = str(energy_stacked_file)
+                
+            except Exception as e:
+                self.logger.warning(f"Failed to generate energy plots: {e}")
+            
             self.logger.info(f"Generated {len(plot_files)} plots")
             
         except ImportError:

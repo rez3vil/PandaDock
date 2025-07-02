@@ -12,6 +12,7 @@ from typing import List, Tuple, Any, Dict, Optional
 import random
 from copy import deepcopy
 import time
+from tqdm import tqdm
 
 from .base_algorithm import BaseAlgorithm
 from ..utils_new.math_utils import rotation_matrix_from_euler, apply_rotation_translation
@@ -111,41 +112,57 @@ class GeneticAlgorithm(BaseAlgorithm):
         if not active_site:
             raise ValueError("No active site defined for protein")
         
+        # Store active site for mutation constraints
+        self._current_active_site = active_site
+        
         # Initialize population
         self._initialize_population(protein, ligand, active_site)
         
-        # Evolution loop
-        for generation in range(self.max_generations):
-            self.iteration_count = generation
-            
-            # Evaluate fitness
-            self._evaluate_population(protein, ligand)
-            
-            # Calculate population diversity
-            diversity = self._calculate_diversity()
-            self.diversity_history.append(diversity)
-            
-            # Log progress
-            if generation % 10 == 0 or generation < 5:
-                best_idx = np.argmin(self.fitness_scores)
-                avg_score = np.mean([s for s in self.fitness_scores if s != float('inf')])
-                self.logger.info(
-                    f"Gen {generation}: best={self.fitness_scores[best_idx]:.4f}, "
-                    f"avg={avg_score:.4f}, diversity={diversity:.4f}, "
-                    f"radius={self.search_radius:.2f}, mut_rate={self.current_mutation_rate:.3f}"
-                )
-            
-            # Check convergence
-            if self._check_convergence():
-                self.logger.info(f"Converged at generation {generation}")
-                break
-            
-            # Update adaptive parameters
-            if self.adaptive_mutation:
-                self._update_adaptive_parameters(generation)
-            
-            # Create next generation
-            self._create_next_generation()
+        # Evolution loop with progress bar
+        with tqdm(range(self.max_generations), desc="GA Evolution", unit="gen") as pbar:
+            for generation in pbar:
+                self.iteration_count = generation
+                
+                # Evaluate fitness
+                self._evaluate_population(protein, ligand)
+                
+                # Calculate population diversity
+                diversity = self._calculate_diversity()
+                self.diversity_history.append(diversity)
+                
+                # Update progress bar with current best score
+                if self.fitness_scores:
+                    best_score = min([s for s in self.fitness_scores if s != float('inf')])
+                    if best_score != float('inf'):
+                        pbar.set_postfix({
+                            'best': f'{best_score:.3f}',
+                            'diversity': f'{diversity:.2f}',
+                            'mut_rate': f'{self.current_mutation_rate:.3f}'
+                        })
+                
+                # Log progress (less frequent to avoid cluttering with progress bar)
+                if generation % 20 == 0 or generation < 3:
+                    best_idx = np.argmin(self.fitness_scores)
+                    avg_score = np.mean([s for s in self.fitness_scores if s != float('inf')])
+                    self.logger.info(
+                        f"Gen {generation}: best={self.fitness_scores[best_idx]:.4f}, "
+                        f"avg={avg_score:.4f}, diversity={diversity:.4f}, "
+                        f"radius={self.search_radius:.2f}, mut_rate={self.current_mutation_rate:.3f}"
+                    )
+                
+                # Check convergence
+                if self._check_convergence():
+                    self.logger.info(f"Converged at generation {generation}")
+                    pbar.set_description("GA Evolution (Converged)")
+                    pbar.close()
+                    break
+                
+                # Update adaptive parameters
+                if self.adaptive_mutation:
+                    self._update_adaptive_parameters(generation)
+                
+                # Create next generation
+                self._create_next_generation()
         
         elapsed = time.time() - start_time
         self.logger.info(f"Genetic algorithm completed in {elapsed:.1f}s")
@@ -162,6 +179,14 @@ class GeneticAlgorithm(BaseAlgorithm):
         for i, (individual, score) in enumerate(zip(self.population, self.fitness_scores)):
             if score != float('inf'):
                 pose = self._individual_to_pose(individual, ligand)
+                
+                # Add energy components to the pose if available
+                if 'energy_components' in individual and individual['energy_components']:
+                    if hasattr(pose, '__dict__'):
+                        pose.energy_components = individual['energy_components']
+                    elif hasattr(pose, 'energy_components'):
+                        pose.energy_components = individual['energy_components']
+                
                 results.append((pose, score))
         
         # Sort results by score
@@ -183,6 +208,7 @@ class GeneticAlgorithm(BaseAlgorithm):
         radius = active_site.get('radius', self.initial_radius)
         self.search_radius = min(radius, self.initial_radius)
         
+        
         # Get reference ligand coordinates
         ref_coords = self._get_ligand_coordinates(ligand)
         if ref_coords is None:
@@ -194,11 +220,19 @@ class GeneticAlgorithm(BaseAlgorithm):
                 self.population.append(individual)
             except Exception as e:
                 self.logger.warning(f"Failed to generate individual {i}: {e}")
-                # Add a default individual as fallback
+                # Add a default individual as fallback within sphere
+                ligand_center = np.mean(ref_coords, axis=0)
+                # Generate fallback position within sphere
+                direction = np.random.randn(3)
+                direction = direction / np.linalg.norm(direction)
+                distance = self.search_radius * np.random.random()**(1/3)
+                target_position = center + direction * distance
+                translation_fallback = target_position - ligand_center
                 self.population.append({
-                    'translation': center + np.random.normal(0, 2, 3),
+                    'translation': translation_fallback,
                     'rotation': np.random.uniform(0, 2*np.pi, 3),
-                    'coords': ref_coords.copy()
+                    'coords': ref_coords.copy(),
+                    'reference_coords': ref_coords.copy()
                 })
         
         self.logger.info(f"Initialized population of {len(self.population)} individuals")
@@ -206,13 +240,21 @@ class GeneticAlgorithm(BaseAlgorithm):
     def _generate_random_individual(self, ref_coords: np.ndarray, 
                                   center: np.ndarray, radius: float) -> Dict:
         """Generate a random individual (pose) within the search space."""
+        # Calculate ligand center of mass
+        ligand_center = np.mean(ref_coords, axis=0)
+        
         # Random position within sphere
         while True:
             random_point = np.random.uniform(-1, 1, 3)
             if np.linalg.norm(random_point) <= 1.0:
                 break
         
-        translation = center + random_point * radius * np.random.random()
+        # Generate target position within sphere
+        distance = radius * np.random.random()**(1/3)  # Uniform distribution in sphere
+        target_position = center + random_point * distance
+        
+        # Calculate translation needed to move ligand center to target position
+        translation = target_position - ligand_center
         
         # Random orientation
         rotation = np.random.uniform(0, 2*np.pi, 3)
@@ -224,7 +266,8 @@ class GeneticAlgorithm(BaseAlgorithm):
         return {
             'translation': translation,
             'rotation': rotation,
-            'coords': transformed_coords
+            'coords': transformed_coords,
+            'reference_coords': ref_coords.copy()
         }
     
     def _evaluate_population(self, protein: Any, ligand: Any) -> None:
@@ -234,7 +277,25 @@ class GeneticAlgorithm(BaseAlgorithm):
         for i, individual in enumerate(self.population):
             try:
                 pose = self._individual_to_pose(individual, ligand)
-                score = self.scoring_function.score(protein, pose)
+                
+                # Try to get energy components if available
+                if hasattr(self.scoring_function, 'score_with_components'):
+                    score_data = self.scoring_function.score_with_components(protein, pose)
+                    score = score_data['total_score']
+                    individual['energy_components'] = {
+                        'van_der_waals': score_data.get('van_der_waals', 0.0),
+                        'hydrogen_bonds': score_data.get('hydrogen_bonds', 0.0),
+                        'electrostatic': score_data.get('electrostatic', 0.0),
+                        'desolvation': score_data.get('desolvation', 0.0),
+                        'hydrophobic': score_data.get('hydrophobic', 0.0),
+                        'entropy': score_data.get('entropy', 0.0),
+                        'clash': score_data.get('clash', 0.0)
+                    }
+                else:
+                    # Fallback to simple scoring
+                    score = self.scoring_function.score(protein, pose)
+                    individual['energy_components'] = {}
+                
                 new_scores.append(score)
                 
                 # Track best individual
@@ -430,16 +491,58 @@ class GeneticAlgorithm(BaseAlgorithm):
             mutated = deepcopy(individual)
             
             # Small perturbations
-            translation_noise = np.random.normal(0, 0.5, 3)
+            translation_noise = np.random.normal(0, 0.3, 3)  # Reduced from 0.5
             rotation_noise = np.random.normal(0, 0.1, 3)
             
             mutated['translation'] += translation_noise
             mutated['rotation'] += rotation_noise
             
-            # Occasionally apply larger mutations
+            # Always check if mutation moves ligand outside binding sphere
+            if hasattr(self, '_current_active_site') and self._current_active_site:
+                center = np.array(self._current_active_site['center'])
+                radius = self._current_active_site['radius']
+                
+                # Calculate ligand center after mutation
+                current_coords = mutated.get('coords', individual['coords'])
+                if 'reference_coords' in individual:
+                    # Use original coordinates for calculation
+                    ligand_center = np.mean(individual['reference_coords'], axis=0)
+                else:
+                    ligand_center = np.mean(current_coords, axis=0)
+                
+                # Apply translation to get final center
+                final_center = ligand_center + mutated['translation']
+                distance_from_center = np.linalg.norm(final_center - center)
+                
+                # If outside sphere, adjust translation to keep within sphere
+                if distance_from_center > radius * 0.9:  # 90% of radius as safety margin
+                    direction = (final_center - center) / distance_from_center
+                    max_distance = radius * 0.8  # Keep within 80% of radius
+                    corrected_position = center + direction * max_distance
+                    mutated['translation'] = corrected_position - ligand_center
+            
+            # Occasionally apply larger mutations but constrain to sphere
             if random.random() < 0.1:
-                # Large translation
-                mutated['translation'] += np.random.normal(0, 2.0, 3)
+                # Check if we have active site info for constraint
+                if hasattr(self, '_current_active_site') and self._current_active_site:
+                    center = self._current_active_site['center']
+                    radius = self._current_active_site['radius']
+                    
+                    # Calculate current ligand center after mutation
+                    current_coords = mutated.get('coords', individual['coords'])
+                    current_center = np.mean(current_coords, axis=0) + mutated['translation']
+                    
+                    # If outside sphere, pull back towards center
+                    distance_from_center = np.linalg.norm(current_center - center)
+                    if distance_from_center > radius * 0.8:  # 80% of radius as safety margin
+                        direction_to_center = (center - current_center) / distance_from_center
+                        max_distance = radius * 0.7
+                        target_position = center + direction_to_center * max_distance * np.random.random()
+                        ligand_center = np.mean(current_coords, axis=0)
+                        mutated['translation'] = target_position - ligand_center
+                else:
+                    # Fallback: smaller random perturbation
+                    mutated['translation'] += np.random.normal(0, 1.0, 3)
             
             if random.random() < 0.1:
                 # Large rotation

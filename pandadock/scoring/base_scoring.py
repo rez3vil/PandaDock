@@ -56,6 +56,29 @@ class BaseScoringFunction(ABC):
         
         return scores
     
+    def score_with_components(self, protein: Any, ligand_pose: Any) -> Dict[str, float]:
+        """
+        Score a pose and return both total score and energy components.
+        
+        Args:
+            protein: Protein molecule object
+            ligand_pose: Ligand pose to score
+            
+        Returns:
+            Dictionary with 'total_score' and energy components
+        """
+        total_score = self.score(protein, ligand_pose)
+        return {
+            'total_score': total_score,
+            'van_der_waals': 0.0,
+            'hydrogen_bonds': 0.0,
+            'electrostatic': 0.0,
+            'desolvation': 0.0,
+            'hydrophobic': 0.0,
+            'entropy': 0.0,
+            'clash': 0.0
+        }
+    
     def get_scoring_info(self) -> Dict[str, Any]:
         """
         Get information about the scoring function.

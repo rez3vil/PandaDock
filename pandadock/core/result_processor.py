@@ -240,11 +240,16 @@ class ResultProcessor:
         formatted_poses = []
         
         for i, (pose, score) in enumerate(results):
+            # Extract energy components if available
+            energy_components = {}
+            if hasattr(pose, 'energy_components') and pose.energy_components:
+                energy_components = pose.energy_components
+            
             pose_dict = {
                 'rank': i + 1,
                 'score': float(score),
                 'pose_data': pose,
-                'energy_components': {}
+                'energy_components': energy_components
             }
             
             # Extract coordinates if available

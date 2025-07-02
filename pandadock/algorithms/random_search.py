@@ -10,6 +10,7 @@ import logging
 from typing import List, Tuple, Any, Optional, Dict, Union
 from copy import deepcopy
 import time
+from tqdm import tqdm
 
 from .base_algorithm import BaseAlgorithm
 from ..utils_new.math_utils import rotation_matrix_from_euler, apply_rotation_translation
@@ -92,52 +93,76 @@ class RandomSearchAlgorithm(BaseAlgorithm):
         start_time = time.time()
         results = []
         
-        for iteration in range(self.max_iterations):
-            try:
-                # Generate random pose
-                pose = self._generate_random_pose(ligand, center, self.current_radius)
-                
-                # Check for clashes
-                if not self._is_pose_valid(protein, pose):
-                    continue
-                
-                # Evaluate pose
-                score = self.scoring_function.score(protein, pose)
-                
-                # Store result
-                results.append((pose, score))
-                
-                # Update best score and adapt search
-                if score < self.best_score:
-                    self.best_score = score
-                    self.iterations_without_improvement = 0
+        with tqdm(range(self.max_iterations), desc="Random Search", unit="iter") as pbar:
+            for iteration in pbar:
+                try:
+                    # Generate random pose
+                    pose = self._generate_random_pose(ligand, center, self.current_radius)
                     
-                    # Shrink radius when better poses are found
-                    if self.current_radius > self.min_radius:
-                        self.current_radius = max(
-                            self.min_radius,
-                            self.current_radius * self.radius_shrink_factor
-                        )
-                        self.logger.debug(f"Shrunk search radius to {self.current_radius:.2f}Å")
-                else:
-                    self.iterations_without_improvement += 1
-                
-                # Check convergence
-                if self.iterations_without_improvement >= self.convergence_patience:
-                    self.logger.info(f"Converged after {iteration+1} iterations")
-                    break
-                
-                # Progress reporting
-                if (iteration + 1) % 100 == 0:
-                    elapsed = time.time() - start_time
-                    self.logger.info(f"Iteration {iteration+1}/{self.max_iterations}, "
-                                   f"Best score: {self.best_score:.3f}, "
-                                   f"Radius: {self.current_radius:.2f}Å, "
-                                   f"Time: {elapsed:.1f}s")
-                
-            except Exception as e:
-                self.logger.warning(f"Error in iteration {iteration}: {e}")
-                continue
+                    # Check for clashes
+                    if not self._is_pose_valid(protein, pose):
+                        continue
+                    
+                    # Evaluate pose with energy components if available
+                    if hasattr(self.scoring_function, 'score_with_components'):
+                        score_data = self.scoring_function.score_with_components(protein, pose)
+                        score = score_data['total_score']
+                        pose.energy_components = {
+                            'van_der_waals': score_data.get('van_der_waals', 0.0),
+                            'hydrogen_bonds': score_data.get('hydrogen_bonds', 0.0),
+                            'electrostatic': score_data.get('electrostatic', 0.0),
+                            'desolvation': score_data.get('desolvation', 0.0),
+                            'hydrophobic': score_data.get('hydrophobic', 0.0),
+                            'entropy': score_data.get('entropy', 0.0),
+                            'clash': score_data.get('clash', 0.0)
+                        }
+                    else:
+                        # Fallback to simple scoring
+                        score = self.scoring_function.score(protein, pose)
+                    
+                    # Store result
+                    results.append((pose, score))
+                    
+                    # Update best score and adapt search
+                    if score < self.best_score:
+                        self.best_score = score
+                        self.iterations_without_improvement = 0
+                        
+                        # Shrink radius when better poses are found
+                        if self.current_radius > self.min_radius:
+                            self.current_radius = max(
+                                self.min_radius,
+                                self.current_radius * self.radius_shrink_factor
+                            )
+                            self.logger.debug(f"Shrunk search radius to {self.current_radius:.2f}Å")
+                    else:
+                        self.iterations_without_improvement += 1
+                    
+                    # Update progress bar
+                    pbar.set_postfix({
+                        'best': f'{self.best_score:.3f}',
+                        'poses': len(results),
+                        'radius': f'{self.current_radius:.2f}Å'
+                    })
+                    
+                    # Check convergence
+                    if self.iterations_without_improvement >= self.convergence_patience:
+                        self.logger.info(f"Converged after {iteration+1} iterations")
+                        pbar.set_description("Random Search (Converged)")
+                        pbar.close()
+                        break
+                    
+                    # Progress reporting (less frequent to avoid cluttering with progress bar)
+                    if (iteration + 1) % 200 == 0:
+                        elapsed = time.time() - start_time
+                        self.logger.info(f"Iteration {iteration+1}/{self.max_iterations}, "
+                                       f"Best score: {self.best_score:.3f}, "
+                                       f"Radius: {self.current_radius:.2f}Å, "
+                                       f"Time: {elapsed:.1f}s")
+                    
+                except Exception as e:
+                    self.logger.warning(f"Error in iteration {iteration}: {e}")
+                    continue
         
         elapsed = time.time() - start_time
         self.logger.info(f"Random search completed: {len(results)} poses in {elapsed:.1f}s")
@@ -157,6 +182,9 @@ class RandomSearchAlgorithm(BaseAlgorithm):
         # Create a copy of the ligand to modify
         pose = deepcopy(ligand)
         
+        # Calculate ligand center of mass
+        ligand_center = np.mean(pose.coords, axis=0)
+        
         # Random translation within sphere
         # Use rejection sampling to ensure uniform distribution in sphere
         while True:
@@ -164,7 +192,12 @@ class RandomSearchAlgorithm(BaseAlgorithm):
             if np.linalg.norm(random_point) <= 1.0:
                 break
         
-        translation = center + random_point * radius * np.random.random()
+        # Generate target position within sphere
+        distance = radius * np.random.random()**(1/3)  # Uniform distribution in sphere
+        target_position = center + random_point * distance
+        
+        # Calculate translation needed to move ligand center to target position
+        translation = target_position - ligand_center
         
         # Random rotation
         euler_angles = np.random.uniform(0, 2*np.pi, 3)
@@ -488,32 +521,38 @@ class SimpleRandomSearch(BaseAlgorithm):
         
         results = []
         
-        for i in range(self.max_iterations):
-            try:
-                # Create random pose (very basic implementation)
-                pose = deepcopy(ligand)
-                
-                # Random translation
-                translation = np.random.normal(0, 5.0, 3)
-                
-                # Random rotation
-                euler = np.random.uniform(0, 2*np.pi, 3)
-                rotation = rotation_matrix_from_euler(euler)
-                
-                # Apply transformation (basic attempt)
-                if hasattr(pose, 'coords'):
-                    coords = np.array(pose.coords)
-                    if coords.ndim == 2:
-                        transformed = apply_rotation_translation(coords, rotation, translation)
-                        pose.coords = transformed
-                
-                # Score pose
-                score = self.scoring_function.score(protein, pose)
-                results.append((pose, score))
-                
-            except Exception as e:
-                self.logger.debug(f"Error in simple random search iteration {i}: {e}")
-                continue
+        with tqdm(range(self.max_iterations), desc="Simple Random Search", unit="iter") as pbar:
+            for i in pbar:
+                try:
+                    # Create random pose (very basic implementation)
+                    pose = deepcopy(ligand)
+                    
+                    # Random translation
+                    translation = np.random.normal(0, 5.0, 3)
+                    
+                    # Random rotation
+                    euler = np.random.uniform(0, 2*np.pi, 3)
+                    rotation = rotation_matrix_from_euler(euler)
+                    
+                    # Apply transformation (basic attempt)
+                    if hasattr(pose, 'coords'):
+                        coords = np.array(pose.coords)
+                        if coords.ndim == 2:
+                            transformed = apply_rotation_translation(coords, rotation, translation)
+                            pose.coords = transformed
+                    
+                    # Score pose
+                    score = self.scoring_function.score(protein, pose)
+                    results.append((pose, score))
+                    
+                    # Update progress bar
+                    if results:
+                        best_score = min(result[1] for result in results)
+                        pbar.set_postfix({'best': f'{best_score:.3f}', 'poses': len(results)})
+                    
+                except Exception as e:
+                    self.logger.debug(f"Error in simple random search iteration {i}: {e}")
+                    continue
         
         # Sort by score
         results.sort(key=lambda x: x[1])

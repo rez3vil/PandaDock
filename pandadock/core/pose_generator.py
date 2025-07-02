@@ -268,11 +268,17 @@ class PoseGenerator:
             center = np.array(binding_site['center'])
             radius = binding_site['radius']
             
-            # Random translation within sphere
+            # Calculate ligand center of mass
+            ligand_center = np.mean(ligand_coords, axis=0)
+            
+            # Generate random position within sphere
             direction = np.random.randn(3)
             direction = direction / np.linalg.norm(direction)
             distance = np.random.uniform(0, radius * 0.8)  # Stay within 80% of radius
-            translation = center + direction * distance
+            target_position = center + direction * distance
+            
+            # Calculate translation needed to move ligand center to target position
+            translation = target_position - ligand_center
         else:
             # Random translation in reasonable range
             translation = np.random.uniform(-10, 10, 3)

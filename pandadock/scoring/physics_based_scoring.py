@@ -155,11 +155,84 @@ class PhysicsBasedScoringFunction(BaseScoringFunction):
             self.logger.debug(f"Energy components: {components}")
             self.logger.debug(f"Total energy: {total_energy:.3f} kcal/mol")
             
+            # Store components for retrieval
+            self._last_components = components.copy()
+            
             return total_energy
             
         except Exception as e:
             self.logger.error(f"Error in physics-based scoring: {e}")
             return 1000.0  # High penalty for failed scoring
+    
+    def score_with_components(self, protein: Any, ligand_pose: Any) -> Dict[str, float]:
+        """
+        Score a pose and return both total score and energy components.
+        
+        Args:
+            protein: Protein molecule object
+            ligand_pose: Ligand pose to score
+            
+        Returns:
+            Dictionary with 'total_score' and energy components
+        """
+        try:
+            protein_atoms = self._get_protein_atoms(protein)
+            ligand_atoms = self._get_ligand_atoms(ligand_pose)
+            
+            if not protein_atoms or not ligand_atoms:
+                return {
+                    'total_score': 1000.0,
+                    'van_der_waals': 0.0,
+                    'hydrogen_bonds': 0.0,
+                    'electrostatic': 0.0,
+                    'desolvation': 0.0,
+                    'hydrophobic': 0.0,
+                    'entropy': 0.0,
+                    'clash': 0.0
+                }
+            
+            # Calculate individual components
+            components = {}
+            components['vdw'] = self._calculate_vdw_energy(protein_atoms, ligand_atoms)
+            components['hbond'] = self._calculate_hbond_energy(protein_atoms, ligand_atoms)
+            components['electrostatic'] = self._calculate_electrostatic_energy(protein_atoms, ligand_atoms)
+            components['solvation'] = self._calculate_solvation_energy(protein, ligand_pose)
+            components['hydrophobic'] = self._calculate_hydrophobic_energy(protein_atoms, ligand_atoms)
+            components['entropy'] = self._calculate_entropy_penalty(ligand_pose)
+            components['clash'] = self._calculate_clash_energy(protein_atoms, ligand_atoms)
+            
+            # Calculate total energy
+            total_energy = 0.0
+            for component, energy in components.items():
+                if not math.isnan(energy) and not math.isinf(energy):
+                    total_energy += self.weights[component] * energy
+                else:
+                    total_energy += 100.0  # Penalty for invalid calculation
+            
+            # Return both total and components
+            return {
+                'total_score': total_energy,
+                'van_der_waals': components['vdw'],
+                'hydrogen_bonds': components['hbond'],
+                'electrostatic': components['electrostatic'],
+                'desolvation': components['solvation'],  # Map solvation to desolvation for output
+                'hydrophobic': components['hydrophobic'],
+                'entropy': components['entropy'],
+                'clash': components['clash']
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error in physics-based scoring with components: {e}")
+            return {
+                'total_score': 1000.0,
+                'van_der_waals': 0.0,
+                'hydrogen_bonds': 0.0,
+                'electrostatic': 0.0,
+                'desolvation': 0.0,
+                'hydrophobic': 0.0,
+                'entropy': 0.0,
+                'clash': 0.0
+            }
     
     def _calculate_vdw_energy(self, protein_atoms: List[Any], ligand_atoms: List[Any]) -> float:
         """Calculate van der Waals energy using Lennard-Jones potential."""
@@ -499,7 +572,32 @@ class PhysicsBasedScoringFunction(BaseScoringFunction):
     def _get_protein_atoms(self, protein: Any) -> List[Any]:
         """Extract protein atoms."""
         try:
-            if hasattr(protein, 'active_site') and protein.active_site and 'atoms' in protein.active_site:
+            # Handle ProteinStructure from new architecture
+            if hasattr(protein, 'coords') and hasattr(protein, 'atom_names'):
+                atoms = []
+                for i, (coord, atom_name) in enumerate(zip(protein.coords, protein.atom_names)):
+                    # Extract element from atom name (first character usually)
+                    element = atom_name[0].upper() if atom_name else 'C'
+                    atom = {
+                        'coords': coord,
+                        'element': element,
+                        'index': i,
+                        'name': atom_name
+                    }
+                    atoms.append(atom)
+                return atoms
+            elif hasattr(protein, 'coords') and hasattr(protein, 'atom_types'):
+                atoms = []
+                for i, (coord, atom_type) in enumerate(zip(protein.coords, protein.atom_types)):
+                    atom = {
+                        'coords': coord,
+                        'element': atom_type,
+                        'index': i,
+                        'name': f'{atom_type}{i}'
+                    }
+                    atoms.append(atom)
+                return atoms
+            elif hasattr(protein, 'active_site') and protein.active_site and 'atoms' in protein.active_site:
                 return protein.active_site['atoms']
             elif hasattr(protein, 'atoms'):
                 return protein.atoms
@@ -511,7 +609,19 @@ class PhysicsBasedScoringFunction(BaseScoringFunction):
     def _get_ligand_atoms(self, ligand: Any) -> List[Any]:
         """Extract ligand atoms."""
         try:
-            if hasattr(ligand, 'atoms'):
+            # Handle LigandStructure from new architecture
+            if hasattr(ligand, 'coords') and hasattr(ligand, 'atom_types'):
+                atoms = []
+                for i, (coord, atom_type) in enumerate(zip(ligand.coords, ligand.atom_types)):
+                    atom = {
+                        'coords': coord,
+                        'element': atom_type,
+                        'index': i,
+                        'name': ligand.atom_names[i] if hasattr(ligand, 'atom_names') and i < len(ligand.atom_names) else f'{atom_type}{i}'
+                    }
+                    atoms.append(atom)
+                return atoms
+            elif hasattr(ligand, 'atoms'):
                 return ligand.atoms
             elif hasattr(ligand, 'molecule') and hasattr(ligand.molecule, 'atoms'):
                 return ligand.molecule.atoms
