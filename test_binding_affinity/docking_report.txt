@@ -1,0 +1,34 @@
+================================================================================
+  PandaDock Molecular Docking Results
+  Refactored Architecture - Easy to Debug & Extend
+================================================================================
+
+RUN INFORMATION
+--------------------
+Generated: 2025-07-02 08:58:05
+Algorithm: genetic
+Scoring: Standard composite
+Hardware: Unknown
+
+RESULTS STATISTICS
+--------------------
+Total poses: 2
+Best score: -2.7946
+Worst score: -1.4502
+Mean score: -2.1224
+Score std: 0.6722
+
+TOP POSES
+--------------------
+Rank  Score       N_Atoms   File
+--------------------------------------------------
+1     -2.7946     31        pose_1_score_-2.79.pdb
+2     -1.4502     31        pose_2_score_-1.45.pdb
+
+ANALYSIS RESULTS
+--------------------
+
+================================================================================
+For detailed pose structures, see the poses/ directory
+For machine-readable data, see results_summary.json
+================================================================================

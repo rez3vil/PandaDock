@@ -86,6 +86,15 @@ class ResultWriters:
         saved_files['config'] = str(config_file)
         self._save_config(config, config_file)
         
+        # Generate binding affinity reports
+        affinity_files = self._generate_binding_affinity_reports(results)
+        saved_files.update(affinity_files)
+        
+        # Generate detailed docking report with energy breakdown
+        detailed_report_file = self.output_dir / "detailed_docking_report.txt"
+        saved_files['detailed_report'] = str(detailed_report_file)
+        self._save_detailed_docking_report(results, config, detailed_report_file)
+        
         self.logger.info(f"Saved results to {len(saved_files)} files in {self.output_dir}")
         
         return saved_files
@@ -623,3 +632,180 @@ class ResultWriters:
             self.logger.info(f"Saved {len(saved_files)} protein-ligand complexes")
         
         return saved_files
+    
+    def _generate_binding_affinity_reports(self, results: Dict[str, Any]) -> Dict[str, str]:
+        """Generate binding affinity reports in multiple formats."""
+        affinity_files = {}
+        
+        try:
+            from ..analysis.binding_affinity import BindingAffinityCalculator, export_affinity_results_csv
+            
+            poses = results.get('poses', [])
+            if not poses:
+                return affinity_files
+            
+            # Calculate binding affinities
+            calculator = BindingAffinityCalculator()
+            affinity_results = []
+            
+            for pose in poses:
+                affinity = calculator.calculate_binding_affinity(
+                    docking_score=pose['score'],
+                    pose_rank=pose['rank'],
+                    molecular_weight=pose.get('molecular_weight'),
+                    heavy_atom_count=pose.get('n_atoms')
+                )
+                affinity_results.append(affinity)
+            
+            # Save binding affinity report in text format
+            text_report = calculator.generate_affinity_report(affinity_results)
+            affinity_txt_file = self.output_dir / "binding_affinity_report.txt"
+            with open(affinity_txt_file, 'w') as f:
+                f.write(text_report)
+            affinity_files['binding_affinity_txt'] = str(affinity_txt_file)
+            
+            # Save binding affinity report in CSV format
+            affinity_csv_file = self.output_dir / "binding_affinity_report.csv"
+            export_affinity_results_csv(affinity_results, affinity_csv_file)
+            affinity_files['binding_affinity_csv'] = str(affinity_csv_file)
+            
+            # Save simple scores file for compatibility
+            scores_file = self.output_dir / "docking_scores.txt"
+            with open(scores_file, 'w') as f:
+                f.write("Pose Ranking and Docking Scores\n")
+                f.write("=" * 40 + "\n")
+                f.write(f"{'Rank':<6}{'Score (kcal/mol)':<15}{'File'}\n")
+                f.write("-" * 40 + "\n")
+                for pose in poses:
+                    filename = f"pose_{pose['rank']}_score_{pose['score']:.2f}.pdb"
+                    f.write(f"{pose['rank']:<6}{pose['score']:<15.3f}{filename}\n")
+            affinity_files['docking_scores'] = str(scores_file)
+            
+            self.logger.info(f"Generated {len(affinity_files)} binding affinity reports")
+            
+        except ImportError:
+            self.logger.warning("Binding affinity calculator not available")
+        except Exception as e:
+            self.logger.warning(f"Failed to generate binding affinity reports: {e}")
+        
+        return affinity_files
+    
+    def _save_detailed_docking_report(self, results: Dict[str, Any], config: Dict[str, Any], 
+                                    output_file: Path) -> None:
+        """Save detailed docking report with energy breakdown."""
+        try:
+            poses = results.get('poses', [])
+            stats = results.get('statistics', {})
+            
+            with open(output_file, 'w') as f:
+                # Header
+                f.write("=" * 80 + "\n")
+                f.write("    DETAILED PANDADOCK MOLECULAR DOCKING REPORT\n")
+                f.write("=" * 80 + "\n\n")
+                
+                # Algorithm details
+                f.write("ALGORITHM DETAILS\n")
+                f.write("-" * 17 + "\n")
+                f.write(f"Algorithm: {config.get('algorithm', 'Unknown').title()}\n")
+                f.write(f"Population Size: {config.get('population_size', 'N/A')}\n")
+                f.write(f"Iterations: {config.get('iterations', 'N/A')}\n")
+                f.write(f"Scoring Function: {self._get_scoring_description(config)}\n")
+                f.write(f"Hardware Acceleration: {config.get('device_used', 'CPU')}\n")
+                if config.get('use_gpu'):
+                    f.write(f"GPU Precision: {config.get('gpu_precision', 'float32')}\n")
+                f.write(f"Exhaustiveness: {config.get('exhaustiveness', 1)}\n\n")
+                
+                # Results summary
+                f.write("RESULTS SUMMARY\n")
+                f.write("-" * 14 + "\n")
+                f.write(f"Total Poses Generated: {stats.get('total_poses', len(poses))}\n")
+                if stats.get('best_score') is not None:
+                    f.write(f"Best Score: {stats['best_score']:.4f}\n")
+                    f.write(f"Worst Score: {stats.get('worst_score', 0):.4f}\n")
+                    f.write(f"Average Score: {stats.get('mean_score', 0):.4f}\n")
+                    f.write(f"Score Standard Deviation: {stats.get('std_score', 0):.4f}\n")
+                f.write("\n")
+                
+                # Top poses table
+                f.write("TOP 10 POSES\n")
+                f.write("-" * 14 + "\n")
+                f.write(f"{'Rank':<6}{'Score':<12}{'File'}\n")
+                f.write("-" * 50 + "\n")
+                
+                for pose in poses[:10]:
+                    filename = f"pose_{pose['rank']}_score_{pose['score']:.2f}.pdb"
+                    f.write(f"{pose['rank']:<6}{pose['score']:<12.4f}{filename}\n")
+                f.write("\n")
+                
+                # Energy component breakdown
+                energy_poses = [pose for pose in poses if pose.get('energy_components')]
+                if energy_poses:
+                    f.write("ENERGY COMPONENT BREAKDOWN (TOP 10 POSES)\n")
+                    f.write("-" * 40 + "\n")
+                    
+                    # Table header
+                    f.write(f"{'Pose':<8}{'Clash':<12}{'Desolvat':<12}{'Electros':<12}")
+                    f.write(f"{'Entropy':<12}{'H-Bond':<12}{'Hydropho':<12}{'Van der':<12}\n")
+                    f.write("-" * 92 + "\n")
+                    
+                    # Energy values
+                    for pose in energy_poses[:10]:
+                        components = pose['energy_components']
+                        f.write(f"{pose['rank']:>4}    ")
+                        f.write(f"{components.get('clash', 0.0):>8.2f}    ")
+                        f.write(f"{components.get('desolvation', 0.0):>8.2f}    ")
+                        f.write(f"{components.get('electrostatic', 0.0):>8.2f}    ")
+                        f.write(f"{components.get('entropy', 0.0):>8.2f}    ")
+                        f.write(f"{components.get('hydrogen_bonds', 0.0):>8.2f}    ")
+                        f.write(f"{components.get('hydrophobic', 0.0):>8.2f}    ")
+                        f.write(f"{components.get('van_der_waals', 0.0):>8.2f}\n")
+                    f.write("\n")
+                
+                # Binding affinity estimation
+                try:
+                    from ..analysis.binding_affinity import BindingAffinityCalculator
+                    
+                    calculator = BindingAffinityCalculator()
+                    
+                    f.write("BINDING AFFINITY ESTIMATION\n")
+                    f.write("-" * 27 + "\n")
+                    
+                    for pose in poses[:10]:  # Top 10 poses
+                        affinity = calculator.calculate_binding_affinity(
+                            docking_score=pose['score'],
+                            pose_rank=pose['rank']
+                        )
+                        
+                        f.write(f"Pose {pose['rank']}: Score = {pose['score']:.2f} kcal/mol\n")
+                        f.write(f"  Estimated ΔG: {affinity.delta_g:.2f} kcal/mol\n")
+                        f.write(f"  Estimated Kd: {affinity.kd:.2e} M\n")
+                        f.write(f"  Estimated IC50: {affinity.ic50:.2e} M\n")
+                        f.write("\n")
+                    
+                    # Summary table
+                    f.write("=" * 80 + "\n")
+                    f.write("    Binding Affinity Report\n")
+                    f.write("=" * 80 + "\n\n")
+                    f.write(f"{'Pose':<12}{'ΔG (kcal/mol)':<20}{'Kd (M)':<20}{'IC50 (M)'}\n")
+                    f.write("-" * 66 + "\n")
+                    
+                    for pose in poses[:10]:
+                        affinity = calculator.calculate_binding_affinity(
+                            docking_score=pose['score'],
+                            pose_rank=pose['rank']
+                        )
+                        f.write(f"{pose['rank']:<12}{affinity.delta_g:<20.2f}")
+                        f.write(f"{affinity.kd:<20.2e}{affinity.ic50:.2e}\n")
+                    f.write("\n")
+                    
+                except ImportError:
+                    f.write("Binding affinity analysis not available\n\n")
+                
+                # Footer
+                f.write("=" * 80 + "\n")
+                f.write("Report generated by PandaDock 2.0 - Refactored Architecture\n")
+                f.write("For visualization, load pose PDB files with your favorite molecular viewer\n")
+                f.write("=" * 80 + "\n")
+                
+        except Exception as e:
+            self.logger.warning(f"Failed to save detailed docking report {output_file}: {e}")
