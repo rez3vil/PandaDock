@@ -66,6 +66,14 @@ class ScoringFunctionFactory:
                 def score(self, protein, ligand_pose):
                     return self.old_scoring.score(protein, ligand_pose)
                 
+                def score_with_components(self, protein, ligand_pose):
+                    """Score with detailed energy component breakdown."""
+                    if hasattr(self.old_scoring, 'score_with_components'):
+                        return self.old_scoring.score_with_components(protein, ligand_pose)
+                    else:
+                        # Fallback to basic score if components not available
+                        return {'total_score': self.score(protein, ligand_pose)}
+                
                 def score_batch(self, protein, ligand_poses):
                     return [self.score(protein, pose) for pose in ligand_poses]
             
@@ -86,6 +94,14 @@ class ScoringFunctionFactory:
                 
                 def score(self, protein, ligand_pose):
                     return self.old_scoring.score(protein, ligand_pose)
+                
+                def score_with_components(self, protein, ligand_pose):
+                    """Score with detailed energy component breakdown."""
+                    if hasattr(self.old_scoring, 'score_with_components'):
+                        return self.old_scoring.score_with_components(protein, ligand_pose)
+                    else:
+                        # Fallback to basic score if components not available
+                        return {'total_score': self.score(protein, ligand_pose)}
                 
                 def score_batch(self, protein, ligand_poses):
                     return [self.score(protein, pose) for pose in ligand_poses]

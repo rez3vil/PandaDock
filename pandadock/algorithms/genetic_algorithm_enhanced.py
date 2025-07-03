@@ -34,11 +34,11 @@ class GeneticAlgorithm(BaseAlgorithm):
     - Search radius adaptation for focused exploration
     """
     
-    def __init__(self, scoring_function: Any, population_size: int = 50,
-                 max_generations: int = 100, mutation_rate: float = 0.1, 
+    def __init__(self, scoring_function: Any, population_size: int = 30,
+                 max_generations: int = 50, mutation_rate: float = 0.1, 
                  crossover_rate: float = 0.8, tournament_size: int = 3,
                  elitism_count: int = 2, adaptive_mutation: bool = True,
-                 local_optimization: bool = True, convergence_patience: int = 20,
+                 local_optimization: bool = False, convergence_patience: int = 10,
                  initial_radius: float = 10.0, **kwargs):
         """
         Initialize genetic algorithm.
