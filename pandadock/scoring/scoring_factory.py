@@ -129,8 +129,10 @@ class ScoringFunctionFactory:
                     # Simple scoring: penalize very close and very far
                     if min_distance < 1.0:
                         return 100.0  # Severe clash penalty
+                    elif min_distance > 15.0:
+                        return 25.0   # Too far penalty (reduced from 50.0)
                     elif min_distance > 10.0:
-                        return 50.0   # Too far penalty
+                        return 10.0   # Moderately far penalty
                     else:
                         return -min_distance  # Better when closer (within reason)
                         
