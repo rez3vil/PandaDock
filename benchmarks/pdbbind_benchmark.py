@@ -260,7 +260,7 @@ class PDBBindParser:
 class PandaDockBenchmark:
     """Main benchmark class for running PandaDock benchmarks."""
     
-    def __init__(self, output_dir: str):
+    def __init__(self, output_dir: str, grid_centers_file: Optional[str] = None):
         """Initialize benchmark runner."""
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -270,6 +270,11 @@ class PandaDockBenchmark:
         
         # Results storage
         self.results: List[BenchmarkResult] = []
+        
+        # Load grid centers if provided
+        self.grid_centers = {}
+        if grid_centers_file:
+            self.grid_centers = self._load_grid_centers(grid_centers_file)
     
     def _setup_logging(self) -> logging.Logger:
         """Setup logging configuration."""
@@ -296,6 +301,48 @@ class PandaDockBenchmark:
         logger.addHandler(console_handler)
         
         return logger
+    
+    def _load_grid_centers(self, grid_centers_file: str) -> Dict[str, Tuple[float, float, float]]:
+        """
+        Load grid centers from CSV file.
+        
+        Args:
+            grid_centers_file: Path to CSV file with columns: ProteinID, X, Y, Z
+            
+        Returns:
+            Dictionary mapping protein IDs to (x, y, z) coordinates
+        """
+        grid_centers = {}
+        
+        try:
+            df = pd.read_csv(grid_centers_file)
+            
+            # Validate required columns
+            required_cols = ['ProteinID', 'X', 'Y', 'Z']
+            missing_cols = [col for col in required_cols if col not in df.columns]
+            if missing_cols:
+                raise ValueError(f"Missing required columns in grid centers file: {missing_cols}")
+            
+            # Load grid centers
+            for _, row in df.iterrows():
+                protein_id = str(row['ProteinID']).lower()  # Convert to lowercase for matching
+                x, y, z = float(row['X']), float(row['Y']), float(row['Z'])
+                grid_centers[protein_id] = (x, y, z)
+            
+            self.logger.info(f"Loaded {len(grid_centers)} grid centers from {grid_centers_file}")
+            
+            # Log first few entries for verification
+            for i, (protein_id, coords) in enumerate(list(grid_centers.items())[:5]):
+                self.logger.info(f"  {protein_id}: ({coords[0]:.3f}, {coords[1]:.3f}, {coords[2]:.3f})")
+            
+            if len(grid_centers) > 5:
+                self.logger.info(f"  ... and {len(grid_centers) - 5} more")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to load grid centers from {grid_centers_file}: {e}")
+            raise
+        
+        return grid_centers
     
     def extract_binding_site_from_pocket(self, pocket_file: str) -> Tuple[List[float], float]:
         """
@@ -361,13 +408,18 @@ class PandaDockBenchmark:
         run_output.mkdir(exist_ok=True)
         
         try:
-            # Extract binding site if pocket file available
-            if entry.pocket_file:
+            # Use grid centers if available, otherwise extract from pocket file
+            if entry.pdb_code in self.grid_centers:
+                center = list(self.grid_centers[entry.pdb_code])
+                radius = 10.0  # Default radius for grid centers
+                self.logger.debug(f"Using grid center for {entry.pdb_code}: {center}")
+            elif entry.pocket_file:
                 center, radius = self.extract_binding_site_from_pocket(entry.pocket_file)
+                self.logger.debug(f"Extracted binding site from pocket file for {entry.pdb_code}")
             else:
                 # Use default binding site
                 center, radius = [0.0, 0.0, 0.0], 15.0
-                self.logger.warning(f"No pocket file for {entry.pdb_code}, using default binding site")
+                self.logger.warning(f"No grid center or pocket file for {entry.pdb_code}, using default binding site")
             
             setup_time = time.time() - start_time
             
@@ -1051,15 +1103,20 @@ Examples:
   # Basic benchmark (CPU only, 10 entries)
   python pdbbind_benchmark.py --pdbbind_dir /path/to/pdbbind --max_entries 10
 
-  # CPU vs GPU comparison
-  python pdbbind_benchmark.py --pdbbind_dir /path/to/pdbbind --devices CPU GPU --max_entries 50
+  # Using predefined grid centers
+  python pdbbind_benchmark.py --pdbbind_dir /path/to/pdbbind --grid_centers grid_centers.csv --max_entries 50
 
-  # Algorithm comparison
-  python pdbbind_benchmark.py --pdbbind_dir /path/to/pdbbind --algorithms genetic random --max_entries 100
+  # CPU vs GPU comparison with grid centers
+  python pdbbind_benchmark.py --pdbbind_dir /path/to/pdbbind --grid_centers grid_centers.csv \\
+                               --devices CPU GPU --max_entries 50
 
-  # Full benchmark
-  python pdbbind_benchmark.py --pdbbind_dir /path/to/pdbbind --devices CPU GPU \\
-                               --algorithms genetic random pandadock \\
+  # Algorithm comparison with grid centers
+  python pdbbind_benchmark.py --pdbbind_dir /path/to/pdbbind --grid_centers grid_centers.csv \\
+                               --algorithms genetic random --max_entries 100
+
+  # Full benchmark with grid centers
+  python pdbbind_benchmark.py --pdbbind_dir /path/to/pdbbind --grid_centers grid_centers.csv \\
+                               --devices CPU GPU --algorithms genetic random pandadock \\
                                --scoring standard enhanced physics-based \\
                                --max_entries 500 --parallel_jobs 4
         """
@@ -1083,6 +1140,11 @@ Examples:
         '--output', 
         default='benchmark_results',
         help='Output directory for results (default: benchmark_results)'
+    )
+    
+    parser.add_argument(
+        '--grid_centers', 
+        help='CSV file with grid centers (columns: ProteinID, X, Y, Z)'
     )
     
     parser.add_argument(
@@ -1162,7 +1224,7 @@ Examples:
         print(f"Found {len(entries)} valid entries")
         
         # Initialize benchmark
-        benchmark = PandaDockBenchmark(args.output)
+        benchmark = PandaDockBenchmark(args.output, args.grid_centers)
         
         # Run benchmark
         print(f"Starting benchmark with {len(args.algorithms)} algorithms, "

@@ -5,6 +5,9 @@
 PDBBIND_DIR="/path/to/pdbbind"
 OUTPUT_BASE="benchmark_results"
 
+# Set your grid centers file path here (optional)
+GRID_CENTERS="grid_centers.csv"
+
 echo "PandaDock PDBbind Benchmark Examples"
 echo "====================================="
 
@@ -28,6 +31,7 @@ echo "================================================"
 python pdbbind_benchmark.py \
     --pdbbind_dir "$PDBBIND_DIR" \
     --output "${OUTPUT_BASE}_${TIMESTAMP}_quick_test" \
+    --grid_centers "$GRID_CENTERS" \
     --max_entries 10 \
     --algorithms genetic \
     --devices CPU \
@@ -43,6 +47,7 @@ echo "========================================================="
 python pdbbind_benchmark.py \
     --pdbbind_dir "$PDBBIND_DIR" \
     --output "${OUTPUT_BASE}_${TIMESTAMP}_cpu_vs_gpu" \
+    --grid_centers "$GRID_CENTERS" \
     --max_entries 50 \
     --algorithms genetic \
     --devices CPU GPU \
@@ -58,6 +63,7 @@ echo "=============================================="
 python pdbbind_benchmark.py \
     --pdbbind_dir "$PDBBIND_DIR" \
     --output "${OUTPUT_BASE}_${TIMESTAMP}_algorithms" \
+    --grid_centers "$GRID_CENTERS" \
     --max_entries 100 \
     --algorithms genetic random \
     --devices CPU \
@@ -73,6 +79,7 @@ echo "==================================================="
 python pdbbind_benchmark.py \
     --pdbbind_dir "$PDBBIND_DIR" \
     --output "${OUTPUT_BASE}_${TIMESTAMP}_scoring" \
+    --grid_centers "$GRID_CENTERS" \
     --max_entries 75 \
     --algorithms genetic \
     --devices CPU \
@@ -88,6 +95,7 @@ echo "================================================="
 python pdbbind_benchmark.py \
     --pdbbind_dir "$PDBBIND_DIR" \
     --output "${OUTPUT_BASE}_${TIMESTAMP}_comprehensive" \
+    --grid_centers "$GRID_CENTERS" \
     --max_entries 200 \
     --algorithms genetic random \
     --devices CPU GPU \
@@ -104,6 +112,7 @@ echo "Uncomment the following lines to run full benchmark:"
 echo "# python pdbbind_benchmark.py \\"
 echo "#     --pdbbind_dir \"$PDBBIND_DIR\" \\"
 echo "#     --output \"${OUTPUT_BASE}_${TIMESTAMP}_full\" \\"
+echo "#     --grid_centers \"$GRID_CENTERS\" \\"
 echo "#     --algorithms genetic random pandadock \\"
 echo "#     --devices CPU GPU \\"
 echo "#     --scoring standard enhanced physics-based \\"

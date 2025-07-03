@@ -21,6 +21,9 @@ nano run_benchmark_examples.sh
 PDBBIND_DIR="/path/to/pdbbind"
 # To your actual path, e.g.:
 PDBBIND_DIR="/data/pdbbind/refined-set"
+
+# Grid centers file (already provided):
+GRID_CENTERS="grid_centers.csv"
 ```
 
 ### 3. Install Dependencies
@@ -33,6 +36,7 @@ pip install pandas numpy scipy sklearn matplotlib seaborn
 # Test with 10 entries (should complete in 5-15 minutes)
 python pdbbind_benchmark.py \
     --pdbbind_dir /data/pdbbind/refined-set \
+    --grid_centers grid_centers.csv \
     --output quick_test \
     --max_entries 10 \
     --algorithms genetic \
@@ -59,6 +63,7 @@ python analyze_benchmark_results.py quick_test --export_csv results.csv
 ```bash
 python pdbbind_benchmark.py \
     --pdbbind_dir /data/pdbbind/refined-set \
+    --grid_centers grid_centers.csv \
     --output cpu_vs_gpu_50 \
     --max_entries 50 \
     --algorithms genetic \
@@ -72,6 +77,7 @@ python pdbbind_benchmark.py \
 ```bash
 python pdbbind_benchmark.py \
     --pdbbind_dir /data/pdbbind/refined-set \
+    --grid_centers grid_centers.csv \
     --output algorithm_comparison_100 \
     --max_entries 100 \
     --algorithms genetic random \
@@ -85,6 +91,7 @@ python pdbbind_benchmark.py \
 ```bash
 python pdbbind_benchmark.py \
     --pdbbind_dir /data/pdbbind/refined-set \
+    --grid_centers grid_centers.csv \
     --output comprehensive_500 \
     --max_entries 500 \
     --algorithms genetic random \
@@ -126,7 +133,8 @@ benchmark_results/
 ### 1. **Automated PDBbind Parsing**
 - Parses INDEX files automatically
 - Converts binding data (Kd/Ki/IC50) to standard units (M)
-- Extracts binding sites from pocket.pdb files
+- Uses predefined grid centers from `grid_centers.csv` for accurate binding site definition
+- Falls back to extracting binding sites from pocket.pdb files if needed
 - Handles missing files gracefully
 
 ### 2. **Comprehensive Performance Analysis**
