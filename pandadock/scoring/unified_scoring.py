@@ -259,16 +259,48 @@ class ScoringFunction:
     
     def _get_protein_atoms(self, protein):
         """Get active site atoms if defined, otherwise all protein atoms."""
-        if protein.active_site and 'atoms' in protein.active_site:
+        if hasattr(protein, 'active_site') and protein.active_site and 'atoms' in protein.active_site:
             return protein.active_site['atoms']
-        #if hasattr(protein, 'active_site') and protein.active_site:
-            #return protein.active_site['atoms']
-        else:
+        elif hasattr(protein, 'atoms'):
             return protein.atoms
+        elif hasattr(protein, 'coords'):
+            # For ProteinStructure objects, create atom-like objects from coordinates
+            coords = protein.coords
+            atoms = []
+            for i, coord in enumerate(coords):
+                atom = {
+                    'coords': coord,
+                    'atom_index': i,
+                    'atom_type': 'C',  # Default type
+                    'residue_name': 'UNK',
+                    'residue_id': str(i // 20)  # Rough estimate
+                }
+                atoms.append(atom)
+            return atoms
+        else:
+            return []
         
     def _get_ligand_atoms(self, ligand):
         """Get ligand atoms."""
-        return ligand.atoms
+        if hasattr(ligand, 'atoms'):
+            return ligand.atoms
+        elif hasattr(ligand, 'coords'):
+            # For ligand objects with coords, create atom-like objects
+            coords = ligand.coords
+            atoms = []
+            for i, coord in enumerate(coords):
+                atom = {
+                    'coords': coord,
+                    'atom_index': i,
+                    'atom_type': 'C',  # Default type
+                    'atom_name': f'C{i}',
+                    'residue_name': 'LIG',
+                    'residue_id': '1'
+                }
+                atoms.append(atom)
+            return atoms
+        else:
+            return []
     
     def _estimate_pose_restriction(self, ligand, protein=None):
         """
@@ -278,7 +310,8 @@ class ScoringFunction:
         if not protein or not hasattr(protein, 'active_site') or not protein.active_site.get('atoms'):
             return 0.5  # Fallback if no protein info
 
-        ligand_coords = np.array([atom['coords'] for atom in ligand.atoms if 'coords' in atom])
+        ligand_atoms = self._get_ligand_atoms(ligand)
+        ligand_coords = np.array([atom['coords'] for atom in ligand_atoms if 'coords' in atom])
         protein_coords = np.array([atom['coords'] for atom in protein.active_site['atoms'] if 'coords' in atom])
 
         # Safety checks
@@ -299,7 +332,7 @@ class ScoringFunction:
         close_contacts = kdtree.query_ball_point(ligand_coords, r=4.0)  # 4Å cutoff
 
         buried_atoms = sum(1 for contacts in close_contacts if len(contacts) > 0)
-        burial_fraction = buried_atoms / len(ligand.atoms)
+        burial_fraction = buried_atoms / len(ligand_atoms)
 
         # Heuristic: more burial → more restriction
         flexibility_factor = 1.0 - burial_fraction  # 0 = buried, 1 = exposed
@@ -657,7 +690,8 @@ class CPUScoringFunction(ScoringFunction):
     
     def calculate_entropy(self, ligand, protein=None):
         n_rotatable = len(getattr(ligand, 'rotatable_bonds', []))
-        n_atoms = len(ligand.atoms)  # ✅ Fix here
+        ligand_atoms = self._get_ligand_atoms(ligand)
+        n_atoms = len(ligand_atoms)
         flexibility = self._estimate_pose_restriction(ligand, protein)
         entropy_penalty = 0.5 * n_rotatable * flexibility * (1.0 + 0.05 * n_atoms)
         return entropy_penalty
@@ -698,6 +732,35 @@ class CompositeScoringFunction(CPUScoringFunction):
             print(f"Total: {total:.2f}")
         
         return total * -1.0 * 0.03
+    
+    def score_with_components(self, protein, ligand):
+        """Calculate score with detailed energy component breakdown."""
+        protein_atoms = self._get_protein_atoms(protein)
+        ligand_atoms = self._get_ligand_atoms(ligand)
+        
+        # Calculate individual components
+        vdw = self.calculate_vdw(protein_atoms, ligand_atoms)
+        hbond = self.calculate_hbond(protein_atoms, ligand_atoms, protein, ligand)
+        elec = self.calculate_electrostatics(protein_atoms, ligand_atoms)
+        desolv = self.calculate_desolvation(protein_atoms, ligand_atoms)
+        hydrophobic = self.calculate_hydrophobic(protein_atoms, ligand_atoms)
+        clash = self.calculate_clashes(protein_atoms, ligand_atoms)
+        entropy = self.calculate_entropy(ligand, protein)
+        
+        # Calculate total score
+        total_score = self.score(protein, ligand)
+        
+        # Return comprehensive breakdown
+        return {
+            'total_score': total_score,
+            'van_der_waals': vdw * self.weights['vdw'] * -1.0 * 0.03,
+            'hydrogen_bonds': hbond * self.weights['hbond'] * -1.0 * 0.03,
+            'electrostatic': elec * self.weights['elec'] * -1.0 * 0.03,
+            'desolvation': desolv * self.weights['desolv'] * -1.0 * 0.03,
+            'hydrophobic': hydrophobic * self.weights['hydrophobic'] * -1.0 * 0.03,
+            'entropy': entropy * self.weights['entropy'] * 1.0 * 0.03,  # Penalty, so positive
+            'clash': clash * self.weights['clash'] * 1.0 * 0.03  # Penalty, so positive
+        }
 
 
 class EnhancedScoringFunction(CompositeScoringFunction):
@@ -871,15 +934,16 @@ class GPUScoringFunction(ScoringFunction):
         GPU-accelerated van der Waals interaction calculation.
         """
         protein_atoms = self._get_protein_atoms(protein)
+        ligand_atoms = self._get_ligand_atoms(ligand)
         
         if self.torch_available:
-            return self._calculate_vdw_torch(protein_atoms, ligand.atoms)
+            return self._calculate_vdw_torch(protein_atoms, ligand_atoms)
         elif self.cupy_available:
-            return self._calculate_vdw_cupy(protein_atoms, ligand.atoms)
+            return self._calculate_vdw_cupy(protein_atoms, ligand_atoms)
         else:
             # Fall back to CPU implementation
             cpu_scorer = CPUScoringFunction()
-            return cpu_scorer.calculate_vdw(protein_atoms, ligand.atoms)
+            return cpu_scorer.calculate_vdw(protein_atoms, ligand_atoms)
     
     def _calculate_vdw_torch(self, protein_atoms, ligand_atoms):
         """
@@ -1012,14 +1076,16 @@ class GPUScoringFunction(ScoringFunction):
         """
         protein_atoms = self._get_protein_atoms(protein)
         
+        ligand_atoms = self._get_ligand_atoms(ligand)
+        
         if self.torch_available:
-            return self._calculate_electrostatics_torch(protein_atoms, ligand.atoms)
+            return self._calculate_electrostatics_torch(protein_atoms, ligand_atoms)
         elif self.cupy_available:
-            return self._calculate_electrostatics_cupy(protein_atoms, ligand.atoms)
+            return self._calculate_electrostatics_cupy(protein_atoms, ligand_atoms)
         else:
             # Fall back to CPU implementation
             cpu_scorer = CPUScoringFunction()
-            return cpu_scorer.calculate_electrostatics(protein_atoms, ligand.atoms)
+            return cpu_scorer.calculate_electrostatics(protein_atoms, ligand_atoms)
     
     def _calculate_electrostatics_torch(self, protein_atoms, ligand_atoms):
         """
@@ -1132,14 +1198,16 @@ class GPUScoringFunction(ScoringFunction):
         """
         protein_atoms = self._get_protein_atoms(protein)
         
+        ligand_atoms = self._get_ligand_atoms(ligand)
+        
         if self.torch_available:
-            return self._calculate_desolvation_torch(protein_atoms, ligand.atoms)
+            return self._calculate_desolvation_torch(protein_atoms, ligand_atoms)
         elif self.cupy_available:
-            return self._calculate_desolvation_cupy(protein_atoms, ligand.atoms)
+            return self._calculate_desolvation_cupy(protein_atoms, ligand_atoms)
         else:
             # Fall back to CPU implementation
             cpu_scorer = CPUScoringFunction()
-            return cpu_scorer.calculate_desolvation(protein_atoms, ligand.atoms)
+            return cpu_scorer.calculate_desolvation(protein_atoms, ligand_atoms)
     
     def _calculate_desolvation_torch(self, protein_atoms, ligand_atoms):
         """
@@ -1248,7 +1316,8 @@ class GPUScoringFunction(ScoringFunction):
                         if atom.get('element', atom.get('name', ''))[0] in self.hydrophobic_types]
         
         # Identify hydrophobic atoms in ligand
-        l_hydrophobic = [atom for atom in ligand.atoms 
+        ligand_atoms = self._get_ligand_atoms(ligand) if not isinstance(ligand, list) else ligand
+        l_hydrophobic = [atom for atom in ligand_atoms 
                         if atom.get('symbol', '') in self.hydrophobic_types]
         
         if not p_hydrophobic or not l_hydrophobic:
@@ -1261,7 +1330,8 @@ class GPUScoringFunction(ScoringFunction):
         else:
             # Fall back to CPU implementation
             cpu_scorer = CPUScoringFunction()
-            return cpu_scorer.calculate_hydrophobic(protein_atoms, ligand.atoms)
+            ligand_atoms = self._get_ligand_atoms(ligand)
+            return cpu_scorer.calculate_hydrophobic(protein_atoms, ligand_atoms)
     
     def _calculate_hydrophobic_torch(self, p_hydrophobic, l_hydrophobic):
         """
@@ -1343,7 +1413,8 @@ class GPUScoringFunction(ScoringFunction):
         # Fall back to CPU implementation
         cpu_scorer = CPUScoringFunction()
         protein_atoms = self._get_protein_atoms(protein)
-        return cpu_scorer.calculate_hbond(protein_atoms, ligand.atoms, protein, ligand)
+        ligand_atoms = self._get_ligand_atoms(ligand)
+        return cpu_scorer.calculate_hbond(protein_atoms, ligand_atoms, protein, ligand)
     
     def calculate_clashes(self, protein, ligand):
         """
@@ -1351,14 +1422,16 @@ class GPUScoringFunction(ScoringFunction):
         """
         protein_atoms = self._get_protein_atoms(protein)
         
+        ligand_atoms = self._get_ligand_atoms(ligand)
+        
         if self.torch_available:
-            return self._calculate_clashes_torch(protein_atoms, ligand.atoms)
+            return self._calculate_clashes_torch(protein_atoms, ligand_atoms)
         elif self.cupy_available:
-            return self._calculate_clashes_cupy(protein_atoms, ligand.atoms)
+            return self._calculate_clashes_cupy(protein_atoms, ligand_atoms)
         else:
             # Fall back to CPU implementation
             cpu_scorer = CPUScoringFunction()
-            return cpu_scorer.calculate_clashes(protein_atoms, ligand.atoms)
+            return cpu_scorer.calculate_clashes(protein_atoms, ligand_atoms)
     
     def _calculate_clashes_torch(self, protein_atoms, ligand_atoms):
         """

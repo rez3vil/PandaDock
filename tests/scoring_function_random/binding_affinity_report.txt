@@ -1,0 +1,40 @@
+================================================================================
+    Binding Affinity Report
+================================================================================
+
+SUMMARY STATISTICS
+------------------
+Number of poses: 11
+Best docking score: -55.40 kcal/mol
+Average docking score: -22.40 kcal/mol
+Best Kd: 2.47e-41 M
+Average Kd: 2.83e-05 M
+Best IC50: 1.00e-06 M
+Average IC50: 2.93e-05 M
+
+DETAILED BINDING AFFINITY RESULTS
+-----------------------------------
+
+Pose    ΔG (kcal/mol)    Kd (M)        IC50 (M)      Ki (M)        LE     Confidence
+-------------------------------------------------------------------------------------
+   1      -55.40       2.47e-41      1.00e-06      5.00e-07     1.787    High
+   2      -39.56       1.00e-29      1.00e-06      5.00e-07     1.276    High
+   3      -29.83       1.36e-22      1.00e-06      5.00e-07     0.962    High
+   4      -27.38       8.53e-21      1.00e-06      5.00e-07     0.883    Medium
+   5      -23.09       1.18e-17      1.00e-06      5.00e-07     0.745    Medium
+   6      -16.56       7.21e-13      1.00e-06      5.00e-07     0.534    Low
+   7      -15.71       3.03e-12      1.00e-06      5.00e-07     0.507    Low
+   8      -14.77       1.48e-11      1.00e-06      5.00e-07     0.477    Low
+   9      -13.54       1.19e-10      1.00e-06      5.00e-07     0.437    Low
+  10       -5.64       7.37e-05      7.47e-05      3.74e-05     0.182    Low
+  11       -4.95       2.37e-04      2.38e-04      1.19e-04     0.160    Low
+
+================================================================================
+
+NOTES:
+- ΔG: Free energy change (more negative = stronger binding)
+- Kd: Dissociation constant (lower = stronger binding)
+- IC50: Half-maximal inhibitory concentration
+- Ki: Inhibition constant
+- LE: Ligand efficiency (binding energy per heavy atom)
+- Confidence: Based on score quality and pose rank

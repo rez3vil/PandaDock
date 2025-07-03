@@ -1,6 +1,0 @@
-Pose Ranking and Docking Scores
-========================================
-Rank  Score (kcal/mol)File
-----------------------------------------
-1     -2.795         pose_1_score_-2.79.pdb
-2     -1.450         pose_2_score_-1.45.pdb

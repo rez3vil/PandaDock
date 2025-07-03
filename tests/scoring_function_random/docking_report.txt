@@ -5,25 +5,33 @@
 
 RUN INFORMATION
 --------------------
-Generated: 2025-07-02 08:58:05
-Algorithm: genetic
+Generated: 2025-07-03 08:41:19
+Algorithm: random
 Scoring: Standard composite
 Hardware: Unknown
 
 RESULTS STATISTICS
 --------------------
-Total poses: 2
-Best score: -2.7946
-Worst score: -1.4502
-Mean score: -2.1224
-Score std: 0.6722
+Total poses: 11
+Best score: -55.3984
+Worst score: -4.9451
+Mean score: -22.4038
+Score std: 14.3497
 
 TOP POSES
 --------------------
 Rank  Score       N_Atoms   File
 --------------------------------------------------
-1     -2.7946     31        pose_1_score_-2.79.pdb
-2     -1.4502     31        pose_2_score_-1.45.pdb
+1     -55.3984    31        pose_1_score_-55.40.pdb
+2     -39.5626    31        pose_2_score_-39.56.pdb
+3     -29.8334    31        pose_3_score_-29.83.pdb
+4     -27.3789    31        pose_4_score_-27.38.pdb
+5     -23.0938    31        pose_5_score_-23.09.pdb
+6     -16.5648    31        pose_6_score_-16.56.pdb
+7     -15.7148    31        pose_7_score_-15.71.pdb
+8     -14.7743    31        pose_8_score_-14.77.pdb
+9     -13.5384    31        pose_9_score_-13.54.pdb
+10    -5.6376     31        pose_10_score_-5.64.pdb
 
 ANALYSIS RESULTS
 --------------------

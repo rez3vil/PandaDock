@@ -23,7 +23,7 @@ class RandomSearchAlgorithm(BaseAlgorithm):
     
     def __init__(self, scoring_function: Any, max_iterations: int = 1000,
                  initial_radius: float = 15.0, min_radius: float = 3.0,
-                 radius_shrink_factor: float = 0.95, local_optimization: bool = True,
+                 radius_shrink_factor: float = 0.95, local_optimization: bool = False,
                  clash_threshold: float = 1.5, max_clashes: int = 5,
                  convergence_patience: int = 100, **kwargs):
         """
@@ -310,25 +310,53 @@ class RandomSearchAlgorithm(BaseAlgorithm):
     def _get_protein_atoms(self, protein: Any) -> List[Any]:
         """Extract protein atoms for clash checking."""
         try:
+            # First try to get atoms from active site
             if hasattr(protein, 'active_site') and protein.active_site and 'atoms' in protein.active_site:
                 return protein.active_site['atoms']
+            # Try atoms attribute
             elif hasattr(protein, 'atoms'):
                 return protein.atoms
+            # For ProteinStructure objects, create atoms list from coords and residues
+            elif hasattr(protein, 'coords') and hasattr(protein, 'residues'):
+                atoms = []
+                for res_id, res_atoms in protein.residues.items():
+                    for atom in res_atoms:
+                        atoms.append(atom)
+                return atoms
+            # Fallback to creating atom-like objects from coords
+            elif hasattr(protein, 'coords'):
+                coords = protein.coords
+                atoms = []
+                for i, coord in enumerate(coords):
+                    atom = {'coords': coord, 'atom_index': i}
+                    atoms.append(atom)
+                return atoms
             else:
                 return []
-        except:
+        except Exception as e:
+            self.logger.debug(f"Error getting protein atoms: {e}")
             return []
     
     def _get_pose_atoms(self, pose: Any) -> List[Any]:
         """Extract pose atoms for clash checking."""
         try:
+            # Try atoms attribute first
             if hasattr(pose, 'atoms'):
                 return pose.atoms
             elif hasattr(pose, 'molecule') and hasattr(pose.molecule, 'atoms'):
                 return pose.molecule.atoms
+            # For ligand objects with coords, create atom-like objects
+            elif hasattr(pose, 'coords'):
+                coords = pose.coords
+                atoms = []
+                for i, coord in enumerate(coords):
+                    atom = {'coords': coord, 'atom_index': i}
+                    atoms.append(atom)
+                return atoms
             else:
                 return []
-        except:
+        except Exception as e:
+            self.logger.debug(f"Error getting pose atoms: {e}")
             return []
     
     def _get_atom_coords(self, atom: Any) -> Optional[np.ndarray]:
@@ -352,32 +380,52 @@ class RandomSearchAlgorithm(BaseAlgorithm):
     def _get_active_site(self, protein: Any) -> Optional[Dict]:
         """Extract active site information from protein."""
         try:
+            # Check for existing active site
             if hasattr(protein, 'active_site') and protein.active_site:
                 return protein.active_site
             elif hasattr(protein, 'binding_site'):
                 return protein.binding_site
             else:
-                # Create default active site from protein center
-                atoms = self._get_protein_atoms(protein)
-                if atoms:
-                    coords = []
-                    for atom in atoms:
-                        coord = self._get_atom_coords(atom)
-                        if coord is not None:
-                            coords.append(coord)
-                    
-                    if coords:
-                        coords_array = np.array(coords)
-                        center = np.mean(coords_array, axis=0)
-                        max_dist = np.max(np.linalg.norm(coords_array - center, axis=1))
+                # Create default active site from protein coordinates
+                coords = None
+                
+                # Try to get coordinates directly from protein
+                if hasattr(protein, 'coords'):
+                    coords = protein.coords
+                elif hasattr(protein, 'get_center_of_mass'):
+                    # Use center of mass method if available
+                    center = protein.get_center_of_mass()
+                    return {
+                        'center': center,
+                        'radius': 15.0  # Default radius
+                    }
+                else:
+                    # Fallback to extracting from atoms
+                    atoms = self._get_protein_atoms(protein)
+                    if atoms:
+                        atom_coords = []
+                        for atom in atoms:
+                            coord = self._get_atom_coords(atom)
+                            if coord is not None:
+                                atom_coords.append(coord)
                         
-                        return {
-                            'center': center,
-                            'radius': max_dist + 5.0  # Add some padding
-                        }
+                        if atom_coords:
+                            coords = np.array(atom_coords)
+                
+                # Calculate center and radius from coordinates
+                if coords is not None and len(coords) > 0:
+                    coords = np.array(coords)
+                    center = np.mean(coords, axis=0)
+                    max_dist = np.max(np.linalg.norm(coords - center, axis=1))
+                    
+                    return {
+                        'center': center,
+                        'radius': max_dist + 5.0  # Add some padding
+                    }
                 
                 return None
-        except:
+        except Exception as e:
+            self.logger.debug(f"Error getting active site: {e}")
             return None
     
     def _apply_local_optimization(self, protein: Any, 
@@ -387,7 +435,7 @@ class RandomSearchAlgorithm(BaseAlgorithm):
             self.logger.info("Applying local optimization to top poses")
             
             optimized_results = []
-            n_optimize = min(10, len(results))  # Optimize top 10 poses
+            n_optimize = min(5, len(results))  # Optimize top 5 poses (reduced from 10)
             
             for i, (pose, score) in enumerate(results[:n_optimize]):
                 try:
@@ -422,9 +470,11 @@ class RandomSearchAlgorithm(BaseAlgorithm):
             best_score = initial_score
             
             # Simple gradient-free optimization using random perturbations
-            n_steps = 20
+            n_steps = 10  # Reduced from 20 to 10 steps
             step_size = 0.5  # Angstroms
             angle_step = 0.1  # radians
+            steps_without_improvement = 0
+            max_no_improvement = 3  # Early stopping after 3 steps without improvement
             
             for step in range(n_steps):
                 # Generate small random perturbation
@@ -453,8 +503,15 @@ class RandomSearchAlgorithm(BaseAlgorithm):
                     best_pose = test_pose
                     best_score = new_score
                     step_size *= 1.1  # Increase step size on success
+                    steps_without_improvement = 0  # Reset counter
                 else:
                     step_size *= 0.9  # Decrease step size on failure
+                    steps_without_improvement += 1
+                
+                # Early stopping if no improvement
+                if steps_without_improvement >= max_no_improvement:
+                    self.logger.debug(f"Early stopping local optimization at step {step+1}")
+                    break
                 
                 # Ensure step size doesn't get too small or large
                 step_size = max(0.1, min(2.0, step_size))
@@ -567,12 +624,24 @@ class SimpleRandomSearch(BaseAlgorithm):
     def _basic_clash_check(self, protein: Any, pose: Any) -> bool:
         """Basic clash check for SimpleRandomSearch."""
         try:
-            # Get coordinates
-            protein_coords = getattr(protein, 'coords', None)
-            pose_coords = getattr(pose, 'coords', None)
+            # Get coordinates using the same methods as the main class
+            protein_coords = None
+            pose_coords = None
+            
+            # Extract protein coordinates
+            if hasattr(protein, 'coords'):
+                protein_coords = protein.coords
+            else:
+                return False  # No clash if no coordinates
+            
+            # Extract pose coordinates  
+            if hasattr(pose, 'coords'):
+                pose_coords = pose.coords
+            else:
+                return False  # No clash if no coordinates
             
             if protein_coords is None or pose_coords is None:
-                return False  # No clash if no coordinates
+                return False
             
             # Convert to numpy arrays
             protein_coords = np.array(protein_coords)
@@ -580,13 +649,13 @@ class SimpleRandomSearch(BaseAlgorithm):
             
             # Check minimum distance
             if protein_coords.size > 0 and pose_coords.size > 0:
-                # Reshape if necessary
+                # Ensure proper shape (N, 3)
                 if protein_coords.ndim == 1:
                     protein_coords = protein_coords.reshape(-1, 3)
                 if pose_coords.ndim == 1:
                     pose_coords = pose_coords.reshape(-1, 3)
                 
-                # Calculate distances
+                # Calculate all pairwise distances
                 distances = np.linalg.norm(
                     protein_coords[:, np.newaxis, :] - pose_coords[np.newaxis, :, :],
                     axis=2
