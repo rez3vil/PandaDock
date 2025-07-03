@@ -55,7 +55,7 @@ class ScoringFunctionFactory:
     def _create_standard_scoring(self, **kwargs) -> BaseScoringFunction:
         """Create standard composite scoring function."""
         try:
-            from ..unified_scoring import CompositeScoringFunction
+            from .unified_scoring import CompositeScoringFunction
             
             # Adapter to make old scoring work with new interface
             class StandardScoringAdapter(BaseScoringFunction):
@@ -77,7 +77,7 @@ class ScoringFunctionFactory:
     def _create_enhanced_scoring(self, **kwargs) -> BaseScoringFunction:
         """Create enhanced scoring function."""
         try:
-            from ..unified_scoring import EnhancedScoringFunction
+            from .unified_scoring import EnhancedScoringFunction
             
             class EnhancedScoringAdapter(BaseScoringFunction):
                 def __init__(self, **kwargs):

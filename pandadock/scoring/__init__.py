@@ -14,17 +14,15 @@ try:
 except ImportError:
     PHYSICS_AVAILABLE = False
 
-# Try to import optional scoring functions
+# Try to import unified scoring functions
 try:
-    from .composite_scoring import CompositeScoringFunction
+    from .unified_scoring import CompositeScoringFunction, EnhancedScoringFunction
+    UNIFIED_AVAILABLE = True
     COMPOSITE_AVAILABLE = True
-except ImportError:
-    COMPOSITE_AVAILABLE = False
-
-try:
-    from .enhanced_scoring import EnhancedScoringFunction
     ENHANCED_AVAILABLE = True
 except ImportError:
+    UNIFIED_AVAILABLE = False
+    COMPOSITE_AVAILABLE = False
     ENHANCED_AVAILABLE = False
 
 try:
@@ -38,9 +36,7 @@ __all__ = ['BaseScoringFunction', 'ScoringFunctionFactory']
 
 if PHYSICS_AVAILABLE:
     __all__.append('PhysicsBasedScoringFunction')
-if COMPOSITE_AVAILABLE:
-    __all__.append('CompositeScoringFunction')
-if ENHANCED_AVAILABLE:
-    __all__.append('EnhancedScoringFunction')
+if UNIFIED_AVAILABLE:
+    __all__.extend(['CompositeScoringFunction', 'EnhancedScoringFunction'])
 if LEGACY_PHYSICS_AVAILABLE:
     __all__.append('PhysicsScoringFunction')

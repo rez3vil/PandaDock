@@ -22,9 +22,9 @@ class RandomSearchAlgorithm(BaseAlgorithm):
     """Random search algorithm with adaptive radius and local optimization."""
     
     def __init__(self, scoring_function: Any, max_iterations: int = 1000,
-                 initial_radius: float = 10.0, min_radius: float = 2.0,
+                 initial_radius: float = 15.0, min_radius: float = 3.0,
                  radius_shrink_factor: float = 0.95, local_optimization: bool = True,
-                 clash_threshold: float = 2.0, max_clashes: int = 10,
+                 clash_threshold: float = 1.5, max_clashes: int = 5,
                  convergence_patience: int = 100, **kwargs):
         """
         Initialize random search algorithm.
@@ -36,7 +36,7 @@ class RandomSearchAlgorithm(BaseAlgorithm):
             min_radius: Minimum search radius
             radius_shrink_factor: Factor to shrink radius when poses are found
             local_optimization: Whether to perform local optimization
-            clash_threshold: Distance threshold for clash detection
+            clash_threshold: Distance threshold for clash detection (1.5Å recommended)
             max_clashes: Maximum allowed clashes per pose
             convergence_patience: Iterations without improvement before stopping
         """
@@ -527,8 +527,8 @@ class SimpleRandomSearch(BaseAlgorithm):
                     # Create random pose (very basic implementation)
                     pose = deepcopy(ligand)
                     
-                    # Random translation
-                    translation = np.random.normal(0, 5.0, 3)
+                    # Random translation with larger spread
+                    translation = np.random.normal(0, 10.0, 3)
                     
                     # Random rotation
                     euler = np.random.uniform(0, 2*np.pi, 3)
@@ -540,6 +540,10 @@ class SimpleRandomSearch(BaseAlgorithm):
                         if coords.ndim == 2:
                             transformed = apply_rotation_translation(coords, rotation, translation)
                             pose.coords = transformed
+                    
+                    # Basic clash check before scoring
+                    if self._basic_clash_check(protein, pose):
+                        continue
                     
                     # Score pose
                     score = self.scoring_function.score(protein, pose)
@@ -559,3 +563,40 @@ class SimpleRandomSearch(BaseAlgorithm):
         
         self.logger.info(f"Simple random search completed: {len(results)} poses")
         return results
+    
+    def _basic_clash_check(self, protein: Any, pose: Any) -> bool:
+        """Basic clash check for SimpleRandomSearch."""
+        try:
+            # Get coordinates
+            protein_coords = getattr(protein, 'coords', None)
+            pose_coords = getattr(pose, 'coords', None)
+            
+            if protein_coords is None or pose_coords is None:
+                return False  # No clash if no coordinates
+            
+            # Convert to numpy arrays
+            protein_coords = np.array(protein_coords)
+            pose_coords = np.array(pose_coords)
+            
+            # Check minimum distance
+            if protein_coords.size > 0 and pose_coords.size > 0:
+                # Reshape if necessary
+                if protein_coords.ndim == 1:
+                    protein_coords = protein_coords.reshape(-1, 3)
+                if pose_coords.ndim == 1:
+                    pose_coords = pose_coords.reshape(-1, 3)
+                
+                # Calculate distances
+                distances = np.linalg.norm(
+                    protein_coords[:, np.newaxis, :] - pose_coords[np.newaxis, :, :],
+                    axis=2
+                )
+                min_distance = np.min(distances)
+                
+                # Return True if clash detected (distance < 1.5Å)
+                return min_distance < 1.5
+            
+            return False
+        except Exception as e:
+            self.logger.debug(f"Clash check failed: {e}")
+            return False  # Default to no clash if check fails
