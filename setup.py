@@ -50,16 +50,16 @@ requirements = read_requirements()
 
 setup(
     name="pandadock",
-    version="1.0.0",
-    author="PandaDock Development Team",
-    author_email="info@pandadock.org",
+    version="3.0.0",
+    author="Pritam Kumar Panda",
+    author_email="pritam@stanford.edu",
     description="Modular, Multi-Strategy, High-Performance Molecular Docking Software",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/pandadock/pandadock",
+    url="https://github.com/pritampanda15/pandadock",
     packages=find_packages(),
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 3 - Beta",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",

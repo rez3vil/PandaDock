@@ -49,8 +49,9 @@ class Pose:
     def get_binding_affinity(self) -> float:
         """Calculate binding affinity (ΔG) from score"""
         # Convert score to binding affinity (kcal/mol)
-        # This is a simplified conversion; real implementations would be more complex
-        return self.score * 1.36  # Rough conversion factor
+        # Lower scores indicate better binding, so we need negative ΔG for favorable binding
+        # Convert positive score to negative ΔG for thermodynamically favorable binding
+        return -self.score * 1.36  # Negative for favorable binding
     
     def get_ic50(self, temperature: float = 298.15) -> float:
         """Calculate IC50 from binding affinity"""
@@ -367,7 +368,7 @@ class DockingEngine(ABC):
         self._save_poses_summary(poses, summary_filename)
         
         # Save multi-SDF file with all poses
-        multi_sdf_filename = os.path.join(output_dir, "all_poses.sdf")
+        multi_sdf_filename = os.path.join(output_dir, "all.ligands.sdf")
         self._save_poses_as_multi_sdf(poses, multi_sdf_filename)
     
     def _save_pose_as_pdb(self, pose: Pose, filename: str):
@@ -404,20 +405,42 @@ class DockingEngine(ABC):
             f.write("  PandaDock generated structure\n")
             f.write("\n")
             
+            # Get atom types and bonds from ligand if available
+            atom_types = []
+            bonds = []
+            if hasattr(self, 'ligand') and self.ligand:
+                if 'atom_types' in self.ligand:
+                    atom_types = self.ligand['atom_types']
+                if 'bonds' in self.ligand:
+                    bonds = self.ligand['bonds']
+            
             # Molecule block
             num_atoms = len(pose.coordinates)
-            f.write(f"{num_atoms:3d}  0  0  0  0  0  0  0  0999 V2000\n")
-            
-            # Get atom types from ligand if available
-            atom_types = []
-            if hasattr(self, 'ligand') and self.ligand and 'atom_types' in self.ligand:
-                atom_types = self.ligand['atom_types']
+            num_bonds = len(bonds)
+            f.write(f"{num_atoms:3d}{num_bonds:3d}  0  0  0  0  0  0  0  0999 V2000\n")
             
             # Atom block with proper atom types
             for i, coord in enumerate(pose.coordinates):
                 # Use actual atom type if available, otherwise default to carbon
                 atom_type = atom_types[i] if i < len(atom_types) else 'C'
                 f.write(f"{coord[0]:10.4f}{coord[1]:10.4f}{coord[2]:10.4f} {atom_type:<3s} 0  0  0  0  0  0  0  0  0  0  0  0\n")
+            
+            # Bond block
+            for atom1, atom2, bond_type in bonds:
+                # Convert bond type to SDF format
+                bond_order = '1'
+                if bond_type in ['single', '1']:
+                    bond_order = '1'
+                elif bond_type in ['double', '2']:
+                    bond_order = '2'
+                elif bond_type in ['triple', '3']:
+                    bond_order = '3'
+                elif bond_type in ['aromatic', 'ar']:
+                    bond_order = '4'
+                else:
+                    bond_order = '1'  # Default to single bond
+                
+                f.write(f"{atom1+1:3d}{atom2+1:3d}  {bond_order}  0  0  0  0\n")
             
             # Properties
             f.write("M  END\n")
@@ -445,13 +468,42 @@ class DockingEngine(ABC):
                 f.write("  PandaDock generated structure\n")
                 f.write("\n")
                 
+                # Get atom types and bonds from ligand if available
+                atom_types = []
+                bonds = []
+                if hasattr(self, 'ligand') and self.ligand:
+                    if 'atom_types' in self.ligand:
+                        atom_types = self.ligand['atom_types']
+                    if 'bonds' in self.ligand:
+                        bonds = self.ligand['bonds']
+                
                 # Molecule block
                 num_atoms = len(pose.coordinates)
-                f.write(f"{num_atoms:3d}  0  0  0  0  0  0  0  0999 V2000\n")
+                num_bonds = len(bonds)
+                f.write(f"{num_atoms:3d}{num_bonds:3d}  0  0  0  0  0  0  0  0999 V2000\n")
                 
-                # Atom block
-                for coord in pose.coordinates:
-                    f.write(f"{coord[0]:10.4f}{coord[1]:10.4f}{coord[2]:10.4f} C   0  0  0  0  0  0  0  0  0  0  0  0\n")
+                # Atom block with proper atom types
+                for i, coord in enumerate(pose.coordinates):
+                    # Use actual atom type if available, otherwise default to carbon
+                    atom_type = atom_types[i] if i < len(atom_types) else 'C'
+                    f.write(f"{coord[0]:10.4f}{coord[1]:10.4f}{coord[2]:10.4f} {atom_type:<3s} 0  0  0  0  0  0  0  0  0  0  0  0\n")
+                
+                # Bond block
+                for atom1, atom2, bond_type in bonds:
+                    # Convert bond type to SDF format
+                    bond_order = '1'
+                    if bond_type in ['single', '1']:
+                        bond_order = '1'
+                    elif bond_type in ['double', '2']:
+                        bond_order = '2'
+                    elif bond_type in ['triple', '3']:
+                        bond_order = '3'
+                    elif bond_type in ['aromatic', 'ar']:
+                        bond_order = '4'
+                    else:
+                        bond_order = '1'  # Default to single bond
+                    
+                    f.write(f"{atom1+1:3d}{atom2+1:3d}  {bond_order}  0  0  0  0\n")
                 
                 # Properties
                 f.write("M  END\n")

@@ -1,0 +1,75 @@
+/* Custom CSS for PandaDock documentation */
+
+/* Logo and branding */
+.wy-side-nav-search {
+    background-color: #4CAF50;
+}
+
+.wy-side-nav-search > a img.logo {
+    width: 200px;
+    height: auto;
+}
+
+/* Code blocks */
+.highlight {
+    background: #f8f8f8;
+    border: 1px solid #e1e4e5;
+    border-radius: 3px;
+}
+
+/* Admonitions */
+.admonition {
+    margin: 1em 0;
+    padding: 1em;
+    border-left: 5px solid #4CAF50;
+    background-color: #f0f7ff;
+}
+
+.admonition.note {
+    border-left-color: #2196F3;
+}
+
+.admonition.warning {
+    border-left-color: #FF9800;
+    background-color: #fff8e1;
+}
+
+.admonition.danger {
+    border-left-color: #f44336;
+    background-color: #ffebee;
+}
+
+/* Tables */
+.wy-table-responsive table td,
+.wy-table-responsive table th {
+    white-space: normal;
+}
+
+/* API documentation */
+.py.class .descname,
+.py.function .descname,
+.py.method .descname {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+/* Navigation */
+.wy-nav-content {
+    max-width: 1200px;
+}
+
+/* Footer */
+.rst-footer-buttons {
+    margin-top: 30px;
+}
+
+/* Custom button styling */
+.btn {
+    border-radius: 3px;
+    font-weight: normal;
+}
+
+.btn-neutral {
+    background-color: #4CAF50 !important;
+    color: white !important;
+}

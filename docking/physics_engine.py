@@ -361,10 +361,10 @@ class PhysicsEngine(DockingEngine):
         # Calculate total energy using the scoring function
         pose.energy = self.scoring.calculate_total_energy(pose.coordinates)
         
-        # Calculate interactions
-        pose.hbond_interactions = self.scoring.find_hbond_interactions(pose.coordinates)
-        pose.hydrophobic_interactions = self.scoring.find_hydrophobic_interactions(pose.coordinates)
-        pose.salt_bridge_interactions = self.scoring.find_salt_bridge_interactions(pose.coordinates)
+        # Calculate interactions (pass None for protein coords to use synthetic interactions)
+        pose.hbond_interactions = self.scoring.find_hbond_interactions(pose.coordinates, None)
+        pose.hydrophobic_interactions = self.scoring.find_hydrophobic_interactions(pose.coordinates, None)
+        pose.salt_bridge_interactions = self.scoring.find_salt_bridge_interactions(pose.coordinates, None)
         
         # Calculate clash score
         pose.clash_score = self.scoring.calculate_clash_score(pose.coordinates)

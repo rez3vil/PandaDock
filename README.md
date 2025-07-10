@@ -5,6 +5,34 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation Status](https://readthedocs.org/projects/pandadock/badge/?version=latest)](https://pandadock.readthedocs.io/)
+**Python-based Molecular Docking Platform for Drug Discovery, Bioinformatics, and Computational Chemistry**.
+
+<p align="center">
+  <a href="https://github.com/pritampanda15/PandaDock">
+    <img src="https://github.com/pritampanda15/PandaDock/blob/main/logo/pandadock-logo.svg" width="1000" alt="PandaDock Logo"/>
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://pypi.org/project/pandadock/">
+    <img src="https://img.shields.io/pypi/v/pandadock.svg" alt="PyPI Version">
+  </a>
+  <a href="https://github.com/pritampanda15/PandaDock/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/pritampanda15/PandaDock" alt="License">
+  </a>
+  <a href="https://github.com/pritampanda15/PandaDock/stargazers">
+    <img src="https://img.shields.io/github/stars/pritampanda15/PandaDock?style=social" alt="GitHub Stars">
+  </a>
+  <a href="https://github.com/pritampanda15/PandaDock/issues">
+    <img src="https://img.shields.io/github/issues/pritampanda15/PandaDock" alt="GitHub Issues">
+  </a>
+  <a href="https://github.com/pritampanda15/PandaDock/network/members">
+    <img src="https://img.shields.io/github/forks/pritampanda15/PandaDock?style=social" alt="GitHub Forks">
+  </a>
+  <a href="https://pepy.tech/project/pandadock">
+    <img src="https://static.pepy.tech/badge/pandadock" alt="Downloads">
+  </a>
+</p>
 
 ## Overview
 
@@ -12,18 +40,18 @@ PandaDock is a comprehensive molecular docking software that combines multiple d
 
 ## Key Features
 
-### 🔌 **Three Docking Strategies**
+###  **Three Docking Strategies**
 - **Precise Mode**: Physics-based docking with Glide-style systematic conformer generation
 - **Balanced Mode**: ML-based docking using DiffDock/Boltz-style diffusion models
 - **Fast Mode**: Genetic algorithm-based docking for high-throughput virtual screening
 
-### 🧬 **Advanced Capabilities**
+###  **Advanced Capabilities**
 - **Flexible Docking**: Side-chain flexibility with rotamer library sampling
 - **Comprehensive Scoring**: Physics-based + ML rescoring with detailed energy breakdown
 - **Multi-format Support**: SMILES, SDF, MOL2, PDB input formats
 - **Interactive Reports**: HTML reports with pose visualization and analysis
 
-### ⚡ **Performance Features**
+###  **Performance Features**
 - **GPU Acceleration**: CUDA support for ML models
 - **Parallel Processing**: Multi-threading for GA and physics calculations
 - **Memory Efficient**: Optimized for large-scale virtual screening
@@ -50,7 +78,7 @@ pip install -e .[all]
 
 For detailed installation instructions, see [INSTALL.md](INSTALL.md).
 
-### Install from PyPI (Coming Soon)
+### Install from PyPI
 ```bash
 pip install pandadock
 ```
@@ -264,19 +292,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you use PandaDock in your research, please cite:
 
 ```bibtex
-@software{pandadock2024,
-  title={PandaDock: Modular, Multi-Strategy, High-Performance Molecular Docking Software},
-  author={PandaDock Development Team},
-  year={2024},
-  url={https://github.com/pandadock/pandadock}
+@software{pandadock2025,
+  title={PandaDock: Python-Based Molecular Docking},
+  author={Pritam Kumar Panda},
+  year={2025},
+  url={https://github.com/pritampanda15/pandadock}
 }
 ```
 
 ## Support
 
 - **Documentation**: [https://pandadock.readthedocs.io/](https://pandadock.readthedocs.io/)
-- **Issues**: [GitHub Issues](https://github.com/pandadock/pandadock/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/pandadock/pandadock/discussions)
+- **Issues**: [GitHub Issues](https://github.com/pritampanda15/pandadock/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/pritampanda15/pandadock/discussions)
 
 ## Acknowledgments
 
@@ -289,4 +317,17 @@ PandaDock builds upon the scientific contributions of:
 
 ---
 
-**PandaDock** - Empowering drug discovery through intelligent molecular docking.
+##  Contact
+
+- GitHub: [@pritampanda15](https://github.com/pritampanda15)
+- Email: [pritam@stanford.edu](mailto:pritam@stanford.edu)
+- Issue Tracker: [Open an Issue](https://github.com/pritampanda15/PandaDock/issues)
+
+---
+
+##  Disclaimer
+
+> PandaDock is intended for research purposes.  
+> Always verify docking predictions through experimental validation.
+
+**Dock Smarter. Discover Faster**
