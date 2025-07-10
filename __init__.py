@@ -13,13 +13,13 @@ A comprehensive molecular docking framework supporting:
 __version__ = "1.0.0"
 __author__ = "PandaDock Development Team"
 
-from .docking.physics_engine import PhysicsEngine
-from .docking.ml_engine import MLEngine
-from .docking.ga_engine import GAEngine
-from .docking.flexible_docking import FlexibleDocking
-from .docking.pose_filtering import PoseFiltering
-from .scoring.scoring_functions import ScoringFunctions
-from .utils.ic50_calculator import IC50Calculator
+from docking.physics_engine import PhysicsEngine
+from docking.ml_engine import MLEngine
+from docking.ga_engine import GAEngine
+from docking.flexible_docking import FlexibleDocking
+from docking.pose_filtering import PoseFiltering
+from scoring.scoring_functions import ScoringFunctions
+from utils.ic50_calculator import IC50Calculator
 
 __all__ = [
     'PhysicsEngine',

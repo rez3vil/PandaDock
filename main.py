@@ -11,11 +11,11 @@ from typing import Optional, List
 import json
 import logging
 
-from .config import PandaDockConfig
-from .docking.physics_engine import PhysicsEngine
-from .docking.ml_engine import MLEngine
-from .docking.ga_engine import GAEngine
-from .reports.html_report import HTMLReportGenerator
+from config import PandaDockConfig
+from docking.physics_engine import PhysicsEngine
+from docking.ml_engine import MLEngine
+from docking.ga_engine import GAEngine
+from reports.html_report import HTMLReportGenerator
 
 
 def setup_logging(verbose: bool, debug: bool):
