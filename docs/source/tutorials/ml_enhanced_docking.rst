@@ -1,12 +1,12 @@
 ML-Enhanced Docking Tutorial
 ============================
 
-This tutorial demonstrates how to use PandaDock's machine learning capabilities for high-accuracy molecular docking.
+This tutorial demonstrates how to use PandaDock's PandaML algorithm for superior affinity prediction and high-accuracy molecular docking.
 
 Introduction
 ------------
 
-PandaDock's ML-enhanced mode uses deep learning models trained on experimental binding data to provide:
+PandaDock's PandaML algorithm uses advanced machine learning models trained on experimental binding data to provide:
 
 - Higher accuracy than traditional scoring functions
 - Uncertainty quantification for predictions
@@ -40,9 +40,9 @@ Start with a simple ML-enhanced docking setup:
 
    from pandadock import PandaDock
    
-   # Initialize with ML engine
+   # Initialize with PandaML algorithm
    docker = PandaDock(
-       engine='ml',
+       engine='pandaml',
        model_type='transformer',    # transformer, cnn, graph
        ensemble_size=3,            # Number of models in ensemble
        uncertainty=True,           # Enable uncertainty quantification
@@ -58,7 +58,7 @@ Choose the appropriate ML model based on your needs:
 
    # Graph neural network (best for novel scaffolds)
    docker_gnn = PandaDock(
-       engine='ml',
+       engine='pandaml',
        model_type='graph',
        ml_config={
            'architecture': 'graphsage',
@@ -71,7 +71,7 @@ Choose the appropriate ML model based on your needs:
    
    # Convolutional neural network (fast, good for screening)
    docker_cnn = PandaDock(
-       engine='ml',
+       engine='pandaml',
        model_type='cnn',
        ml_config={
            'architecture': '3dcnn',
@@ -82,9 +82,9 @@ Choose the appropriate ML model based on your needs:
        }
    )
    
-   # Transformer (best overall accuracy)
+   # Transformer (best overall accuracy with PandaML)
    docker_transformer = PandaDock(
-       engine='ml',
+       engine='pandaml',
        model_type='transformer',
        ml_config={
            'architecture': 'bert',
@@ -102,9 +102,9 @@ Run ML-enhanced docking with comprehensive analysis:
 
 .. code-block:: python
 
-   # Configure for high-accuracy docking
+   # Configure PandaML for high-accuracy docking
    docker = PandaDock(
-       engine='ml',
+       engine='pandaml',
        model_type='transformer',
        ensemble_size=5,
        uncertainty=True,
@@ -126,7 +126,7 @@ Run ML-enhanced docking with comprehensive analysis:
    )
    
    # Analyze ML-specific results
-   print("ML-Enhanced Docking Results:")
+   print("PandaML Algorithm Results:")
    print("=" * 40)
    
    for i, pose in enumerate(results.poses):
@@ -201,9 +201,9 @@ Use ML models to predict binding affinities:
 
 .. code-block:: python
 
-   # Configure for affinity prediction
+   # Configure PandaML for affinity prediction
    docker = PandaDock(
-       engine='ml',
+       engine='pandaml',
        model_type='transformer',
        affinity_prediction=True,
        ml_config={
@@ -250,9 +250,9 @@ Use multiple models for robust predictions:
 
 .. code-block:: python
 
-   # Configure ensemble
+   # Configure PandaML ensemble
    docker = PandaDock(
-       engine='ml',
+       engine='pandaml',
        ensemble_config={
            'models': [
                {'type': 'transformer', 'weight': 0.4},
@@ -383,9 +383,9 @@ Compare ML and traditional scoring:
 
 .. code-block:: python
 
-   # Run both ML and physics-based docking
-   docker_ml = PandaDock(engine='ml', model_type='transformer')
-   docker_physics = PandaDock(engine='physics')
+   # Run both PandaML and PandaPhysics algorithms
+   docker_ml = PandaDock(engine='pandaml', model_type='transformer')
+   docker_physics = PandaDock(engine='pandaphysics')
    
    # Same docking parameters
    dock_params = {
@@ -400,14 +400,14 @@ Compare ML and traditional scoring:
    results_physics = docker_physics.dock(**dock_params)
    
    # Compare results
-   print("Comparison of ML vs Physics-based Docking:")
+   print("Comparison of PandaML vs PandaPhysics Algorithms:")
    print("=" * 50)
    
-   print(f"ML best score: {results_ml.best_pose.score:.3f}")
-   print(f"Physics best score: {results_physics.best_pose.score:.3f}")
+   print(f"PandaML best score: {results_ml.best_pose.score:.3f}")
+   print(f"PandaPhysics best score: {results_physics.best_pose.score:.3f}")
    
-   print(f"ML runtime: {results_ml.runtime:.2f} seconds")
-   print(f"Physics runtime: {results_physics.runtime:.2f} seconds")
+   print(f"PandaML runtime: {results_ml.runtime:.2f} seconds")
+   print(f"PandaPhysics runtime: {results_physics.runtime:.2f} seconds")
    
    # Score correlation
    import numpy as np
@@ -428,9 +428,9 @@ Deploy ML models in production:
 
 .. code-block:: python
 
-   # Production configuration
+   # Production configuration with PandaML
    docker = PandaDock(
-       engine='ml',
+       engine='pandaml',
        model_type='transformer',
        production_config={
            'batch_size': 32,           # Optimize for throughput
@@ -479,9 +479,9 @@ Here's a comprehensive example combining all techniques:
        Perform ML-enhanced docking with comprehensive analysis
        """
        
-       # Configure ML engine
+       # Configure PandaML algorithm
        docker = PandaDock(
-           engine='ml',
+           engine='pandaml',
            model_type='transformer',
            ensemble_size=3,
            uncertainty=True,
@@ -496,7 +496,7 @@ Here's a comprehensive example combining all techniques:
        )
        
        # Run docking
-       print("Running ML-enhanced docking...")
+       print("Running PandaML algorithm...")
        results = docker.dock(
            receptor=receptor_file,
            ligand=ligand_file,
@@ -511,7 +511,7 @@ Here's a comprehensive example combining all techniques:
        # Best pose analysis
        best_pose = results.best_pose
        print(f"\nBest Pose Analysis:")
-       print(f"  ML Score: {best_pose.ml_score:.3f}")
+       print(f"  PandaML Score: {best_pose.ml_score:.3f}")
        print(f"  Confidence: {best_pose.confidence:.3f}")
        print(f"  Uncertainty: {best_pose.uncertainty:.3f}")
        print(f"  Predicted pKd: {best_pose.predicted_pkd:.2f}")
@@ -536,8 +536,8 @@ Here's a comprehensive example combining all techniques:
                print(f"  {feature}: {importance:+.4f}")
        
        # Save results
-       results.save_poses("ml_docking_poses.sdf")
-       results.save_report("ml_docking_report.html")
+       results.save_poses("pandaml_docking_poses.sdf")
+       results.save_report("pandaml_docking_report.html")
        
        return results
    
@@ -552,7 +552,7 @@ Here's a comprehensive example combining all techniques:
        
        try:
            results = ml_enhanced_docking(receptor_file, ligand_file, binding_site)
-           print("\nML-enhanced docking completed successfully!")
+           print("\nPandaML docking completed successfully!")
            
        except Exception as e:
            print(f"Error: {e}")
@@ -586,9 +586,9 @@ Next Steps
 
 After completing this tutorial:
 
-- Explore :doc:`virtual_screening` with ML models
+- Explore :doc:`virtual_screening` with PandaML algorithm
 - Learn about :doc:`../examples/custom_ml_models`
 - Check out :doc:`../user_guide/model_selection`
 - Try :doc:`active_learning` for model improvement
 
-The ML-enhanced docking capabilities of PandaDock provide state-of-the-art accuracy for molecular docking applications. Experiment with different models and configurations to find the best setup for your specific use case!
+The PandaML algorithm provides state-of-the-art accuracy for molecular docking applications with superior affinity prediction (R² = 0.878). Experiment with different models and configurations to find the best setup for your specific use case!

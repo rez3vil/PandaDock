@@ -1,11 +1,6 @@
 # PandaDock
 
-**Modular, Multi-Strategy, High-Performance Molecular Docking Software**
-
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation Status](https://readthedocs.org/projects/pandadock/badge/?version=latest)](https://pandadock.readthedocs.io/)
-**Python-based Molecular Docking Platform for Drug Discovery, Bioinformatics, and Computational Chemistry**.
+**Python-based Molecular Docking Platform featuring Novel PandaDock Algorithms for Drug Discovery, Bioinformatics, and Computational Chemistry**. **Modular, Multi-Strategy, High-Performance Molecular Docking Software**
 
 <p align="center">
   <a href="https://github.com/pritampanda15/PandaDock">
@@ -33,31 +28,65 @@
     <img src="https://static.pepy.tech/badge/pandadock" alt="Downloads">
   </a>
 </p>
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Documentation Status](https://readthedocs.org/projects/pandadock/badge/?version=latest)](https://pandadock.readthedocs.io/)
 
-## Overview
+## 🎯 Overview
 
-PandaDock is a comprehensive molecular docking software that combines multiple docking strategies in a unified framework. It supports physics-based, machine learning-based, and genetic algorithm-based approaches for protein-ligand docking with comprehensive analysis and reporting capabilities.
+PandaDock is a comprehensive molecular docking software that combines multiple docking strategies in a unified framework. It features **three novel PandaDock algorithms** - PandaCore, PandaML, and PandaPhysics - for protein-ligand docking with comprehensive analysis and reporting capabilities.
 
-## Key Features
+## 🏆 Benchmark Results
 
-###  **Three Docking Strategies**
-- **Precise Mode**: Physics-based docking with Glide-style systematic conformer generation
-- **Balanced Mode**: ML-based docking using DiffDock/Boltz-style diffusion models
-- **Fast Mode**: Genetic algorithm-based docking for high-throughput virtual screening
+**Comprehensive evaluation on 285 PDBbind complexes:**
 
-###  **Advanced Capabilities**
+<p align="center">
+  <img src="publication_results_final/master_publication_figure.png" alt="PandaDock Benchmark Results" width="800"/>
+</p>
+
+### Algorithm Performance Rankings:
+
+| Algorithm | Affinity R² | Success Rate | Mean RMSD | Speed |
+|-----------|-------------|--------------|-----------|-------|
+| **PandaML** | **0.878** | **46.7%** | **3.22 Å** | **26.1s** |
+| **PandaPhysics** | 0.671 | **48.8%** | 2.18 Å | 42.9s |
+| **PandaCore** | 0.738 | 46.3% | 3.63 Å | 32.9s |
+
+*Success Rate = RMSD < 2Å. Benchmarked on 285 diverse protein-ligand complexes.*
+
+### Metal vs Non-Metal Specialization:
+
+<p align="center">
+  <img src="metal_analysis_results/metal_master_figure.png" alt="Metal vs Non-Metal Analysis" width="800"/>
+</p>
+
+**Key Findings:**
+- **93 metal complexes** (32.6%) vs **192 non-metal complexes** (67.4%) analyzed
+- **PandaPhysics** excels at metal coordination chemistry
+- **PandaML** maintains consistent performance across both complex types
+- Metal complexes are 32% more challenging computationally
+
+## ✨ Key Features
+
+### 🧬 **Three Novel PandaDock Algorithms**
+- **PandaCore**: Robust baseline algorithm with excellent general performance
+- **PandaML**: Advanced machine learning-based algorithm with superior affinity prediction
+- **PandaPhysics**: Physics-based algorithm specialized for metal coordination and complex chemistry
+
+### 🚀 **Advanced Capabilities**
 - **Flexible Docking**: Side-chain flexibility with rotamer library sampling
+- **Metal Coordination**: Specialized handling of metal-containing complexes
 - **Comprehensive Scoring**: Physics-based + ML rescoring with detailed energy breakdown
 - **Multi-format Support**: SMILES, SDF, MOL2, PDB input formats
 - **Interactive Reports**: HTML reports with pose visualization and analysis
 
-###  **Performance Features**
+### ⚡ **Performance Features**
 - **GPU Acceleration**: CUDA support for ML models
-- **Parallel Processing**: Multi-threading for GA and physics calculations
+- **Parallel Processing**: Multi-threading for optimized calculations
 - **Memory Efficient**: Optimized for large-scale virtual screening
-- **Extensible Architecture**: Easy to add new docking engines
+- **Extensible Architecture**: Easy to add new docking algorithms
 
-## Installation
+## 🛠️ Installation
 
 ### Quick Install
 ```bash
@@ -85,24 +114,27 @@ pip install pandadock
 
 ### Install from Source
 ```bash
-git clone https://github.com/pandadock/pandadock.git
+git clone https://github.com/pritampanda15/pandadock.git
 cd pandadock
 pip install -e .[all]
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
-### Basic Docking
+### Basic Docking with Novel PandaDock Algorithms
 ```bash
-# Balanced mode (ML-based)
-pandadock --protein receptor.pdb --ligand ligand.sdf --mode balanced
+# PandaML algorithm (best overall performance)
+pandadock --protein receptor.pdb --ligand ligand.sdf --mode balanced --scoring pandaml
 
-# Physics-based with flexible residues
-pandadock --protein receptor.pdb --ligand ligand.sdf --mode precise \
+# PandaPhysics algorithm (best for metal complexes)
+pandadock --protein receptor.pdb --ligand ligand.sdf --mode precise --scoring pandaphysics \
           --flexible-residues "HIS57,SER195" --out results.html
 
-# Fast virtual screening
-pandadock --protein receptor.pdb --screen ligands.smi --mode fast \
+# PandaCore algorithm (reliable baseline)
+pandadock --protein receptor.pdb --ligand ligand.sdf --mode fast --scoring pandacore
+
+# Fast virtual screening with PandaML
+pandadock --protein receptor.pdb --screen ligands.smi --mode fast --scoring pandaml \
           --num-poses 5 --exhaustiveness 16
 ```
 
@@ -110,11 +142,12 @@ pandadock --protein receptor.pdb --screen ligands.smi --mode fast \
 ```python
 from pandadock import PandaDockConfig, PhysicsEngine, MLEngine, GAEngine
 
-# Configure docking
+# Configure docking with PandaML algorithm
 config = PandaDockConfig()
 config.docking.mode = "balanced"
 config.docking.num_poses = 10
 config.docking.flexible_residues = ["HIS57", "SER195"]
+config.scoring.scoring_function = "pandaml"
 
 # Initialize engine
 engine = MLEngine(config)
@@ -129,50 +162,56 @@ for pose in results[:5]:
     print(f"  IC50: {pose.get_ic50()*1e9:.1f} nM")
 ```
 
-## Docking Modes
+## 🔬 Algorithm Modes
 
-### Precise Mode (Physics-based)
+### Precise Mode (PandaPhysics)
 ```bash
-pandadock --protein receptor.pdb --ligand ligand.sdf --mode precise \
+pandadock --protein receptor.pdb --ligand ligand.sdf --mode precise --scoring pandaphysics \
           --flexible-residues "HIS57,SER195,TYR191" \
           --exhaustiveness 8 --num-poses 10
 ```
 
 **Features:**
-- Systematic conformer generation
+- Physics-based systematic conformer generation
 - Detailed molecular mechanics scoring
+- Excellent for metal coordination chemistry
 - Flexible side-chain sampling
-- Energy minimization
-- Clash detection and resolution
+- Energy minimization and clash resolution
 
-### Balanced Mode (ML-based)
+**Best for:** Metal complexes, detailed binding analysis, publication-quality poses
+
+### Balanced Mode (PandaML)
 ```bash
-pandadock --protein receptor.pdb --ligand ligand.sdf --mode balanced \
+pandadock --protein receptor.pdb --ligand ligand.sdf --mode balanced --scoring pandaml \
           --confidence-threshold 0.7 --ml-rescoring
 ```
 
 **Features:**
-- Diffusion-based pose generation
-- Deep learning confidence scoring
-- Fast inference
-- Hybrid ML/physics scoring
+- Advanced machine learning pose generation
+- Superior binding affinity prediction (R² = 0.878)
+- Fast inference with deep learning confidence scoring
+- Hybrid ML/physics scoring approach
 
-### Fast Mode (GA-based)
+**Best for:** General docking, affinity prediction, high-throughput screening
+
+### Fast Mode (PandaCore)
 ```bash
-pandadock --protein receptor.pdb --ligand ligand.sdf --mode fast \
+pandadock --protein receptor.pdb --ligand ligand.sdf --mode fast --scoring pandacore \
           --population-size 150 --generations 27000 \
           --n-jobs 4
 ```
 
 **Features:**
+- Robust baseline algorithm with reliable performance
 - Evolutionary search optimization
-- Parallel evaluation
-- Empirical scoring functions
-- Optimized for virtual screening
+- Parallel evaluation capabilities
+- Empirical scoring functions optimized for speed
 
-## Configuration
+**Best for:** Virtual screening, baseline comparisons, resource-constrained environments
 
-### JSON Configuration
+## ⚙️ Configuration
+
+### JSON Configuration with PandaDock Algorithms
 ```json
 {
   "docking": {
@@ -182,7 +221,7 @@ pandadock --protein receptor.pdb --ligand ligand.sdf --mode fast \
     "exhaustiveness": 8
   },
   "scoring": {
-    "scoring_function": "vina",
+    "scoring_function": "pandaml",
     "use_ml_rescoring": true,
     "vdw_weight": 1.0,
     "electrostatic_weight": 1.0
@@ -201,17 +240,19 @@ pandadock --protein receptor.pdb --ligand ligand.sdf --mode fast \
 export PANDADOCK_GPU_ENABLED=true
 export PANDADOCK_N_JOBS=4
 export PANDADOCK_CACHE_DIR=/tmp/pandadock
+export PANDADOCK_DEFAULT_ALGORITHM=pandaml
 ```
 
-## Output and Analysis
+## 📊 Output and Analysis
 
 ### HTML Reports
 PandaDock generates comprehensive HTML reports including:
+- **Algorithm Performance**: Detailed comparison of PandaDock algorithms
 - **Pose Rankings**: Sorted by score with energy breakdown
 - **Binding Affinity**: ΔG, IC50, and ligand efficiency calculations
 - **Interaction Analysis**: H-bonds, hydrophobic contacts, salt bridges
 - **Visualization**: Interactive 3D pose viewer
-- **Comparison Charts**: Score vs. energy correlations
+- **Metal Coordination**: Specialized analysis for metal complexes
 
 ### Data Export
 ```python
@@ -220,7 +261,22 @@ report_generator.export_data(results, format='json', output_path='results.json')
 report_generator.export_data(results, format='csv', output_path='results.csv')
 ```
 
-## Advanced Features
+## 🔧 Advanced Features
+
+### Metal Complex Docking
+```python
+from pandadock.docking import MetalDockingEngine
+
+# Configure for metal complexes
+config.scoring.scoring_function = "pandaphysics"
+config.docking.enable_metal_coordination = True
+
+# Initialize metal-specialized engine
+engine = MetalDockingEngine(config)
+
+# Analyze metal coordination
+coordination_analysis = engine.analyze_metal_coordination(results)
+```
 
 ### Flexible Docking
 ```python
@@ -234,44 +290,56 @@ flexible_docking.setup_flexible_residues(protein_coords, residue_info)
 optimized_pose = flexible_docking.optimize_with_sidechains(pose)
 ```
 
-### ML Rescoring
+### ML Rescoring with PandaML
 ```python
 from pandadock.scoring import MLRescorer
 
-# Initialize ML rescorer
-rescorer = MLRescorer()
-rescorer.load_model('path/to/model.pkl')
+# Initialize PandaML rescorer
+rescorer = MLRescorer(algorithm="pandaml")
+rescorer.load_model('pandaml_model.pkl')
 
-# Rescore poses
+# Rescore poses with ML
 rescored_poses = rescorer.rescore_poses(poses)
 ```
 
-### Custom Scoring Functions
-```python
-from pandadock.scoring import ScoringFunctions
+## 📈 Comprehensive Benchmarking
 
-# Custom scoring weights
-config.scoring.vdw_weight = 1.5
-config.scoring.electrostatic_weight = 0.8
-config.scoring.hbond_weight = 2.0
+### Validated Performance Metrics
 
-scoring = ScoringFunctions(config)
-energy = scoring.calculate_total_energy(ligand_coords, protein_coords)
-```
+**PDBbind Dataset (285 complexes):**
+- ✅ **Affinity Prediction**: Up to R² = 0.878 (PandaML)
+- ✅ **Pose Accuracy**: Up to 48.8% success rate (PandaPhysics)
+- ✅ **Speed**: 26-43 seconds per complex
+- ✅ **Metal Specialization**: Comprehensive analysis of 93 metal complexes
 
-## Benchmarking
+**Algorithm Specializations:**
+- **PandaML**: Superior for affinity prediction and general docking
+- **PandaPhysics**: Excellent for metal coordination and detailed analysis
+- **PandaCore**: Reliable baseline with consistent performance
 
-PandaDock has been tested on standard benchmarks:
-- **PDBbind**: Binding affinity prediction
-- **CASF**: Comparative assessment of scoring functions
-- **DUD-E**: Directory of useful decoys
+### Benchmark Plots
 
-Performance metrics:
-- **Success Rate**: >80% for top-3 poses (RMSD < 2.0 Å)
-- **Correlation**: R² > 0.7 for binding affinity prediction
-- **Speed**: ~10-100 poses/second depending on mode
+<details>
+<summary>📊 View All Benchmark Results</summary>
 
-## Contributing
+#### Overall Performance Comparison
+![Engine Performance](publication_results_final/engine_performance.png)
+
+#### Correlation Analysis
+![Correlation Analysis](publication_results_final/correlation_analysis.png)
+
+#### RMSD Analysis
+![RMSD Analysis](publication_results_final/rmsd_analysis.png)
+
+#### Metal vs Non-Metal Performance
+![Metal Performance](metal_analysis_results/metal_vs_nonmetal_performance.png)
+
+#### Algorithm Specialization
+![Engine Specialization](metal_analysis_results/engine_metal_specialization.png)
+
+</details>
+
+## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
@@ -283,41 +351,42 @@ pip install -e .[dev]
 pytest tests/
 ```
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Citation
+## 📚 Citation
 
 If you use PandaDock in your research, please cite:
 
 ```bibtex
 @software{pandadock2025,
-  title={PandaDock: Python-Based Molecular Docking},
+  title={PandaDock: Next-Generation Molecular Docking with Novel PandaDock Algorithms},
   author={Pritam Kumar Panda},
   year={2025},
-  url={https://github.com/pritampanda15/pandadock}
+  url={https://github.com/pritampanda15/pandadock},
+  note={Featuring PandaCore, PandaML, and PandaPhysics algorithms}
 }
 ```
 
-## Support
+## 🆘 Support
 
 - **Documentation**: [https://pandadock.readthedocs.io/](https://pandadock.readthedocs.io/)
 - **Issues**: [GitHub Issues](https://github.com/pritampanda15/pandadock/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/pritampanda15/pandadock/discussions)
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 PandaDock builds upon the scientific contributions of:
-- **AutoDock Vina**: Genetic algorithm optimization
-- **Glide**: Physics-based scoring functions
-- **DiffDock**: Machine learning pose prediction
+- **Molecular Docking**: Classical docking methodologies and scoring functions
+- **Machine Learning**: Deep learning approaches for pose prediction
+- **Physics-Based Modeling**: Molecular mechanics and dynamics principles
 - **RDKit**: Molecular handling and processing
 - **OpenMM**: Molecular dynamics integration
 
 ---
 
-##  Contact
+## 📞 Contact
 
 - GitHub: [@pritampanda15](https://github.com/pritampanda15)
 - Email: [pritam@stanford.edu](mailto:pritam@stanford.edu)
@@ -325,9 +394,10 @@ PandaDock builds upon the scientific contributions of:
 
 ---
 
-##  Disclaimer
+## ⚠️ Disclaimer
 
 > PandaDock is intended for research purposes.  
 > Always verify docking predictions through experimental validation.
+> The PandaDock algorithms (PandaCore, PandaML, PandaPhysics) are proprietary to this software.
 
-**Dock Smarter. Discover Faster**
+**Dock Smarter. Discover Faster. 🐼⚗️**

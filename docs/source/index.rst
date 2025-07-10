@@ -26,8 +26,8 @@ Basic usage:
 
    from pandadock import PandaDock
    
-   # Initialize docking engine
-   docker = PandaDock(engine='ml', scoring='vina')
+   # Initialize docking engine with PandaML algorithm
+   docker = PandaDock(engine='ml', scoring='pandaml')
    
    # Perform docking
    results = docker.dock(
@@ -39,11 +39,11 @@ Basic usage:
 Key Features
 ------------
 
-🔬 **Multiple Docking Strategies**
-   - Physics-based docking with AutoDock Vina-style scoring
-   - Machine learning-enhanced pose prediction
-   - Genetic algorithm optimization
-   - Flexible receptor docking
+🔬 **Novel PandaDock Algorithms**
+   - **PandaCore**: Robust baseline algorithm with reliable performance
+   - **PandaML**: Advanced machine learning algorithm with superior affinity prediction
+   - **PandaPhysics**: Physics-based algorithm specialized for metal coordination
+   - Flexible receptor docking with side-chain sampling
    - **Advanced metal docking for metalloproteins**
 
 ⚡ **High Performance**
@@ -113,35 +113,39 @@ Performance Benchmarks
 
 PandaDock has been benchmarked against established docking software:
 
-.. list-table:: Docking Performance Comparison
+.. list-table:: PandaDock Algorithm Performance (285 PDBbind complexes)
    :header-rows: 1
-   :widths: 20 20 20 20 20
+   :widths: 25 20 20 20 15
 
-   * - Software
+   * - Algorithm
+     - Affinity R²
      - Success Rate (%)
-     - Speed (poses/min)
-     - RMSD (Å)
-     - Correlation (R²)
-   * - PandaDock (ML)
-     - **94.2**
-     - **450**
-     - **1.2**
-     - **0.89**
-   * - AutoDock Vina
-     - 87.3
-     - 320
-     - 1.8
-     - 0.76
-   * - Glide SP
-     - 89.1
-     - 180
-     - 1.5
-     - 0.82
-   * - GOLD
-     - 85.7
-     - 210
-     - 1.9
-     - 0.78
+     - Mean RMSD (Å)
+     - Speed (s)
+   * - **PandaML**
+     - **0.878**
+     - **46.7**
+     - **3.22**
+     - **26.1**
+   * - **PandaPhysics**
+     - 0.671
+     - **48.8**
+     - 2.18
+     - 42.9
+   * - **PandaCore**
+     - 0.738
+     - 46.3
+     - 3.63
+     - 32.9
+
+*Success Rate = RMSD < 2Å. Benchmarked on diverse protein-ligand complexes.*
+
+**Metal vs Non-Metal Specialization:**
+
+- **93 metal complexes** (32.6%) vs **192 non-metal complexes** (67.4%) analyzed
+- **PandaPhysics** excels at metal coordination chemistry  
+- **PandaML** maintains consistent performance across both complex types
+- Metal complexes are 32% more challenging computationally
 
 Citation
 --------

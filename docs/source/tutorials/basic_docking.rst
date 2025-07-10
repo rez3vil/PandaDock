@@ -61,9 +61,9 @@ Create a Python script called ``basic_docking.py``:
    from pandadock import PandaDock
    import os
    
-   # Initialize PandaDock with physics engine
+   # Initialize PandaDock with PandaCore algorithm
    docker = PandaDock(
-       engine='physics',
+       engine='pandacore',
        exhaustiveness=8,
        num_poses=10,
        energy_range=3.0
@@ -127,9 +127,9 @@ For more control over the docking process:
 
 .. code-block:: python
 
-   # Advanced configuration
+   # Advanced configuration with PandaPhysics algorithm
    docker = PandaDock(
-       engine='physics',
+       engine='pandaphysics',
        config={
            'exhaustiveness': 16,          # Higher for better accuracy
            'num_poses': 20,               # More poses
@@ -268,10 +268,10 @@ Here's the complete working script:
            print("Please download a PDB file or adjust the filename.")
            sys.exit(1)
        
-       # Initialize PandaDock
+       # Initialize PandaDock with PandaCore algorithm
        print("Initializing PandaDock...")
        docker = PandaDock(
-           engine='physics',
+           engine='pandacore',
            exhaustiveness=8,
            num_poses=10,
            energy_range=3.0
@@ -396,7 +396,8 @@ Troubleshooting
 
 4. **Poor docking results**
    - Increase exhaustiveness (16-32)
-   - Use ML-enhanced engine
+   - Try PandaML algorithm for better affinity prediction
+   - Use PandaPhysics for metal complexes
    - Check protein preparation
 
 **Getting Help:**

@@ -22,7 +22,7 @@ Advanced Topics
 
 Once you're comfortable with basic docking, explore:
 
-* :doc:`ml_enhanced_docking` - Learn how to use machine learning models for higher accuracy
+* :doc:`ml_enhanced_docking` - Learn how to use PandaML algorithm for superior affinity prediction
 * :doc:`metal_docking_tutorial` - Master metal docking for metalloproteins with coordination constraints
 * :doc:`virtual_screening` - Discover how to screen large compound libraries efficiently
 
