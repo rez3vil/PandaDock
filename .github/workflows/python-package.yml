@@ -56,5 +56,6 @@ jobs:
       shell: bash -el {0}
       run: |
         export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
-        PYTHONPATH=$PYTHONPATH:$(pwd) pytest --maxfail=1 -v
+        # Run tests with better error reporting
+        python -m pytest tests/ --maxfail=5 -v --tb=short --strict-markers
   

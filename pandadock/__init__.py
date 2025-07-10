@@ -14,11 +14,18 @@ __version__ = "3.0.0"
 __author__ = "Pritam Kumar Panda"
 __email__ = "pritam@stanford.edu"
 
-from .config import PandaDockConfig
-
-__all__ = [
-    'PandaDockConfig',
-    '__version__',
-    '__author__',
-    '__email__'
-]
+try:
+    from .config import PandaDockConfig
+    __all__ = [
+        'PandaDockConfig',
+        '__version__',
+        '__author__',
+        '__email__'
+    ]
+except ImportError:
+    # Allow basic package import even if config fails
+    __all__ = [
+        '__version__',
+        '__author__',
+        '__email__'
+    ]
