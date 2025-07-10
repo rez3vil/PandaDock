@@ -4,6 +4,7 @@ PandaDock: Main entry point for molecular docking
 """
 
 import argparse
+import argparse
 import sys
 import os
 from pathlib import Path
@@ -11,11 +12,16 @@ from typing import Optional, List
 import json
 import logging
 
-from config import PandaDockConfig
-from docking.physics_engine import PhysicsEngine
-from docking.ml_engine import MLEngine
-from docking.ga_engine import GAEngine
-from reports.html_report import HTMLReportGenerator
+# Add PandaDock to path if running as script
+if __name__ == '__main__':
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(0, project_root)
+
+from pandadock.config import PandaDockConfig
+from pandadock.docking.physics_engine import PhysicsEngine
+from pandadock.docking.ml_engine import MLEngine
+from pandadock.docking.ga_engine import GAEngine
+from pandadock.reports.html_report import HTMLReportGenerator
 
 
 def setup_logging(verbose: bool, debug: bool):
@@ -45,16 +51,16 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Basic docking with balanced mode
-  pandadock --protein receptor.pdb --ligand ligand.sdf --mode balanced
+  # Basic docking with PandaCore scoring
+  pandadock --protein receptor.pdb --ligand ligand.sdf --mode balanced --scoring pandacore
 
-  # Physics-based docking with flexible residues
+  # Physics-based docking with PandaPhysics scoring
   pandadock --protein receptor.pdb --ligand ligand.sdf --mode precise \\
-           --flexible-residues "HIS57,SER195" --out report.html
+           --flexible-residues "HIS57,SER195" --scoring pandaphysics --out report.html
 
-  # Fast virtual screening
+  # Fast virtual screening with PandaML scoring
   pandadock --protein receptor.pdb --screen ligands.smi --mode fast \\
-           --num-poses 5 --exhaustiveness 16
+           --num-poses 5 --scoring pandaml --exhaustiveness 16
 
   # Use custom configuration
   pandadock --config config.json
@@ -98,9 +104,9 @@ Examples:
                        help='Enable side chain flexibility')
     
     # Scoring
-    parser.add_argument('--scoring', type=str, default='vina',
-                       choices=['vina', 'glide', 'ml'],
-                       help='Scoring function (default: vina)')
+    parser.add_argument('--scoring', type=str, default='pandacore',
+                       choices=['pandacore', 'pandaml', 'pandaphysics'],
+                       help='PandaDock scoring function (default: pandacore)')
     parser.add_argument('--ml-rescoring', action='store_true',
                        help='Use ML-based rescoring')
     

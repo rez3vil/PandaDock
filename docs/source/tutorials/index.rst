@@ -9,6 +9,7 @@ This section contains step-by-step tutorials to help you get started with PandaD
 
    basic_docking
    ml_enhanced_docking
+   metal_docking_tutorial
    virtual_screening
 
 Getting Started
@@ -22,6 +23,7 @@ Advanced Topics
 Once you're comfortable with basic docking, explore:
 
 * :doc:`ml_enhanced_docking` - Learn how to use machine learning models for higher accuracy
+* :doc:`metal_docking_tutorial` - Master metal docking for metalloproteins with coordination constraints
 * :doc:`virtual_screening` - Discover how to screen large compound libraries efficiently
 
 Each tutorial includes:

@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="https://github.com/pritampanda15/PandaDock">
-    <img src="https://github.com/pritampanda15/PandaDock/blob/main/logo/pandadock-logo.svg" width="1000" alt="PandaDock Logo"/>
+    <img src="https://github.com/pritampanda15/PandaDock/blob/main/logo/logo_new.png" width="1000" alt="PandaDock Logo"/>
   </a>
 </p>
 

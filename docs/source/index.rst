@@ -44,6 +44,7 @@ Key Features
    - Machine learning-enhanced pose prediction
    - Genetic algorithm optimization
    - Flexible receptor docking
+   - **Advanced metal docking for metalloproteins**
 
 ⚡ **High Performance**
    - GPU acceleration support (CUDA)
@@ -77,6 +78,7 @@ Documentation Contents
    user_guide/quickstart
    user_guide/configuration
    user_guide/docking_modes
+   user_guide/metal_docking
    user_guide/scoring_functions
    user_guide/analysis
 

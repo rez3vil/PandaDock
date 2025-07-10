@@ -128,7 +128,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "pandadock=main:main",
+            "pandadock=pandadock.__main__:main",
         ],
     },
     include_package_data=True,
