@@ -74,23 +74,38 @@ pip install -e .[dev,all]
 
 ### Common Issues
 
-#### 1. Environment Marker Error
-If you see an error about `'extra' does not exist in evaluation environment`, use:
+#### 1. PyMOL Installation Fails
+PyMOL can be problematic via pip. Use conda instead:
 ```bash
+conda install -c conda-forge pymol-open-source
+pip install -e .[ml,chem] # Install without viz group
+```
+
+#### 2. RDKit Installation Issues
+For RDKit problems, use conda:
+```bash
+conda install -c conda-forge rdkit
 pip install -e . --no-deps
 pip install -r requirements-core.txt
 ```
 
-#### 2. GPU Installation on macOS
+#### 3. GPU Installation on macOS
 GPU acceleration is not available on macOS. Use:
 ```bash
 pip install -e .[ml,chem,viz] # Skip GPU dependencies
 ```
 
-#### 3. Commercial Software Dependencies
+#### 4. Commercial Software Dependencies
 Commercial packages (OpenEye, Schrödinger) require separate licenses:
 ```bash
 pip install -e .[commercial] # Only if you have licenses
+```
+
+#### 5. CI/CD and GitHub Actions
+For automated builds, use the CI-safe requirements:
+```bash
+pip install -r requirements-ci.txt
+pip install -e . --no-deps
 ```
 
 ## Verification
@@ -130,7 +145,7 @@ pandadock --help
 - openmm>=7.7.0
 
 #### Visualization (`[viz]`)
-- pymol-open-source>=2.5.0
+- pymol-open-source>=2.5.0 (install via conda if pip fails)
 - py3dmol>=1.8.0
 - nglview>=3.0.0
 

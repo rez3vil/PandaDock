@@ -63,8 +63,8 @@ mypy>=0.910
 sphinx>=4.0.0
 sphinx-rtd-theme>=1.0.0
 
-# Optional molecular visualization
-pymol-open-source>=2.5.0
+# Optional molecular visualization (install manually if needed)
+# pymol-open-source>=2.5.0  # Comment out - causes CI issues, install via conda if needed
 nglview>=3.0.0
 
 # Optional enhanced features (install separately if needed)

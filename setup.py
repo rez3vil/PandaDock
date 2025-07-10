@@ -106,6 +106,12 @@ setup(
             "sphinx>=4.0.0",
             "sphinx-rtd-theme>=1.0.0"
         ],
+        "docs": [
+            "sphinx>=4.0.0",
+            "sphinx-rtd-theme>=1.0.0",
+            "sphinx-autodoc-typehints>=1.12.0",
+            "myst-parser>=0.18.0"
+        ],
         "commercial": [
             "openeye-toolkits>=2021.10.0",
             "schrodinger-suite>=2021.4"
