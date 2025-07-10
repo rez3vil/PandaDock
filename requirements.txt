@@ -67,6 +67,6 @@ sphinx-rtd-theme>=1.0.0
 pymol-open-source>=2.5.0
 nglview>=3.0.0
 
-# Optional enhanced features
-openeye-toolkits>=2021.10.0; extra == "commercial"
-schrodinger-suite>=2021.4; extra == "commercial"
+# Optional enhanced features (install separately if needed)
+# openeye-toolkits>=2021.10.0
+# schrodinger-suite>=2021.4

@@ -31,13 +31,26 @@ PandaDock is a comprehensive molecular docking software that combines multiple d
 
 ## Installation
 
+### Quick Install
+```bash
+# Basic installation
+pip install -e .
+
+# With machine learning support
+pip install -e .[ml]
+
+# With all features
+pip install -e .[all]
+```
+
 ### Requirements
 - Python 3.8+
-- NumPy, SciPy, scikit-learn
-- RDKit (for molecular handling)
-- Optional: PyTorch (for ML models), OpenMM (for physics)
+- NumPy, SciPy, scikit-learn (automatically installed)
+- Optional: PyTorch (ML models), RDKit (chemistry), OpenMM (physics)
 
-### Install from PyPI
+For detailed installation instructions, see [INSTALL.md](INSTALL.md).
+
+### Install from PyPI (Coming Soon)
 ```bash
 pip install pandadock
 ```
@@ -46,12 +59,7 @@ pip install pandadock
 ```bash
 git clone https://github.com/pandadock/pandadock.git
 cd pandadock
-pip install -e .
-```
-
-### GPU Support (Optional)
-```bash
-pip install pandadock[gpu]
+pip install -e .[all]
 ```
 
 ## Quick Start
