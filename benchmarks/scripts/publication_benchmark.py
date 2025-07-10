@@ -33,6 +33,7 @@ sys.path.append(project_root)
 from pandadock.docking.metal_docking_engine import MetalDockingEngine, MetalDockingConfig
 from pandadock.docking.physics_engine import PhysicsEngine
 from pandadock.docking.ml_engine import MLEngine
+from pandadock.docking.base_engine import Pose
 from pandadock.scoring.metal_scoring import MetalScoringFunction
 from pandadock.utils.ic50_calculator import IC50Calculator
 from pandadock.config import PandaDockConfig
@@ -288,7 +289,7 @@ class DockingBenchmark:
             confidence=best_pose.confidence if hasattr(best_pose, 'confidence') else 0.0
         )
 
-    def calculate_rmsd(self, pose: "Pose", crystal_pose_file: Path) -> float:
+    def calculate_rmsd(self, pose: Pose, crystal_pose_file: Path) -> float:
         """Calculate RMSD between docked pose and crystal pose"""
         try:
             from rdkit import Chem
@@ -309,7 +310,7 @@ class DockingBenchmark:
             self.logger.warning(f"RMSD calculation failed: {e}")
             return 10.0
 
-    def _create_rdkit_mol_from_pose(self, pose: "Pose") -> Optional[Any]:
+    def _create_rdkit_mol_from_pose(self, pose: Pose) -> Optional[Any]:
         """Creates an RDKit molecule from a pose object"""
         try:
             from rdkit import Chem
