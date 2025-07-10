@@ -1,6 +1,6 @@
 # PandaDock
 
-**Python-based Molecular Docking Platform featuring Novel PandaDock Algorithms for Drug Discovery, Bioinformatics, and Computational Chemistry**. **Modular, Multi-Strategy, High-Performance Molecular Docking Software**
+**Python-based Molecular Docking Platform featuring Novel PandaDock Algorithms for Drug Discovery, Bioinformatics, and Computational Chemistry.** **A Modular, Multi-Strategy, High-Performance Molecular Docking Software**
 
 <p align="center">
   <a href="https://github.com/pritampanda15/PandaDock">
@@ -28,9 +28,21 @@
     <img src="https://static.pepy.tech/badge/pandadock" alt="Downloads">
   </a>
 </p>
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation Status](https://readthedocs.org/projects/pandadock/badge/?version=latest)](https://pandadock.readthedocs.io/)
+
+<p align="center">
+  <a href="https://www.python.org/downloads/">
+    <img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="Python 3.8+">
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
+  </a>
+  <a href="https://pandadock.readthedocs.io/">
+    <img src="https://readthedocs.org/projects/pandadock/badge/?version=latest" alt="Documentation Status">
+  </a>
+</p>
+
+---
+
 
 ## 🎯 Overview
 
