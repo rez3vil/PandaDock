@@ -1,32 +1,36 @@
 """
-PandaDock: Modular, Multi-Strategy, High-Performance Docking Software
+PandaDock: Modular, Multi-Strategy, High-Performance Molecular Docking Software
 
-A comprehensive molecular docking framework supporting:
-- Physics-based docking (Glide-style)
-- Deep learning-based docking (DiffDock/Boltz-style)
-- Fast virtual screening (AutoDock Vina-style GA search)
-- Flexible protein-ligand docking
-- Clash-free pose refinement
-- Comprehensive reporting with IC50, LE, ΔG
+A comprehensive molecular docking framework supporting multiple docking strategies:
+- Precise: Physics-based docking (Glide-style)
+- Balanced: ML-based docking (DiffDock-style) 
+- Fast: GA-based docking (Vina-style)
+
+Features:
+- Flexible protein-ligand docking with side-chain flexibility
+- Multiple scoring functions and ML rescoring
+- Comprehensive pose filtering and validation
+- Multi-format support (SMILES, SDF, MOL2, PDB)
+- HTML reporting with pose visualization
+- GPU acceleration and parallel processing
 """
 
 __version__ = "1.0.0"
 __author__ = "PandaDock Development Team"
+__email__ = "info@pandadock.org"
 
-from docking.physics_engine import PhysicsEngine
-from docking.ml_engine import MLEngine
-from docking.ga_engine import GAEngine
-from docking.flexible_docking import FlexibleDocking
-from docking.pose_filtering import PoseFiltering
-from scoring.scoring_functions import ScoringFunctions
-from utils.ic50_calculator import IC50Calculator
+from .config import PandaDockConfig
+from .docking.base_engine import DockingEngine, Pose
+from .docking.physics_engine import PhysicsEngine
+from .docking.ml_engine import MLEngine  
+from .docking.ga_engine import GAEngine
 
 __all__ = [
+    'PandaDockConfig',
+    'DockingEngine',
+    'Pose',
     'PhysicsEngine',
     'MLEngine', 
     'GAEngine',
-    'FlexibleDocking',
-    'PoseFiltering',
-    'ScoringFunctions',
-    'IC50Calculator'
+    '__version__',
 ]

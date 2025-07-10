@@ -6,8 +6,12 @@ import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
 import logging
 
-from .base_engine import Pose
-from ..utils.math_utils import distance_matrix, calculate_rmsd
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from docking.base_engine import Pose
+from utils.math_utils import distance_matrix, calculate_rmsd
 
 
 class PoseFiltering:
@@ -145,7 +149,12 @@ class PoseFiltering:
             return poses
         
         # Find reference energy (best pose)
-        min_energy = min(pose.energy for pose in poses)
+        energies = [pose.energy for pose in poses]
+        min_energy = min(energies)
+        max_energy = max(energies)
+        
+        self.logger.info(f"Energy range: {min_energy:.2f} to {max_energy:.2f} kcal/mol")
+        self.logger.info(f"Energy threshold: {threshold:.2f} kcal/mol")
         
         # Filter poses within threshold of best energy
         filtered_poses = []
@@ -153,30 +162,39 @@ class PoseFiltering:
             if pose.energy <= min_energy + threshold:
                 filtered_poses.append(pose)
         
+        self.logger.info(f"Energy filter: {len(filtered_poses)}/{len(poses)} poses passed")
         return filtered_poses
     
     def filter_by_clash(self, poses: List[Pose]) -> List[Pose]:
         """Filter poses by clash detection"""
+        if not poses:
+            return poses
+            
         filtered_poses = []
+        clash_scores = []
         
         for pose in poses:
             clash_score = self.calculate_clash_score(pose)
             pose.clash_score = clash_score
+            clash_scores.append(clash_score)
             
             if clash_score < 5.0:  # Threshold for acceptable clash
                 filtered_poses.append(pose)
         
+        if clash_scores:
+            min_clash = min(clash_scores)
+            max_clash = max(clash_scores)
+            self.logger.info(f"Clash score range: {min_clash:.2f} to {max_clash:.2f}")
+        
+        self.logger.info(f"Clash filter: {len(filtered_poses)}/{len(poses)} poses passed")
         return filtered_poses
     
     def calculate_clash_score(self, pose: Pose) -> float:
         """
         Calculate clash score for a pose
         
-        Uses van der Waals radii to detect atomic overlaps
+        Only counts severe clashes, not normal bonded interactions
         """
-        # This is a simplified implementation
-        # In reality, this would use protein coordinates and atom types
-        
         coordinates = pose.coordinates
         distances = distance_matrix(coordinates, coordinates)
         
@@ -185,19 +203,20 @@ class PoseFiltering:
         
         clash_score = 0.0
         
-        # Check for clashes between atoms
+        # Check for severe clashes between atoms
         for i in range(len(coordinates)):
             for j in range(i + 1, len(coordinates)):
                 distance = distances[i, j]
                 
-                # Assume carbon atoms for simplicity
-                # In reality, would use actual atom types
-                vdw_sum = self.vdw_radii['C'] + self.vdw_radii['C']
+                # Only consider severe clashes (atoms much closer than they should be)
+                # Normal bonds are 1.2-1.8 Å, so only flag distances < 1.0 Å as clashes
+                if distance < 1.0:  # Very close atoms
+                    clash_score += (1.0 - distance) ** 2  # Quadratic penalty
                 
-                if distance < vdw_sum:
-                    # Calculate clash penalty
-                    overlap = vdw_sum - distance
-                    clash_score += overlap * overlap  # Quadratic penalty
+                # Check for moderately close non-bonded atoms
+                # Skip 1-2 (bonded) and 1-3 (angle) interactions
+                if j - i > 3 and distance < 2.0:  # Non-bonded atoms too close
+                    clash_score += 0.1 * (2.0 - distance)  # Small penalty
         
         return clash_score
     

@@ -7,12 +7,17 @@ import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
 import logging
 from scipy.optimize import minimize
+from tqdm import tqdm
 
-from .base_engine import DockingEngine, Pose
-from ..scoring.scoring_functions import ScoringFunctions
-from ..utils.math_utils import rotation_matrix, quaternion_to_matrix
-from .flexible_docking import FlexibleDocking
-from .pose_filtering import PoseFiltering
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from docking.base_engine import DockingEngine, Pose
+from scoring.scoring_functions import ScoringFunctions
+from utils.math_utils import rotation_matrix, quaternion_to_matrix
+from docking.flexible_docking import FlexibleDocking
+from docking.pose_filtering import PoseFiltering
 
 
 class PhysicsEngine(DockingEngine):
@@ -67,18 +72,30 @@ class PhysicsEngine(DockingEngine):
         conformers = self.generate_systematic_conformers()
         self.logger.info(f"Generated {len(conformers)} conformers")
         
-        # Sample binding poses for each conformer
+        # Sample binding poses for each conformer with progress bar
         all_poses = []
-        for i, conformer in enumerate(conformers):
-            if i % 100 == 0:
-                self.logger.info(f"Processing conformer {i+1}/{len(conformers)}")
-            
+        conformer_pbar = tqdm(conformers, desc="🧬 Processing conformers", unit="conformer", 
+                             bar_format='{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]')
+        for conformer in conformer_pbar:
             poses = self.sample_binding_poses(conformer)
             all_poses.extend(poses)
+            conformer_pbar.set_postfix({"poses": len(all_poses)})
+        conformer_pbar.close()
         
         self.logger.info(f"Generated {len(all_poses)} initial poses")
         
         # Filter poses by basic criteria
+        print("🔍 Filtering poses by energy and clash criteria...")
+        
+        # First calculate energy for all poses if not already done
+        print("⚡ Computing initial energies for pose filtering...")
+        energy_pbar = tqdm(all_poses, desc="🔬 Initial energy calc", unit="pose",
+                          bar_format='{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]')
+        for pose in energy_pbar:
+            if pose.energy == 0.0:  # Only calculate if not already done
+                pose.energy = self.scoring.calculate_total_energy(pose.coordinates)
+        energy_pbar.close()
+        
         filtered_poses = self.pose_filter.filter_by_energy(all_poses, self.energy_threshold)
         filtered_poses = self.pose_filter.filter_by_clash(filtered_poses)
         
@@ -86,15 +103,23 @@ class PhysicsEngine(DockingEngine):
         
         # Optimize poses with flexible sidechains
         if self.flexible_docking:
+            print("🔧 Optimizing side-chain flexibility...")
             optimized_poses = []
-            for pose in filtered_poses:
+            sidechain_pbar = tqdm(filtered_poses, desc="⚡ Side-chain optimization", unit="pose",
+                                 bar_format='{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]')
+            for pose in sidechain_pbar:
                 optimized_pose = self.optimize_with_flexibility(pose)
                 optimized_poses.append(optimized_pose)
+            sidechain_pbar.close()
             filtered_poses = optimized_poses
         
         # Final scoring and ranking
-        for pose in filtered_poses:
+        print("📊 Computing final physics-based scores...")
+        scoring_pbar = tqdm(filtered_poses, desc="🎯 Final scoring", unit="pose",
+                           bar_format='{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]')
+        for pose in scoring_pbar:
             pose.score = self.score(pose)
+        scoring_pbar.close()
         
         # Sort by score and cluster
         filtered_poses.sort(key=lambda x: x.score)
@@ -111,38 +136,66 @@ class PhysicsEngine(DockingEngine):
         Generate conformers using systematic torsion sampling
         Similar to Glide's conformer generation
         """
-        # Placeholder implementation
-        # In real implementation, this would:
-        # 1. Identify rotatable bonds
-        # 2. Generate systematic combinations of torsion angles
-        # 3. Build 3D coordinates for each combination
-        # 4. Filter by energy and clash criteria
+        if not self.ligand:
+            raise ValueError("Ligand must be prepared before generating conformers")
         
         conformers = []
-        num_torsions = 4  # Placeholder
         
-        # Generate systematic combinations
+        # Start with the original ligand structure
+        base_coords = self.ligand['coordinates'].copy()
+        conformers.append(base_coords)
+        
+        # Generate additional conformers with systematic variations
+        num_torsions = min(4, len(base_coords) // 3)  # Reasonable number of torsions
         angles = np.arange(0, 360, self.torsion_increment)
         
-        for i in range(min(self.num_conformers, len(angles)**num_torsions)):
+        target_conformers = min(self.num_conformers, 50)  # Limit for efficiency
+        
+        for i in range(1, target_conformers):
             # Generate torsion combination
             torsion_angles = np.random.choice(angles, num_torsions)
             
-            # Build conformer coordinates (placeholder)
+            # Build conformer coordinates
             conformer = self.build_conformer_from_torsions(torsion_angles)
             
             # Quick energy filter
             if self.quick_energy_check(conformer):
                 conformers.append(conformer)
         
+        self.logger.info(f"Generated {len(conformers)} valid conformers from {target_conformers} attempts")
         return conformers
     
     def build_conformer_from_torsions(self, torsion_angles: np.ndarray) -> np.ndarray:
         """Build 3D coordinates from torsion angles"""
-        # Placeholder implementation
-        # In real implementation, this would use proper molecular mechanics
-        num_atoms = 20  # Placeholder
-        conformer = np.random.randn(num_atoms, 3) * 2.0
+        if not self.ligand:
+            raise ValueError("Ligand must be prepared before building conformers")
+        
+        # Use actual ligand coordinates as base
+        base_coords = self.ligand['coordinates'].copy()
+        
+        # Apply torsional changes (simplified implementation)
+        # In a real implementation, this would properly rotate around torsion bonds
+        conformer = base_coords.copy()
+        
+        # Apply small perturbations based on torsion angles
+        for i, angle in enumerate(torsion_angles):
+            if i < len(conformer):
+                # Simple rotation around z-axis for demonstration
+                rad = np.radians(angle)
+                cos_a, sin_a = np.cos(rad), np.sin(rad)
+                rotation = np.array([[cos_a, -sin_a, 0], [sin_a, cos_a, 0], [0, 0, 1]])
+                
+                # Center molecule
+                center = np.mean(conformer, axis=0)
+                centered = conformer - center
+                
+                # Apply rotation
+                rotated = np.dot(centered, rotation.T)
+                conformer = rotated + center
+                
+                # Apply small displacement
+                conformer += np.random.normal(0, 0.1, conformer.shape)
+        
         return conformer
     
     def quick_energy_check(self, conformer: np.ndarray) -> bool:
@@ -181,9 +234,12 @@ class PhysicsEngine(DockingEngine):
                     coordinates=transformed_coords,
                     score=0.0,
                     energy=0.0,
-                    ligand_name=self.ligand,
+                    ligand_name=self.ligand['name'] if self.ligand else 'unknown',
                     pose_id=f"pose_{len(poses)}"
                 )
+                
+                # Calculate initial energy for the pose
+                pose.energy = self.scoring.calculate_total_energy(transformed_coords)
                 
                 # Quick check if pose is reasonable
                 if self.validate_pose(pose):
@@ -215,17 +271,30 @@ class PhysicsEngine(DockingEngine):
         return rotations
     
     def apply_transformation(self, coords: np.ndarray, rotation: np.ndarray, translation: np.ndarray) -> np.ndarray:
-        """Apply rotation and translation to coordinates"""
-        # Center coordinates
-        centered = coords - np.mean(coords, axis=0)
+        """Apply rotation and translation to coordinates while preserving molecular geometry"""
+        # Center coordinates around their geometric center
+        center = np.mean(coords, axis=0)
+        centered = coords - center
         
-        # Apply rotation
+        # Apply rotation around center
         rotated = np.dot(centered, rotation.T)
         
-        # Apply translation
-        transformed = rotated + translation
+        # Translate to new position within grid box
+        grid_center = self.grid_box.center
+        final_coords = rotated + grid_center + translation
         
-        return transformed
+        # Ensure coordinates stay within grid box bounds
+        min_bounds, max_bounds = self.grid_box.get_bounds()
+        
+        # Check if any atoms are outside bounds and adjust if needed
+        coord_center = np.mean(final_coords, axis=0)
+        for i in range(3):
+            if coord_center[i] < min_bounds[i] + 2.0:
+                final_coords[:, i] += (min_bounds[i] + 2.0 - coord_center[i])
+            elif coord_center[i] > max_bounds[i] - 2.0:
+                final_coords[:, i] -= (coord_center[i] - (max_bounds[i] - 2.0))
+        
+        return final_coords
     
     def optimize_with_flexibility(self, pose: Pose) -> Pose:
         """
@@ -282,32 +351,15 @@ class PhysicsEngine(DockingEngine):
         Score a pose using physics-based scoring function
         """
         # Calculate individual energy terms
-        vdw_energy = self.scoring.calculate_vdw_energy(pose.coordinates)
-        electrostatic_energy = self.scoring.calculate_electrostatic_energy(pose.coordinates)
-        hbond_energy = self.scoring.calculate_hbond_energy(pose.coordinates)
-        hydrophobic_energy = self.scoring.calculate_hydrophobic_energy(pose.coordinates)
-        solvation_energy = self.scoring.calculate_solvation_energy(pose.coordinates)
-        entropy_energy = self.scoring.calculate_entropy_penalty(pose.coordinates)
+        pose.vdw_energy = self.scoring.calculate_vdw_energy(pose.coordinates)
+        pose.electrostatic_energy = self.scoring.calculate_electrostatic_energy(pose.coordinates)
+        pose.hbond_energy = self.scoring.calculate_hbond_energy(pose.coordinates)
+        pose.hydrophobic_energy = self.scoring.calculate_hydrophobic_energy(pose.coordinates)
+        pose.solvation_energy = self.scoring.calculate_solvation_energy(pose.coordinates)
+        pose.entropy_energy = self.scoring.calculate_entropy_penalty(pose.coordinates)
         
-        # Update pose energy terms
-        pose.vdw_energy = vdw_energy * self.vdw_scale
-        pose.electrostatic_energy = electrostatic_energy * self.electrostatic_scale
-        pose.hbond_energy = hbond_energy
-        pose.hydrophobic_energy = hydrophobic_energy
-        pose.solvation_energy = solvation_energy
-        pose.entropy_energy = entropy_energy
-        
-        # Calculate total energy
-        total_energy = (
-            pose.vdw_energy +
-            pose.electrostatic_energy +
-            pose.hbond_energy +
-            pose.hydrophobic_energy +
-            pose.solvation_energy +
-            pose.entropy_energy
-        )
-        
-        pose.energy = total_energy
+        # Calculate total energy using the scoring function
+        pose.energy = self.scoring.calculate_total_energy(pose.coordinates)
         
         # Calculate interactions
         pose.hbond_interactions = self.scoring.find_hbond_interactions(pose.coordinates)
@@ -317,8 +369,9 @@ class PhysicsEngine(DockingEngine):
         # Calculate clash score
         pose.clash_score = self.scoring.calculate_clash_score(pose.coordinates)
         
-        # Final score (lower is better)
-        score = total_energy + pose.clash_score * 10.0
+        # Final score equals energy (lower is better for both)
+        # Add small clash penalty
+        score = pose.energy + pose.clash_score * 0.1
         
         return score
     

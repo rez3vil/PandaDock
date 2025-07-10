@@ -8,10 +8,20 @@ from typing import List, Dict, Any, Optional, Tuple
 import logging
 import json
 from pathlib import Path
+from tqdm import tqdm
+try:
+    from scipy.spatial.transform import Rotation
+except ImportError:
+    # Fallback implementation for rotation
+    Rotation = None
 
-from .base_engine import DockingEngine, Pose
-from ..scoring.scoring_functions import ScoringFunctions
-from ..utils.math_utils import rotation_matrix, quaternion_to_matrix
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from docking.base_engine import DockingEngine, Pose
+from scoring.scoring_functions import ScoringFunctions
+from utils.math_utils import rotation_matrix, quaternion_to_matrix
 
 
 class MLEngine(DockingEngine):
@@ -85,28 +95,69 @@ class MLEngine(DockingEngine):
     def _create_dummy_diffusion_model(self):
         """Create dummy diffusion model for demonstration"""
         class DummyDiffusionModel:
-            def __init__(self):
+            def __init__(self, parent_engine):
                 self.num_steps = 1000
+                self.parent = parent_engine
             
             def sample(self, protein_features, ligand_features, num_samples=10):
-                # Dummy diffusion sampling
-                num_atoms = ligand_features.shape[0]
+                # Use actual ligand coordinates as starting point
+                if not self.parent.ligand:
+                    # Fallback to random if no ligand loaded
+                    num_atoms = ligand_features.shape[0]
+                    samples = []
+                    for _ in range(num_samples):
+                        noise = np.random.randn(num_atoms, 3) * 2.0
+                        samples.append(noise)
+                    return samples
+                
+                base_coords = self.parent.ligand['coordinates'].copy()
+                num_atoms = len(base_coords)
                 samples = []
                 
                 for _ in range(num_samples):
-                    # Start from noise
-                    noise = np.random.randn(num_atoms, 3) * 2.0
+                    # Start from actual ligand coordinates
+                    coords = base_coords.copy()
                     
-                    # Simulate denoising process
-                    for step in range(50):  # Simplified sampling
-                        # Apply denoising step
-                        noise = noise * 0.98 + np.random.randn(num_atoms, 3) * 0.1
+                    # Apply rigid body transformation (rotation + translation) instead of atomic noise
+                    # This preserves molecular geometry much better
                     
-                    samples.append(noise)
+                    # 1. Random rotation around molecular center
+                    center = np.mean(coords, axis=0)
+                    centered_coords = coords - center
+                    
+                    # Generate random rotation matrix
+                    if Rotation is not None:
+                        rotation = Rotation.random()
+                        rotated_coords = rotation.apply(centered_coords)
+                    else:
+                        # Fallback: use euler angles for rotation
+                        from utils.math_utils import rotation_matrix
+                        angles = np.random.uniform(0, 2*np.pi, 3)
+                        rot_matrix = rotation_matrix(angles)
+                        rotated_coords = np.dot(centered_coords, rot_matrix.T)
+                    
+                    # 2. Random translation within grid box
+                    grid_center = self.parent.grid_box.center
+                    grid_size = self.parent.grid_box.size
+                    
+                    # Random translation within 80% of grid box to ensure ligand stays inside
+                    max_translation = grid_size * 0.4
+                    translation = np.random.uniform(-max_translation, max_translation)
+                    final_center = grid_center + translation
+                    
+                    # 3. Apply translation
+                    final_coords = rotated_coords + final_center
+                    
+                    # 4. Small conformational perturbation (much smaller than before)
+                    # Only apply tiny displacements to preserve bond lengths
+                    perturbation = np.random.normal(0, 0.05, final_coords.shape)  # Very small 0.05 Å
+                    final_coords += perturbation
+                    
+                    samples.append(final_coords)
                 
                 return samples
         
-        return DummyDiffusionModel()
+        return DummyDiffusionModel(self)
     
     def dock(self, protein_file: str, ligand_file: str) -> List[Pose]:
         """
@@ -130,13 +181,34 @@ class MLEngine(DockingEngine):
         poses = self.generate_poses_with_diffusion(protein_features, ligand_features)
         self.logger.info(f"Generated {len(poses)} poses using diffusion model")
         
-        # Predict confidence scores
-        for pose in poses:
+        # Predict confidence scores with progress bar
+        print("🎯 Predicting pose confidence scores...")
+        confidence_pbar = tqdm(poses, desc="🤖 ML confidence", unit="pose",
+                              bar_format='{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]')
+        for pose in confidence_pbar:
             pose.confidence = self.predict_confidence(protein_features, ligand_features, pose)
+        confidence_pbar.close()
         
         # Filter by confidence threshold
         confident_poses = [pose for pose in poses if pose.confidence >= self.confidence_threshold]
         self.logger.info(f"After confidence filtering: {len(confident_poses)} poses")
+        
+        # Calculate energies for all poses with progress bar
+        print("⚡ Computing physics-based energies...")
+        energy_pbar = tqdm(confident_poses, desc="🔬 Energy calculation", unit="pose",
+                          bar_format='{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]')
+        for pose in energy_pbar:
+            # Calculate physics-based energy
+            pose.energy = self.scoring.calculate_total_energy(pose.coordinates)
+            
+            # Calculate detailed energy breakdown
+            pose.vdw_energy = self.scoring.calculate_vdw_energy(pose.coordinates)
+            pose.electrostatic_energy = self.scoring.calculate_electrostatic_energy(pose.coordinates) 
+            pose.hbond_energy = self.scoring.calculate_hbond_energy(pose.coordinates)
+            pose.hydrophobic_energy = self.scoring.calculate_hydrophobic_energy(pose.coordinates)
+            pose.solvation_energy = self.scoring.calculate_solvation_energy(pose.coordinates)
+            pose.entropy_energy = self.scoring.calculate_entropy_penalty(pose.coordinates)
+        energy_pbar.close()
         
         # Optional physics-based rescoring
         if self.config.scoring.use_ml_rescoring:
@@ -186,12 +258,40 @@ class MLEngine(DockingEngine):
         """
         self.logger.debug(f"Preparing ligand features from {ligand_file}")
         
-        # Placeholder implementation
-        # In real implementation, this would parse SDF/MOL2 file
-        num_atoms = 25  # Placeholder
+        # Prepare the ligand structure first
+        self.prepare_ligand(ligand_file)
+        
+        if not self.ligand:
+            raise ValueError(f"Failed to parse ligand from {ligand_file}")
+        
+        # Extract features from the actual ligand structure
+        coords = self.ligand['coordinates']
+        atom_types = self.ligand['atom_types']
+        num_atoms = len(coords)
         feature_dim = 32
         
-        features = np.random.randn(num_atoms, feature_dim)
+        # Create feature matrix based on actual ligand
+        features = np.zeros((num_atoms, feature_dim))
+        
+        # Encode atom types
+        atom_type_map = {'C': 0, 'N': 1, 'O': 2, 'S': 3, 'P': 4, 'F': 5, 'Cl': 6, 'Br': 7, 'I': 8, 'H': 9}
+        for i, atom_type in enumerate(atom_types):
+            if i < num_atoms:
+                type_idx = atom_type_map.get(atom_type, 0)
+                features[i, type_idx] = 1.0
+        
+        # Add coordinate information
+        if num_atoms > 0:
+            features[:, 10:13] = coords / 10.0  # Normalized coordinates
+        
+        # Add distance-based features
+        if num_atoms > 1:
+            for i in range(min(num_atoms, 10)):  # Limit for efficiency
+                for j in range(i + 1, min(num_atoms, 10)):
+                    dist = np.linalg.norm(coords[i] - coords[j])
+                    if 13 + i < feature_dim:
+                        features[i, 13 + i] = dist / 10.0
+        
         return features
     
     def generate_poses_with_diffusion(self, protein_features: np.ndarray, ligand_features: np.ndarray) -> List[Pose]:
@@ -201,11 +301,13 @@ class MLEngine(DockingEngine):
         """
         self.logger.info("Generating poses with diffusion model")
         
-        # Sample poses from diffusion model
+        # Sample poses from diffusion model using actual ligand structure
         num_samples = min(self.config.docking.num_poses * 3, 50)  # Generate more poses for filtering
         pose_samples = self.diffusion_model.sample(protein_features, ligand_features, num_samples)
         
         poses = []
+        ligand_name = self.ligand['name'] if self.ligand else 'unknown'
+        
         for i, coordinates in enumerate(pose_samples):
             # Ensure coordinates are within grid box
             coordinates = self.project_to_grid_box(coordinates)
@@ -214,7 +316,7 @@ class MLEngine(DockingEngine):
                 coordinates=coordinates,
                 score=0.0,
                 energy=0.0,
-                ligand_name=self.ligand,
+                ligand_name=ligand_name,
                 pose_id=f"ml_pose_{i}",
                 confidence=0.0
             )

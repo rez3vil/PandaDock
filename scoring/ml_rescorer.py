@@ -10,7 +10,11 @@ from pathlib import Path
 import pickle
 import json
 
-from ..docking.base_engine import Pose
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from docking.base_engine import Pose
 
 
 class MLRescorer:

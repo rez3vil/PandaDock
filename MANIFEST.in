@@ -1,6 +1,0 @@
-include LICENSE
-include README.md
-include requirements.txt
-recursive-include examples *.py
-recursive-include tests *.py
-recursive-include logo/*.svg

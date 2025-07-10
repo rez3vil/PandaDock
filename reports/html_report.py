@@ -10,8 +10,12 @@ from typing import List, Dict, Any, Optional
 import logging
 from pathlib import Path
 
-from ..docking.base_engine import Pose
-from ..utils.ic50_calculator import IC50Calculator
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from docking.base_engine import Pose
+from utils.ic50_calculator import IC50Calculator
 
 
 class HTMLReportGenerator:
@@ -845,9 +849,52 @@ class HTMLReportGenerator:
         function updateEnergyChart() {
             const energyDiv = document.getElementById('energy-chart');
             const energyDist = reportData.energy_analysis.energy_distribution;
+            const energyContrib = reportData.energy_analysis.energy_contributions;
             
-            if (energyDist.poses) {
-                energyDiv.innerHTML = '<p>Energy analysis for top poses (detailed charts would require plotting library)</p>';
+            if (energyDist.poses && energyDist.poses.length > 0) {
+                let html = '<div class="energy-analysis">';
+                
+                // Energy contributions overview
+                html += '<h4>Average Energy Contributions</h4>';
+                html += '<div class="energy-breakdown">';
+                
+                Object.keys(energyContrib).forEach(component => {
+                    const data = energyContrib[component];
+                    const color = component.includes('hbond') || component.includes('hydrophobic') || component.includes('solvation') ? '#4CAF50' : 
+                                 component.includes('vdw') || component.includes('entropy') ? '#f44336' : '#2196F3';
+                    
+                    html += `
+                        <div class="energy-item" style="border-left: 4px solid ${color}">
+                            <div class="energy-label">${component.replace('_', ' ').toUpperCase()}</div>
+                            <div class="energy-value">${data.average.toFixed(2)}</div>
+                            <div class="energy-label">Range: ${data.min.toFixed(2)} to ${data.max.toFixed(2)}</div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                
+                // Energy distribution table
+                html += '<h4>Energy Distribution Across Poses</h4>';
+                html += '<div class="table-container">';
+                html += '<table>';
+                html += '<thead><tr><th>Pose</th><th>Total</th><th>vdW</th><th>H-bonds</th><th>Hydrophobic</th><th>Solvation</th><th>Entropy</th></tr></thead>';
+                html += '<tbody>';
+                
+                energyDist.poses.forEach((pose, i) => {
+                    html += `<tr>
+                        <td>${pose}</td>
+                        <td>${energyDist.total_energy[i].toFixed(2)}</td>
+                        <td>${energyDist.vdw[i].toFixed(2)}</td>
+                        <td>${energyDist.hbond[i].toFixed(2)}</td>
+                        <td>${energyDist.hydrophobic[i].toFixed(2)}</td>
+                        <td>${energyDist.solvation[i].toFixed(2)}</td>
+                        <td>${energyDist.entropy[i].toFixed(2)}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div></div>';
+                energyDiv.innerHTML = html;
             } else {
                 energyDiv.innerHTML = '<p>No energy data available</p>';
             }
@@ -856,8 +903,75 @@ class HTMLReportGenerator:
         function updatePropertiesChart() {
             const propertiesDiv = document.getElementById('properties-chart');
             const molecular = reportData.molecular_properties;
+            const binding = reportData.binding_analysis;
             
-            propertiesDiv.innerHTML = '<p>Molecular properties analysis (detailed charts would require plotting library)</p>';
+            let html = '<div class="properties-analysis">';
+            
+            // Molecular size and flexibility
+            html += '<h4>Molecular Properties Overview</h4>';
+            html += '<div class="energy-breakdown">';
+            
+            if (molecular.size_distribution && molecular.size_distribution.length > 0) {
+                const avgSize = molecular.size_distribution.reduce((a, b) => a + b, 0) / molecular.size_distribution.length;
+                const avgFlex = molecular.flexibility_distribution.reduce((a, b) => a + b, 0) / molecular.flexibility_distribution.length;
+                
+                html += `
+                    <div class="energy-item">
+                        <div class="energy-label">Average Molecular Size</div>
+                        <div class="energy-value">${avgSize.toFixed(0)} atoms</div>
+                    </div>
+                    <div class="energy-item">
+                        <div class="energy-label">Average Flexibility</div>
+                        <div class="energy-value">${avgFlex.toFixed(1)} bonds</div>
+                    </div>
+                `;
+            }
+            
+            // Shape descriptors
+            if (molecular.shape_descriptors && molecular.shape_descriptors.length > 0) {
+                const avgShape = molecular.shape_descriptors[0];
+                html += `
+                    <div class="energy-item">
+                        <div class="energy-label">Radius of Gyration</div>
+                        <div class="energy-value">${avgShape.radius_of_gyration.toFixed(2)} Å</div>
+                    </div>
+                    <div class="energy-item">
+                        <div class="energy-label">Molecular Dimensions</div>
+                        <div class="energy-value">${avgShape.length.toFixed(1)} × ${avgShape.width.toFixed(1)} × ${avgShape.height.toFixed(1)} Å</div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            
+            // Drug-likeness assessment
+            if (binding.drug_likeness_assessment && binding.drug_likeness_assessment.length > 0) {
+                html += '<h4>Drug-likeness Assessment</h4>';
+                html += '<div class="table-container">';
+                html += '<table>';
+                html += '<thead><tr><th>Pose</th><th>LE</th><th>Lipinski</th><th>Veber</th><th>TPSA</th><th>Category</th></tr></thead>';
+                html += '<tbody>';
+                
+                binding.drug_likeness_assessment.forEach((assessment, i) => {
+                    const pose = reportData.poses[i];
+                    html += `<tr>
+                        <td>${pose.pose_id}</td>
+                        <td>${assessment.ligand_efficiency.toFixed(3)}</td>
+                        <td>${assessment.lipinski_compliant ? 'Pass' : 'Fail'}</td>
+                        <td>${assessment.veber_compliant ? 'Pass' : 'Fail'}</td>
+                        <td>${assessment.tpsa_estimate}</td>
+                        <td style="color: ${assessment.drug_likeness_category === 'good' ? 'green' : 
+                                              assessment.drug_likeness_category === 'moderate' ? 'orange' : 'red'}">
+                            ${assessment.drug_likeness_category}
+                        </td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div>';
+            }
+            
+            html += '</div>';
+            propertiesDiv.innerHTML = html;
         }
         
         function showTab(tabName) {

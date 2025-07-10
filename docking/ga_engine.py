@@ -8,10 +8,15 @@ from typing import List, Dict, Any, Optional, Tuple
 import logging
 from concurrent.futures import ThreadPoolExecutor
 import random
+from tqdm import tqdm
 
-from .base_engine import DockingEngine, Pose
-from ..scoring.scoring_functions import ScoringFunctions
-from ..utils.math_utils import rotation_matrix, quaternion_to_matrix
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from docking.base_engine import DockingEngine, Pose
+from scoring.scoring_functions import ScoringFunctions
+from utils.math_utils import rotation_matrix, quaternion_to_matrix
 
 
 class Individual:
@@ -167,13 +172,20 @@ class GAEngine(DockingEngine):
         best_fitness_history = []
         stagnation_count = 0
         
-        for generation in range(self.generations):
+        # Create progress bar for GA evolution
+        generation_pbar = tqdm(range(self.generations), desc="🧬 GA Evolution", unit="gen",
+                              bar_format='{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]')
+        
+        for generation in generation_pbar:
             # Evaluate population
             self._evaluate_population(population)
             
             # Track best fitness
             best_fitness = min(individual.fitness for individual in population)
             best_fitness_history.append(best_fitness)
+            
+            # Update progress bar with current best fitness
+            generation_pbar.set_postfix({"best_score": f"{best_fitness:.3f}"})
             
             # Check for stagnation
             if len(best_fitness_history) > self.stagnation_limit:
@@ -190,6 +202,7 @@ class GAEngine(DockingEngine):
             
             # Early stopping if stagnated
             if stagnation_count > 50:
+                generation_pbar.set_description("🧬 GA Evolution (converged)")
                 self.logger.info(f"Early stopping at generation {generation} due to stagnation")
                 break
             
@@ -205,6 +218,8 @@ class GAEngine(DockingEngine):
             
             # Replacement
             population = self._replacement(population, offspring)
+        
+        generation_pbar.close()
         
         # Return best individuals
         population.sort(key=lambda x: x.fitness)

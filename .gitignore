@@ -89,24 +89,6 @@ temp_pandadock/
 *.log
 pandadock_*.log
 
-# Test results and temporary files
-tests/new*/
-tests/results*/
-test_results/
-*.pdb
-*.mol2
-*.sdf
-!tests/ligand.sdf
-!tests/protein.pdb
-
-# Debug and analysis scripts output
-debug_scripts/output/
-*.png
-*.jpg
-*.jpeg
-*.svg
-!logo/*.png
-!logo/*.svg
 
 # Temporary files
 temp_*

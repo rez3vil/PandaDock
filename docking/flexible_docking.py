@@ -7,9 +7,13 @@ from typing import List, Dict, Any, Optional, Tuple
 import logging
 from scipy.optimize import minimize
 
-from .base_engine import Pose
-from ..utils.rotamer_lib import RotamerLibrary
-from ..utils.math_utils import rotation_matrix, distance_matrix
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from docking.base_engine import Pose
+from utils.rotamer_lib import RotamerLibrary
+from utils.math_utils import rotation_matrix, distance_matrix
 
 
 class FlexibleResidue:

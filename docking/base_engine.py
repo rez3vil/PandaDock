@@ -181,19 +181,108 @@ class DockingEngine(ABC):
     def prepare_ligand(self, ligand_file: str):
         """Prepare ligand for docking"""
         self.logger.info(f"Preparing ligand: {ligand_file}")
-        # Implementation would load and prepare ligand structure
-        # This is a placeholder for the actual implementation
-        pass
+        
+        # Parse ligand structure from file
+        if ligand_file.endswith('.pdb'):
+            self.ligand = self._parse_pdb_ligand(ligand_file)
+        elif ligand_file.endswith('.sdf') or ligand_file.endswith('.mol'):
+            self.ligand = self._parse_sdf_ligand(ligand_file)
+        else:
+            raise ValueError(f"Unsupported ligand file format: {ligand_file}")
+        
+        self.logger.info(f"Loaded ligand with {len(self.ligand['coordinates'])} atoms")
+    
+    def _parse_pdb_ligand(self, pdb_file: str) -> Dict[str, Any]:
+        """Parse ligand coordinates from PDB file"""
+        coordinates = []
+        atom_types = []
+        
+        with open(pdb_file, 'r') as f:
+            for line in f:
+                if line.startswith('HETATM') or line.startswith('ATOM'):
+                    # Extract coordinates and atom type
+                    x = float(line[30:38].strip())
+                    y = float(line[38:46].strip())
+                    z = float(line[46:54].strip())
+                    atom_type = line[76:78].strip() or line[12:16].strip()[0]
+                    
+                    coordinates.append([x, y, z])
+                    atom_types.append(atom_type)
+        
+        return {
+            'coordinates': np.array(coordinates),
+            'atom_types': atom_types,
+            'name': pdb_file.split('/')[-1].replace('.pdb', '')
+        }
+    
+    def _parse_sdf_ligand(self, sdf_file: str) -> Dict[str, Any]:
+        """Parse ligand coordinates from SDF file"""
+        coordinates = []
+        atom_types = []
+        
+        with open(sdf_file, 'r') as f:
+            lines = f.readlines()
+        
+        # Find the molecule block
+        for i, line in enumerate(lines):
+            if 'V2000' in line or 'V3000' in line:
+                # Parse number of atoms
+                num_atoms = int(line[:3].strip())
+                
+                # Parse atom coordinates and types
+                for j in range(i + 1, i + 1 + num_atoms):
+                    if j < len(lines):
+                        parts = lines[j].split()
+                        if len(parts) >= 4:
+                            x, y, z = float(parts[0]), float(parts[1]), float(parts[2])
+                            atom_type = parts[3]
+                            
+                            coordinates.append([x, y, z])
+                            atom_types.append(atom_type)
+                break
+        
+        if not coordinates:
+            raise ValueError(f"No valid coordinates found in SDF file: {sdf_file}")
+        
+        return {
+            'coordinates': np.array(coordinates),
+            'atom_types': atom_types,
+            'name': sdf_file.split('/')[-1].replace('.sdf', '').replace('.mol', '')
+        }
     
     def generate_conformers(self, num_conformers: int = 100) -> List[np.ndarray]:
         """Generate ligand conformers"""
+        if not self.ligand:
+            raise ValueError("Ligand must be prepared before generating conformers")
+        
         self.logger.info(f"Generating {num_conformers} conformers")
-        # Placeholder implementation
         conformers = []
-        for i in range(num_conformers):
-            # Generate random conformer (placeholder)
-            conformer = np.random.randn(10, 3)  # 10 atoms, 3D coordinates
-            conformers.append(conformer)
+        base_coords = self.ligand['coordinates'].copy()
+        
+        # First conformer is the original structure
+        conformers.append(base_coords)
+        
+        # Generate additional conformers with small perturbations
+        for i in range(1, num_conformers):
+            # Apply small random rotations and bond twists
+            perturbed_coords = base_coords.copy()
+            
+            # Add small random noise to simulate conformational changes
+            noise = np.random.normal(0, 0.3, perturbed_coords.shape)
+            perturbed_coords += noise
+            
+            # Apply a random overall rotation
+            center = np.mean(perturbed_coords, axis=0)
+            centered_coords = perturbed_coords - center
+            
+            # Random rotation matrix
+            angles = np.random.uniform(0, 2*np.pi, 3)
+            from utils.math_utils import rotation_matrix
+            rot_matrix = rotation_matrix(angles)
+            rotated_coords = np.dot(centered_coords, rot_matrix.T) + center
+            
+            conformers.append(rotated_coords)
+        
         return conformers
     
     def optimize_pose(self, pose: Pose) -> Pose:
@@ -257,11 +346,121 @@ class DockingEngine(ABC):
         return True
     
     def save_poses(self, poses: List[Pose], output_dir: str):
-        """Save poses to output directory"""
+        """Save poses to output directory in multiple formats"""
+        import os
+        
         self.logger.info(f"Saving {len(poses)} poses to {output_dir}")
-        # Implementation would save poses in various formats
-        # This is a placeholder for the actual implementation
-        pass
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Save individual poses as PDB files
+        for i, pose in enumerate(poses):
+            # Save as PDB
+            pdb_filename = os.path.join(output_dir, f"pose_{i+1}_{pose.pose_id}.pdb")
+            self._save_pose_as_pdb(pose, pdb_filename)
+            
+            # Save as SDF
+            sdf_filename = os.path.join(output_dir, f"pose_{i+1}_{pose.pose_id}.sdf")
+            self._save_pose_as_sdf(pose, sdf_filename)
+        
+        # Save summary file with all poses and scores
+        summary_filename = os.path.join(output_dir, "poses_summary.csv")
+        self._save_poses_summary(poses, summary_filename)
+        
+        # Save multi-SDF file with all poses
+        multi_sdf_filename = os.path.join(output_dir, "all_poses.sdf")
+        self._save_poses_as_multi_sdf(poses, multi_sdf_filename)
+    
+    def _save_pose_as_pdb(self, pose: Pose, filename: str):
+        """Save a single pose as PDB file"""
+        with open(filename, 'w') as f:
+            f.write("REMARK PandaDock generated pose\n")
+            f.write(f"REMARK Pose ID: {pose.pose_id}\n")
+            f.write(f"REMARK Score: {pose.score:.3f}\n")
+            f.write(f"REMARK Energy: {pose.energy:.2f} kcal/mol\n")
+            f.write(f"REMARK Confidence: {pose.confidence:.3f}\n")
+            f.write(f"REMARK Binding Affinity: {pose.get_binding_affinity():.2f} kcal/mol\n")
+            f.write(f"REMARK IC50: {pose.get_ic50():.1f} nM\n")
+            
+            # Get atom types from ligand if available
+            atom_types = []
+            if hasattr(self, 'ligand') and self.ligand and 'atom_types' in self.ligand:
+                atom_types = self.ligand['atom_types']
+            
+            # Write coordinates with proper atom types
+            for i, coord in enumerate(pose.coordinates):
+                # Use actual atom type if available, otherwise default to carbon
+                atom_type = atom_types[i] if i < len(atom_types) else 'C'
+                atom_symbol = atom_type[:1]  # First character for element symbol
+                
+                f.write(f"HETATM{i+1:5d}  {atom_symbol:<3s} LIG A   1    "
+                       f"{coord[0]:8.3f}{coord[1]:8.3f}{coord[2]:8.3f}"
+                       f"  1.00 20.00           {atom_symbol:<2s}\n")
+            f.write("END\n")
+    
+    def _save_pose_as_sdf(self, pose: Pose, filename: str):
+        """Save a single pose as SDF file"""
+        with open(filename, 'w') as f:
+            f.write(f"{pose.pose_id}\n")
+            f.write("  PandaDock generated structure\n")
+            f.write("\n")
+            
+            # Molecule block
+            num_atoms = len(pose.coordinates)
+            f.write(f"{num_atoms:3d}  0  0  0  0  0  0  0  0999 V2000\n")
+            
+            # Get atom types from ligand if available
+            atom_types = []
+            if hasattr(self, 'ligand') and self.ligand and 'atom_types' in self.ligand:
+                atom_types = self.ligand['atom_types']
+            
+            # Atom block with proper atom types
+            for i, coord in enumerate(pose.coordinates):
+                # Use actual atom type if available, otherwise default to carbon
+                atom_type = atom_types[i] if i < len(atom_types) else 'C'
+                f.write(f"{coord[0]:10.4f}{coord[1]:10.4f}{coord[2]:10.4f} {atom_type:<3s} 0  0  0  0  0  0  0  0  0  0  0  0\n")
+            
+            # Properties
+            f.write("M  END\n")
+            f.write(f">  <Score>\n{pose.score:.6f}\n\n")
+            f.write(f">  <Energy>\n{pose.energy:.6f}\n\n")
+            f.write(f">  <Confidence>\n{pose.confidence:.6f}\n\n")
+            f.write(f">  <Binding_Affinity>\n{pose.get_binding_affinity():.6f}\n\n")
+            f.write(f">  <IC50_nM>\n{pose.get_ic50():.1f}\n\n")
+            f.write("$$$$\n")
+    
+    def _save_poses_summary(self, poses: List[Pose], filename: str):
+        """Save poses summary as CSV file"""
+        with open(filename, 'w') as f:
+            f.write("Rank,Pose_ID,Score,Energy,Confidence,Binding_Affinity,IC50_nM,Ligand_Efficiency,Clash_Score\n")
+            for i, pose in enumerate(poses):
+                f.write(f"{i+1},{pose.pose_id},{pose.score:.6f},{pose.energy:.6f},"
+                       f"{pose.confidence:.6f},{pose.get_binding_affinity():.6f},"
+                       f"{pose.get_ic50():.1f},{pose.ligand_efficiency:.6f},{pose.clash_score:.6f}\n")
+    
+    def _save_poses_as_multi_sdf(self, poses: List[Pose], filename: str):
+        """Save all poses in a single multi-structure SDF file"""
+        with open(filename, 'w') as f:
+            for pose in poses:
+                f.write(f"{pose.pose_id}\n")
+                f.write("  PandaDock generated structure\n")
+                f.write("\n")
+                
+                # Molecule block
+                num_atoms = len(pose.coordinates)
+                f.write(f"{num_atoms:3d}  0  0  0  0  0  0  0  0999 V2000\n")
+                
+                # Atom block
+                for coord in pose.coordinates:
+                    f.write(f"{coord[0]:10.4f}{coord[1]:10.4f}{coord[2]:10.4f} C   0  0  0  0  0  0  0  0  0  0  0  0\n")
+                
+                # Properties
+                f.write("M  END\n")
+                f.write(f">  <Score>\n{pose.score:.6f}\n\n")
+                f.write(f">  <Energy>\n{pose.energy:.6f}\n\n")
+                f.write(f">  <Confidence>\n{pose.confidence:.6f}\n\n")
+                f.write(f">  <Binding_Affinity>\n{pose.get_binding_affinity():.6f}\n\n")
+                f.write(f">  <IC50_nM>\n{pose.get_ic50():.1f}\n\n")
+                f.write("$$$$\n")
     
     def get_engine_info(self) -> Dict[str, Any]:
         """Get information about the docking engine"""

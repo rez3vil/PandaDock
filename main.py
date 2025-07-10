@@ -206,13 +206,29 @@ def run_docking(config: PandaDockConfig, ligand_file: str = None):
     try:
         # Run docking
         logger.info(f"Starting docking: {config.io.protein_file} + {ligand_path}")
+        print(f"\n🚀 PandaDock {config.docking.mode.upper()} Mode")
+        print(f"📁 Protein: {config.io.protein_file}")
+        print(f"💊 Ligand: {ligand_path}")
+        print(f"🎯 Target poses: {config.docking.num_poses}")
+        print("─" * 60)
         results = engine.dock(config.io.protein_file, ligand_path)
+        print("─" * 60)
+        
+        # Save poses if requested
+        if config.io.save_poses:
+            poses_dir = os.path.join(config.io.output_dir, "poses")
+            print(f"💾 Saving {len(results)} poses to {poses_dir}...")
+            logger.info(f"Saving poses to {poses_dir}")
+            engine.save_poses(results, poses_dir)
         
         # Generate report
+        print("📊 Generating interactive HTML report...")
         logger.info("Generating report")
         report_generator = HTMLReportGenerator(config)
         report_generator.generate_report(results)
         
+        print(f"✅ Docking completed successfully!")
+        print(f"📂 Results saved to: {config.io.output_dir}")
         logger.info(f"Docking completed successfully. Results saved to {config.io.output_dir}")
         return results
         
