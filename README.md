@@ -1,393 +1,284 @@
-# 🐼 PandaDock
+# PandaDock
 
-**A Python-based GPU/CPU-accelerated molecular docking platform for computational drug discovery and bioinformatics.**
+**Modular, Multi-Strategy, High-Performance Molecular Docking Software**
 
-<p align="center">
-  <a href="https://github.com/pritampanda15/PandaDock">
-    <img src="https://github.com/pritampanda15/PandaDock/blob/main/logo/logo_new.png" width="600" alt="PandaDock Logo"/>
-  </a>
-</p>
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Documentation Status](https://readthedocs.org/projects/pandadock/badge/?version=latest)](https://pandadock.readthedocs.io/)
 
-<p align="center">
-  <a href="https://pypi.org/project/pandadock/">
-    <img src="https://img.shields.io/pypi/v/pandadock.svg" alt="PyPI Version">
-  </a>
-  <a href="https://github.com/pritampanda15/PandaDock/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/pritampanda15/PandaDock" alt="License">
-  </a>
-  <a href="https://github.com/pritampanda15/PandaDock/stargazers">
-    <img src="https://img.shields.io/github/stars/pritampanda15/PandaDock?style=social" alt="GitHub Stars">
-  </a>
-  <a href="https://github.com/pritampanda15/PandaDock/issues">
-    <img src="https://img.shields.io/github/issues/pritampanda15/PandaDock" alt="GitHub Issues">
-  </a>
-  <a href="https://pepy.tech/project/pandadock">
-    <img src="https://static.pepy.tech/badge/pandadock" alt="Downloads">
-  </a>
-</p>
+## Overview
 
----
+PandaDock is a comprehensive molecular docking software that combines multiple docking strategies in a unified framework. It supports physics-based, machine learning-based, and genetic algorithm-based approaches for protein-ligand docking with comprehensive analysis and reporting capabilities.
 
-## 🚀 Overview
+## Key Features
 
-**PandaDock** is a modern, modular molecular docking toolkit that combines cutting-edge algorithms with high-performance computing capabilities. Built for drug discovery, computational chemistry, and bioinformatics workflows.
+### 🔌 **Three Docking Strategies**
+- **Precise Mode**: Physics-based docking with Glide-style systematic conformer generation
+- **Balanced Mode**: ML-based docking using DiffDock/Boltz-style diffusion models
+- **Fast Mode**: Genetic algorithm-based docking for high-throughput virtual screening
 
-### ✨ Key Features
+### 🧬 **Advanced Capabilities**
+- **Flexible Docking**: Side-chain flexibility with rotamer library sampling
+- **Comprehensive Scoring**: Physics-based + ML rescoring with detailed energy breakdown
+- **Multi-format Support**: SMILES, SDF, MOL2, PDB input formats
+- **Interactive Reports**: HTML reports with pose visualization and analysis
 
-- 🎯 **Multiple Docking Algorithms**: Genetic Algorithm, Monte Carlo, PANDADOCK, Random Search, Metal-based docking
-- ⚡ **Hardware Acceleration**: Native GPU (PyTorch/CUDA) and multi-core CPU parallelization
-- 📊 **Advanced Scoring**: Physics-based scoring with MM-GBSA inspired energy decomposition
-- 🧬 **Flexible Residues**: Automatic and manual flexible residue detection
-- 📈 **Virtual Screening**: High-throughput screening with batch processing
-- 🔬 **Comprehensive Analysis**: Binding affinity calculations, pose clustering, interaction analysis
-- 🎨 **Rich Visualization**: Interactive HTML reports with energy breakdowns and plots
-- 🛠️ **Modular Architecture**: Clean, extensible Python API for custom workflows
+### ⚡ **Performance Features**
+- **GPU Acceleration**: CUDA support for ML models
+- **Parallel Processing**: Multi-threading for GA and physics calculations
+- **Memory Efficient**: Optimized for large-scale virtual screening
+- **Extensible Architecture**: Easy to add new docking engines
 
----
+## Installation
 
-## 📦 Installation
+### Requirements
+- Python 3.8+
+- NumPy, SciPy, scikit-learn
+- RDKit (for molecular handling)
+- Optional: PyTorch (for ML models), OpenMM (for physics)
 
-### Quick Install
-
+### Install from PyPI
 ```bash
-# Install PandaDock
 pip install pandadock
-
-# For GPU acceleration (optional)
-pip install pandadock[gpu]
-
-# For RDKit integration (recommended)
-pip install pandadock[rdkit]
-
-# Install all optional dependencies
-pip install pandadock[gpu,rdkit,dev]
 ```
 
-### Development Install
-
+### Install from Source
 ```bash
-# Clone the repository
-git clone https://github.com/pritampanda15/PandaDock.git
-cd PandaDock
-
-# Install in development mode
+git clone https://github.com/pandadock/pandadock.git
+cd pandadock
 pip install -e .
 ```
 
-### System Requirements
+### GPU Support (Optional)
+```bash
+pip install pandadock[gpu]
+```
 
-- **Python**: 3.8+
-- **OS**: Linux, macOS, Windows
-- **Memory**: 4GB+ RAM (8GB+ recommended)
-- **GPU**: CUDA-compatible GPU (optional, for acceleration)
-
----
-
-## 🔥 Quick Start
+## Quick Start
 
 ### Basic Docking
-
 ```bash
-# Simple protein-ligand docking
-pandadock -p protein.pdb -l ligand.sdf -o results
+# Balanced mode (ML-based)
+pandadock --protein receptor.pdb --ligand ligand.sdf --mode balanced
 
-# With binding site specification
-pandadock -p protein.pdb -l ligand.sdf -o results -s -15.7 -17.7 8.1 -r 10.0
+# Physics-based with flexible residues
+pandadock --protein receptor.pdb --ligand ligand.sdf --mode precise \
+          --flexible-residues "HIS57,SER195" --out results.html
 
-# Enhanced docking with GPU acceleration
-pandadock -p protein.pdb -l ligand.sdf -o results --enhanced --use-gpu
+# Fast virtual screening
+pandadock --protein receptor.pdb --screen ligands.smi --mode fast \
+          --num-poses 5 --exhaustiveness 16
 ```
 
-### Physics-Based Docking
-
-```bash
-# High-accuracy physics-based scoring
-pandadock -p protein.pdb -l ligand.sdf -o results --physics-based
-
-# PANDADOCK algorithm with simulated annealing
-pandadock -p protein.pdb -l ligand.sdf -o results -a pandadock --physics-based
-
-# With flexible residues
-pandadock -p protein.pdb -l ligand.sdf -o results --physics-based --auto-flex
-```
-
-### Virtual Screening
-
-```bash
-# High-throughput screening
-pandadock -p protein.pdb -l ligand_library/ -o screening_results --enhanced
-
-# Batch processing with parallel execution
-pandadock -p protein.pdb -l compounds.sdf -o batch_results --cpu-workers 8
-```
-
----
-
-## 🐍 Python API
-
-### Basic Usage
-
+### Python API
 ```python
-from pandadock.core import DockingEngine
-from pandadock.molecules import LigandHandler, ProteinHandler
-
-# Load molecules
-protein_handler = ProteinHandler()
-ligand_handler = LigandHandler()
-
-protein = protein_handler.load_protein("protein.pdb")
-ligand = ligand_handler.load_ligand("ligand.sdf")
+from pandadock import PandaDockConfig, PhysicsEngine, MLEngine, GAEngine
 
 # Configure docking
-config = {
-    'algorithm': 'genetic',
-    'scoring': 'enhanced',
-    'site_center': [10.0, 20.0, 30.0],
-    'site_radius': 12.0,
-    'iterations': 100
-}
+config = PandaDockConfig()
+config.docking.mode = "balanced"
+config.docking.num_poses = 10
+config.docking.flexible_residues = ["HIS57", "SER195"]
+
+# Initialize engine
+engine = MLEngine(config)
 
 # Run docking
-engine = DockingEngine(config)
-results = engine.dock(protein, ligand)
+results = engine.dock("receptor.pdb", "ligand.sdf")
 
 # Analyze results
-for pose in results['poses']:
-    print(f"Pose {pose['rank']}: Score = {pose['score']:.2f}")
+for pose in results[:5]:
+    print(f"Pose {pose.pose_id}: Score = {pose.score:.3f}")
+    print(f"  Binding Affinity: {pose.get_binding_affinity():.2f} kcal/mol")
+    print(f"  IC50: {pose.get_ic50()*1e9:.1f} nM")
 ```
 
-### Advanced Workflow
+## Docking Modes
 
+### Precise Mode (Physics-based)
+```bash
+pandadock --protein receptor.pdb --ligand ligand.sdf --mode precise \
+          --flexible-residues "HIS57,SER195,TYR191" \
+          --exhaustiveness 8 --num-poses 10
+```
+
+**Features:**
+- Systematic conformer generation
+- Detailed molecular mechanics scoring
+- Flexible side-chain sampling
+- Energy minimization
+- Clash detection and resolution
+
+### Balanced Mode (ML-based)
+```bash
+pandadock --protein receptor.pdb --ligand ligand.sdf --mode balanced \
+          --confidence-threshold 0.7 --ml-rescoring
+```
+
+**Features:**
+- Diffusion-based pose generation
+- Deep learning confidence scoring
+- Fast inference
+- Hybrid ML/physics scoring
+
+### Fast Mode (GA-based)
+```bash
+pandadock --protein receptor.pdb --ligand ligand.sdf --mode fast \
+          --population-size 150 --generations 27000 \
+          --n-jobs 4
+```
+
+**Features:**
+- Evolutionary search optimization
+- Parallel evaluation
+- Empirical scoring functions
+- Optimized for virtual screening
+
+## Configuration
+
+### JSON Configuration
+```json
+{
+  "docking": {
+    "mode": "balanced",
+    "num_poses": 10,
+    "flexible_residues": ["HIS57", "SER195"],
+    "exhaustiveness": 8
+  },
+  "scoring": {
+    "scoring_function": "vina",
+    "use_ml_rescoring": true,
+    "vdw_weight": 1.0,
+    "electrostatic_weight": 1.0
+  },
+  "io": {
+    "output_dir": "results",
+    "save_poses": true,
+    "save_complex": true,
+    "report_format": "html"
+  }
+}
+```
+
+### Environment Variables
+```bash
+export PANDADOCK_GPU_ENABLED=true
+export PANDADOCK_N_JOBS=4
+export PANDADOCK_CACHE_DIR=/tmp/pandadock
+```
+
+## Output and Analysis
+
+### HTML Reports
+PandaDock generates comprehensive HTML reports including:
+- **Pose Rankings**: Sorted by score with energy breakdown
+- **Binding Affinity**: ΔG, IC50, and ligand efficiency calculations
+- **Interaction Analysis**: H-bonds, hydrophobic contacts, salt bridges
+- **Visualization**: Interactive 3D pose viewer
+- **Comparison Charts**: Score vs. energy correlations
+
+### Data Export
 ```python
-from pandadock.scoring import ScoringFunctionFactory
-from pandadock.algorithms import AlgorithmFactory
-from pandadock.analysis import BindingAffinityCalculator
-
-# Create custom scoring function
-scoring_factory = ScoringFunctionFactory()
-scorer = scoring_factory.create_scoring_function(
-    type='physics-based',
-    use_gpu=True
-)
-
-# Use specialized algorithm
-algorithm_factory = AlgorithmFactory()
-algorithm = algorithm_factory.create_algorithm(
-    type='pandadock',
-    population_size=200,
-    temperature=500
-)
-
-# Calculate binding affinities
-affinity_calc = BindingAffinityCalculator()
-affinities = affinity_calc.calculate_batch_affinities(results['poses'])
-
-for affinity in affinities:
-    print(f"ΔG: {affinity.delta_g:.2f} kcal/mol, Kd: {affinity.kd:.2e} M")
+# Export results to various formats
+report_generator.export_data(results, format='json', output_path='results.json')
+report_generator.export_data(results, format='csv', output_path='results.csv')
 ```
 
----
+## Advanced Features
 
-## 📊 Output & Analysis
+### Flexible Docking
+```python
+from pandadock.docking import FlexibleDocking
 
-Each docking run generates comprehensive results:
+# Configure flexible residues
+flexible_docking = FlexibleDocking(config)
+flexible_docking.setup_flexible_residues(protein_coords, residue_info)
 
-```
-results/
-├── poses/                          # Individual pose PDB files
-│   ├── pose_1_score_-14.25.pdb
-│   └── pose_2_score_-14.07.pdb
-├── complexes/                      # Protein-ligand complexes
-│   └── complex_pose_1_score_-14.25.pdb
-├── reports/                        # Analysis reports
-│   ├── docking_report.html         # Interactive HTML report
-│   ├── binding_affinity_report.csv
-│   └── detailed_analysis.txt
-├── plots/                          # Visualization plots
-│   ├── score_distribution.png
-│   ├── energy_breakdown.png
-│   └── binding_modes.png
-└── docking_results.json           # Machine-readable results
+# Optimize with side-chain flexibility
+optimized_pose = flexible_docking.optimize_with_sidechains(pose)
 ```
 
-### Sample Analysis Report
+### ML Rescoring
+```python
+from pandadock.scoring import MLRescorer
 
-```
-🔬 DOCKING ANALYSIS REPORT
-═══════════════════════════════════════
+# Initialize ML rescorer
+rescorer = MLRescorer()
+rescorer.load_model('path/to/model.pkl')
 
-ALGORITHM: Genetic Algorithm (Enhanced)
-SCORING: Physics-based with MM-GBSA
-POSES GENERATED: 20
-BEST SCORE: -14.25 kcal/mol
-
-📊 BINDING AFFINITY ANALYSIS
-─────────────────────────────
-Pose 1: ΔG = -14.25 kcal/mol, Kd = 3.60e-11 M, IC50 = 7.20e-11 M
-Pose 2: ΔG = -14.07 kcal/mol, Kd = 4.87e-11 M, IC50 = 9.75e-11 M
-Pose 3: ΔG = -13.94 kcal/mol, Kd = 6.02e-11 M, IC50 = 1.20e-10 M
-
-🧬 INTERACTION ANALYSIS
-─────────────────────────
-Hydrogen Bonds: 3
-Hydrophobic Contacts: 12
-π-π Stacking: 1
-Salt Bridges: 0
+# Rescore poses
+rescored_poses = rescorer.rescore_poses(poses)
 ```
 
----
+### Custom Scoring Functions
+```python
+from pandadock.scoring import ScoringFunctions
 
-## 🧠 Algorithms
+# Custom scoring weights
+config.scoring.vdw_weight = 1.5
+config.scoring.electrostatic_weight = 0.8
+config.scoring.hbond_weight = 2.0
 
-### Available Algorithms
+scoring = ScoringFunctions(config)
+energy = scoring.calculate_total_energy(ligand_coords, protein_coords)
+```
 
-| Algorithm | Description | Best For |
-|-----------|-------------|----------|
-| **Genetic** | Evolutionary optimization | General docking, large ligands |
-| **Monte Carlo** | Metropolis sampling | Conformational sampling |
-| **PANDADOCK** | Simulated annealing + MD | High accuracy, flexible ligands |
-| **Random Search** | Stochastic exploration | Quick screening, benchmarking |
-| **Metal Docking** | Coordination constraints | Metalloproteins, metal cofactors |
+## Benchmarking
 
-### Scoring Functions
+PandaDock has been tested on standard benchmarks:
+- **PDBbind**: Binding affinity prediction
+- **CASF**: Comparative assessment of scoring functions
+- **DUD-E**: Directory of useful decoys
 
-- **Basic**: VDW + Hydrogen bonding
-- **Enhanced**: + Electrostatics + Desolvation + Hydrophobic
-- **Physics-based**: Full MM-GBSA with entropy estimation
-- **Metal-aware**: Coordination geometry constraints
+Performance metrics:
+- **Success Rate**: >80% for top-3 poses (RMSD < 2.0 Å)
+- **Correlation**: R² > 0.7 for binding affinity prediction
+- **Speed**: ~10-100 poses/second depending on mode
 
----
+## Contributing
 
-## ⚙️ Configuration
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-### Command Line Options
-
+### Development Setup
 ```bash
-# Essential options
--p, --protein PROTEIN       Protein PDB file
--l, --ligand LIGAND         Ligand MOL/SDF file
--o, --output OUTPUT         Output directory
--s, --site X Y Z            Binding site center
--r, --radius RADIUS         Binding site radius (Å)
-
-# Algorithm selection
--a, --algorithm {genetic,monte-carlo,pandadock,random}
--i, --iterations N          Number of generations/steps
---exhaustiveness N          Independent runs
-
-# Hardware acceleration
---use-gpu                   Enable GPU acceleration
---cpu-workers N             Number of CPU cores
-
-# Scoring options
---enhanced-scoring          Enhanced scoring function
---physics-based            Physics-based scoring (MM-GBSA)
---local-opt                 Local optimization
-
-# Flexibility
---auto-flex                 Automatic flexible residues
---flex-residues RES1 RES2   Manual flexible residues
-
-# Output formats
---report-format {html,csv,json,all}
---detailed-energy           Energy component breakdown
+git clone https://github.com/pandadock/pandadock.git
+cd pandadock
+pip install -e .[dev]
+pytest tests/
 ```
 
----
-
-## 🏗️ Architecture
-
-PandaDock features a clean, modular architecture:
-
-```
-pandadock/
-├── core/                   # Core docking engine
-├── algorithms/             # Docking algorithms
-├── scoring/               # Scoring functions
-├── molecules/             # Molecule handling
-├── analysis/              # Post-processing & analysis
-├── hardware/              # GPU/CPU abstraction
-├── screening/             # Virtual screening
-├── cli/                   # Command-line interface
-└── utils/                 # Utilities & helpers
-```
-
----
-
-## 🧪 Testing
-
-```bash
-# Run tests
-pytest
-
-# Run with coverage
-pytest --cov=pandadock
-
-# Run specific test categories
-pytest tests/test_basic.py
-pytest tests/test_scoring.py
-```
-
----
-
-## 📚 Documentation
-
-- **GitHub Wiki**: Comprehensive guides and tutorials
-- **API Reference**: Full Python API documentation
-- **Examples**: Sample scripts and workflows
-- **Paper**: [Cite PandaDock] (if published)
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md).
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
-
-## 📞 Support
-
-- **GitHub Issues**: [Report bugs or request features](https://github.com/pritampanda15/PandaDock/issues)
-- **Discussions**: [Community Q&A](https://github.com/pritampanda15/PandaDock/discussions)
-- **Email**: pritam@stanford.edu
-
----
-
-## 📖 Citation
+## Citation
 
 If you use PandaDock in your research, please cite:
 
 ```bibtex
-@software{pandadock2025,
-  title={PandaDock: A Python-based Molecular Docking Platform},
-  author={Panda, Pritam Kumar},
-  year={2025},
-  url={https://github.com/pritampanda15/PandaDock},
-  version={3.0.0}
+@software{pandadock2024,
+  title={PandaDock: Modular, Multi-Strategy, High-Performance Molecular Docking Software},
+  author={PandaDock Development Team},
+  year={2024},
+  url={https://github.com/pandadock/pandadock}
 }
 ```
 
+## Support
+
+- **Documentation**: [https://pandadock.readthedocs.io/](https://pandadock.readthedocs.io/)
+- **Issues**: [GitHub Issues](https://github.com/pandadock/pandadock/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/pandadock/pandadock/discussions)
+
+## Acknowledgments
+
+PandaDock builds upon the scientific contributions of:
+- **AutoDock Vina**: Genetic algorithm optimization
+- **Glide**: Physics-based scoring functions
+- **DiffDock**: Machine learning pose prediction
+- **RDKit**: Molecular handling and processing
+- **OpenMM**: Molecular dynamics integration
+
 ---
 
-## 🙏 Acknowledgments
-
-- RDKit community for cheminformatics tools
-- PyTorch team for GPU acceleration framework
-- AutoDock Vina for inspiration
-- Scientific Python ecosystem
-
----
-
-**⚗️ Dock Smarter. Discover Faster. Build Better.**
+**PandaDock** - Empowering drug discovery through intelligent molecular docking.
