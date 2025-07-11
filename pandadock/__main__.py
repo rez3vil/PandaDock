@@ -78,7 +78,7 @@ Examples:
     # Docking mode
     parser.add_argument('--mode', '-m', type=str, default='balanced',
                        choices=['precise', 'balanced', 'fast'],
-                       help='Docking mode: precise (physics-based), balanced (ML-based), fast (GA-based)')
+                       help='Docking mode: precise (PandaPhysics), balanced (PandaML), fast (PandaCore)')
     
     # Grid box parameters
     parser.add_argument('--center', nargs=3, type=float, metavar=('X', 'Y', 'Z'),
@@ -212,7 +212,7 @@ def run_docking(config: PandaDockConfig, ligand_file: str = None):
     try:
         # Run docking
         logger.info(f"Starting docking: {config.io.protein_file} + {ligand_path}")
-        print(f"\n🚀 PandaDock {config.docking.mode.upper()} Mode")
+        print(f"\n🐼 PandaDock {config.docking.mode.upper()} Mode")
         print(f"📁 Protein: {config.io.protein_file}")
         print(f"💊 Ligand: {ligand_path}")
         print(f"🎯 Target poses: {config.docking.num_poses}")

@@ -64,7 +64,7 @@ class IOConfig:
 @dataclass
 class ScoringConfig:
     """Configuration for scoring functions"""
-    scoring_function: str = "vina"  # vina, glide, ml
+    scoring_function: str = "pandacore"  # pandacore, pandaml, pandaphysics
     include_solvation: bool = True
     include_entropy: bool = True
     use_ml_rescoring: bool = False
@@ -163,7 +163,7 @@ class PandaDockConfig:
             errors.append(f"Ligand file not found: {self.io.ligand_file}")
         
         # Validate scoring function
-        if self.scoring.scoring_function not in ['vina', 'glide', 'ml']:
+        if self.scoring.scoring_function not in ['pandacore', 'pandaml', 'pandaphysics']:
             errors.append(f"Invalid scoring function: {self.scoring.scoring_function}")
         
         # Validate numeric parameters
