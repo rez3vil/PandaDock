@@ -98,14 +98,29 @@ PandaDock is a comprehensive molecular docking software that combines multiple d
 ### Metal vs Non-Metal Specialization:
 
 <p align="center">
-  <img src="metal_analysis_results/metal_master_figure.png" alt="Metal vs Non-Metal Analysis" width="800"/>
+  <img src="benchmarks/metal_full_benchmark/metal_master_figure.png" alt="Comprehensive Metal vs Non-Metal Analysis" width="900"/>
 </p>
 
-**Key Findings:**
-- **93 metal complexes** (32.6%) vs **192 non-metal complexes** (67.4%) analyzed
-- **PandaPhysics** excels at metal coordination chemistry
-- **PandaML** maintains consistent performance across both complex types
-- Metal complexes are 32% more challenging computationally
+**Comprehensive Metal Analysis (Full PDBbind Dataset):**
+- **1,982 metal complexes** (37.3%) vs **3,334 non-metal complexes** (62.7%) analyzed
+- **PandaPhysics excels with metals**: 56.6% success rate vs 49.6% for non-metals
+- **PandaML maintains balance**: 47.8% vs 51.2% success rates respectively
+- **Metal complexity confirmed**: Higher computational demands with specialized coordination chemistry
+
+#### Metal Distribution Analysis:
+<p align="center">
+  <img src="benchmarks/metal_full_benchmark/metal_type_analysis.png" alt="Metal Type Distribution" width="700"/>
+</p>
+
+#### Metal vs Non-Metal Performance:
+<p align="center">
+  <img src="benchmarks/metal_full_benchmark/metal_vs_nonmetal_performance.png" alt="Metal vs Non-Metal Performance" width="700"/>
+</p>
+
+#### Metal Coordination Analysis:
+<p align="center">
+  <img src="benchmarks/metal_full_benchmark/metal_coordination_analysis.png" alt="Metal Coordination Analysis" width="700"/>
+</p>
 
 ## ✨ Key Features
 
@@ -381,11 +396,20 @@ rescored_poses = rescorer.rescore_poses(poses)
 #### Ligand Complexity Analysis
 ![Ligand Complexity](benchmarks/comprehesive_benchmark/ligand_complexity_analysis.png)
 
-#### Metal vs Non-Metal Performance
-![Metal Performance](metal_analysis_results/metal_vs_nonmetal_performance.png)
+#### Metal vs Non-Metal Performance (Full Dataset)
+![Metal Performance](benchmarks/metal_full_benchmark/metal_vs_nonmetal_performance.png)
 
-#### Algorithm Specialization
-![Engine Specialization](metal_analysis_results/engine_metal_specialization.png)
+#### Metal Type Distribution
+![Metal Types](benchmarks/metal_full_benchmark/metal_type_analysis.png)
+
+#### Metal Coordination Analysis
+![Metal Coordination](benchmarks/metal_full_benchmark/metal_coordination_analysis.png)
+
+#### Metal Complexity Effects
+![Metal Complexity](benchmarks/metal_full_benchmark/metal_complexity_effects.png)
+
+#### Algorithm Metal Specialization
+![Engine Specialization](benchmarks/metal_full_benchmark/engine_metal_specialization.png)
 
 </details>
 
@@ -403,6 +427,13 @@ rescored_poses = rescorer.rescore_poses(poses)
 - **Consistent pose accuracy**: All algorithms achieve ~47-49% success rates (RMSD < 2Å)
 - **Optimal computational efficiency**: PandaML delivers best speed/accuracy ratio at 26.7s per complex
 - **Robust performance**: Maintained across complete molecular diversity spectrum
+
+### Metal vs Non-Metal Specialization
+- **Comprehensive metal coverage**: 1,982 metal complexes (37.3%) analyzed across 16 metal types
+- **PandaPhysics metal excellence**: 56.6% success rate for metals vs 49.6% for non-metals
+- **PandaML versatility**: Balanced performance across both metal (47.8%) and non-metal (51.2%) systems
+- **Metal coordination mastery**: Superior coordination scoring with physics-based modeling
+- **Diverse metal chemistry**: Zinc (40.0%), Calcium (21.7%), Magnesium (15.0%) dominate dataset
 
 ## 🤝 Contributing
 

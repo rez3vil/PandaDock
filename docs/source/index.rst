@@ -79,6 +79,7 @@ Documentation Contents
    user_guide/configuration
    user_guide/docking_modes
    user_guide/metal_docking
+   user_guide/metal_analysis
    user_guide/comprehensive_benchmarks
    user_guide/scoring_functions
    user_guide/analysis
@@ -153,7 +154,14 @@ PandaDock has undergone extensive evaluation on the complete PDBbind database:
 - **Robust across molecular diversity** from 15-79 heavy atom ligands
 - **Computational efficiency** with PandaML optimal at 26.7s per complex
 
-For detailed analysis, see :doc:`user_guide/comprehensive_benchmarks`.
+**Metal vs Non-Metal Specialization:**
+
+- **1,982 metal complexes** (37.3%) vs **3,334 non-metal complexes** (62.7%) analyzed
+- **PandaPhysics excels with metals**: 56.6% success rate for metal complexes
+- **PandaML maintains versatility**: Balanced performance across both system types
+- **16 metal types covered**: Zinc (40%), Calcium (21.7%), Magnesium (15%) dominate
+
+For detailed analysis, see :doc:`user_guide/comprehensive_benchmarks` and :doc:`user_guide/metal_analysis`.
 
 Citation
 --------
