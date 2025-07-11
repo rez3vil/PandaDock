@@ -28,7 +28,7 @@ Module Descriptions
 -------------------
 
 **Docking Module** (:doc:`docking`)
-  Contains the core docking engines including physics-based, machine learning, and genetic algorithm implementations. Also includes the base classes for poses and docking results.
+  Contains the core docking engines including PandaPhysics, PandaML, and PandaCore implementations. Also includes the base classes for poses and docking results.
 
 **Scoring Module** (:doc:`scoring`)
   Provides various scoring functions for evaluating molecular poses, including classical force field terms, machine learning rescoring, and interaction detection methods.
@@ -50,7 +50,7 @@ API Usage Patterns
    from pandadock.docking.base_engine import Pose
    
    # Initialize docking engine
-   docker = PandaDock(engine='physics')
+   docker = PandaDock(engine='pandaphysics')
    
    # Perform docking
    results = docker.dock(
@@ -114,9 +114,9 @@ Class Hierarchies
 .. code-block:: text
 
    DockingEngine (base class)
-   ├── PhysicsEngine
-   ├── MLEngine
-   ├── GAEngine
+   ├── PandaPhysicsEngine
+   ├── PandaMLEngine
+   ├── PandaCoreEngine
    └── FlexibleDocking
 
 **Scoring Functions**
@@ -124,8 +124,8 @@ Class Hierarchies
 .. code-block:: text
 
    ScoringFunctions (base class)
-   ├── VinaScoringFunction
-   ├── MLScoringFunction
+   ├── PandaCoreScoringFunction
+   ├── PandaMLScoringFunction
    └── CustomScoringFunction
 
 **Pose Classes**
@@ -187,11 +187,11 @@ Many PandaDock functions accept configuration dictionaries:
        'exhaustiveness': 16,
        'num_poses': 10,
        'energy_range': 3.0,
-       'force_field': 'amber'
+       'algorithm': 'pandaphysics'
    }
    
-   # ML configuration
-   ml_config = {
+   # PandaML configuration
+   pandaml_config = {
        'model_type': 'transformer',
        'ensemble_size': 5,
        'uncertainty': True,

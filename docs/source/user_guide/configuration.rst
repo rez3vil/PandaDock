@@ -24,16 +24,16 @@ Configure PandaDock directly in your Python code:
    
    # Basic configuration
    docker = PandaDock(
-       engine='ml',
-       scoring='vina',
+       engine='pandaml',
+       scoring='pandaml',
        exhaustiveness=16,
        num_poses=10
    )
    
    # Advanced configuration
    docker = PandaDock(
-       engine='physics',
-       scoring='chemplp',
+       engine='pandaphysics',
+       scoring='pandaphysics',
        exhaustiveness=8,
        num_poses=20,
        energy_range=3.0,
@@ -58,7 +58,7 @@ Use YAML configuration files for complex setups:
    
    # Engine settings
    engine:
-     type: "ml"                    # physics, ml, ga
+     type: "pandaml"               # pandacore, pandaml, pandaphysics
      exhaustiveness: 16            # Search thoroughness (1-32)
      num_poses: 10                # Number of output poses
      energy_range: 3.0            # Energy range for poses (kcal/mol)
@@ -66,7 +66,7 @@ Use YAML configuration files for complex setups:
    
    # Scoring function settings
    scoring:
-     function: "vina"             # vina, chemplp, custom
+     function: "pandaml"          # pandacore, pandaml, pandaphysics
      weights:
        vdw: 1.0                  # van der Waals weight
        electrostatic: 1.0        # Electrostatic weight
@@ -121,8 +121,8 @@ Set global defaults using environment variables:
 .. code-block:: bash
 
    # Engine settings
-   export PANDADOCK_ENGINE=ml
-   export PANDADOCK_SCORING=vina
+   export PANDADOCK_ENGINE=pandaml
+   export PANDADOCK_SCORING=pandaml
    export PANDADOCK_EXHAUSTIVENESS=16
    export PANDADOCK_NUM_POSES=10
    
@@ -146,10 +146,10 @@ These can be overridden in Python:
    import os
    
    # Check environment settings
-   print(f"Engine: {os.getenv('PANDADOCK_ENGINE', 'physics')}")
+   print(f"Engine: {os.getenv('PANDADOCK_ENGINE', 'pandacore')}")
    
    # Override environment variable
-   docker = PandaDock(engine='ga')  # Overrides PANDADOCK_ENGINE
+   docker = PandaDock(engine='pandaphysics')  # Overrides PANDADOCK_ENGINE
 
 Docking Engine Configuration
 ----------------------------
@@ -159,7 +159,7 @@ Docking Engine Configuration
 .. code-block:: python
 
    docker = PandaDock(
-       engine='physics',
+       engine='pandaphysics',
        physics_config={
            'force_field': 'amber',      # amber, charmm, gaff
            'integrator': 'verlet',      # verlet, langevin
@@ -175,7 +175,7 @@ Docking Engine Configuration
 .. code-block:: python
 
    docker = PandaDock(
-       engine='ml',
+       engine='pandaml',
        ml_config={
            'model': 'transformer',      # transformer, cnn, graph
            'model_path': 'models/best.pt',  # Path to trained model
@@ -191,7 +191,7 @@ Docking Engine Configuration
 .. code-block:: python
 
    docker = PandaDock(
-       engine='ga',
+       engine='pandacore',
        ga_config={
            'population_size': 150,      # GA population size
            'generations': 300,          # Number of generations
@@ -210,7 +210,7 @@ Scoring Function Configuration
 .. code-block:: python
 
    docker = PandaDock(
-       scoring='vina',
+       scoring='pandacore',
        vina_config={
            'weights': {
                'gauss1': -0.035579,
@@ -230,7 +230,7 @@ Scoring Function Configuration
 .. code-block:: python
 
    docker = PandaDock(
-       scoring='chemplp',
+       scoring='pandaml',
        chemplp_config={
            'clash_threshold': 0.6,     # Clash detection threshold
            'metal_bonus': 1.0,         # Metal interaction bonus
@@ -349,7 +349,7 @@ Validate configuration before use:
    from pandadock.config import validate_config
    
    config = {
-       'engine': 'ml',
+       'engine': 'pandaml',
        'exhaustiveness': 16,
        'num_poses': 10
    }
@@ -414,7 +414,7 @@ Configuration Examples
 .. code-block:: yaml
 
    engine:
-     type: "physics"
+     type: "pandaphysics"
      exhaustiveness: 8
      num_poses: 5
      energy_range: 2.0
@@ -433,7 +433,7 @@ Configuration Examples
 .. code-block:: yaml
 
    engine:
-     type: "ml"
+     type: "pandaml"
      exhaustiveness: 32
      num_poses: 20
      energy_range: 5.0

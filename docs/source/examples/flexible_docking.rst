@@ -33,7 +33,7 @@ Start with basic sidechain flexibility:
    
    # Configure basic flexible docking
    docker = PandaDock(
-       engine='ga',  # Genetic algorithm handles flexibility well
+       engine='pandacore',  # PandaCore algorithm handles flexibility well
        flexible_residues=['ARG123', 'TYR456', 'ASP789'],
        flexibility_config={
            'backbone_flexibility': False,    # Keep backbone rigid
@@ -76,7 +76,7 @@ Let PandaDock automatically identify flexible residues:
 
    # Auto-detect flexible residues
    docker = PandaDock(
-       engine='ga',
+       engine='pandacore',
        auto_flexible=True,
        flexibility_config={
            'detection_method': 'b_factor',     # Use B-factors
@@ -130,7 +130,7 @@ Implement full induced fit docking:
                'constraint_weight': 10.0
            },
            'redocking': {
-               'engine': 'ml',
+               'engine': 'pandaml',
                'flexibility': 'refined',
                'exhaustiveness': 16,
                'num_poses': 10
@@ -223,7 +223,7 @@ Target specific flexible loops:
 
    # Configure flexible loop docking
    docker = PandaDock(
-       engine='ga',
+       engine='pandacore',
        flexible_loops=[
            {
                'residues': ['GLY45', 'ALA46', 'SER47', 'GLY48'],
@@ -325,7 +325,7 @@ Handle multi-domain proteins with interdomain flexibility:
 
    # Configure multi-domain flexibility
    docker = PandaDock(
-       engine='ga',
+       engine='pandacore',
        multi_domain=True,
        domain_config={
            'domains': [
@@ -523,7 +523,7 @@ Comprehensive workflow combining multiple flexibility types:
            
            # Configure docker
            docker = PandaDock(
-               engine='ga',
+               engine='pandacore',
                flexible_residues=flexible_residues,
                flexibility_config={
                    'backbone_flexibility': True,

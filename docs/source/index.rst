@@ -27,7 +27,7 @@ Basic usage:
    from pandadock import PandaDock
    
    # Initialize docking engine with PandaML algorithm
-   docker = PandaDock(engine='ml', scoring='pandaml')
+   docker = PandaDock(engine='pandaml', scoring='pandaml')
    
    # Perform docking
    results = docker.dock(

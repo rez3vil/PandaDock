@@ -94,7 +94,7 @@ Configure PandaDock for high-throughput screening:
 
    # Configure for high-throughput screening
    screener = VirtualScreening(
-       engine='physics',                    # Fast physics engine
+       engine='pandaphysics',               # Fast PandaPhysics engine
        screening_mode='hts',                # High-throughput mode
        config={
            'exhaustiveness': 4,             # Lower for speed
@@ -140,7 +140,7 @@ Set up the screening parameters:
        'decoy_generation': True,            # Generate decoys for validation
        'multiple_conformers': False,        # Use single conformer for speed
        'binding_site_flexibility': False,   # Rigid receptor for speed
-       'scoring_functions': ['vina', 'ml'], # Multiple scoring functions
+       'scoring_functions': ['pandacore', 'pandaml'], # Multiple scoring functions
        'consensus_scoring': True            # Combine multiple scores
    }
 
@@ -354,7 +354,7 @@ Perform focused screening around promising hits:
        
        # Configure for focused screening (higher accuracy)
        focused_screener = VirtualScreening(
-           engine='ml',                    # Use ML for higher accuracy
+           engine='pandaml',               # Use PandaML for higher accuracy
            screening_mode='focused',
            config={
                'exhaustiveness': 16,       # Higher exhaustiveness
@@ -662,7 +662,7 @@ Performance Optimization
 
 **For Large Libraries (>100K compounds):**
 
-1. **Use Physics Engine**: Fastest for initial screening
+1. **Use PandaPhysics Engine**: Fastest for initial screening
 2. **Reduce Exhaustiveness**: Use 2-4 for initial screening
 3. **Single Pose Output**: Reduce to 1 pose per compound
 4. **Parallel Processing**: Use all available CPU cores
@@ -671,7 +671,7 @@ Performance Optimization
 
 **For High-Accuracy Screening:**
 
-1. **Use ML Engine**: Best accuracy but slower
+1. **Use PandaML Engine**: Best accuracy but slower
 2. **Increase Exhaustiveness**: Use 16-32
 3. **Multiple Poses**: Generate 5-10 poses per compound
 4. **Ensemble Methods**: Use multiple models

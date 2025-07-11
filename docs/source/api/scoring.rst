@@ -44,10 +44,10 @@ Methods for detecting molecular interactions:
 
 .. automethod:: scoring.scoring_functions.ScoringFunctions.find_salt_bridge_interactions
 
-ML Rescorer
------------
+PandaML Rescorer
+----------------
 
-Machine learning-based rescoring module.
+PandaML machine learning-based rescoring module.
 
 .. automodule:: scoring.ml_rescorer
    :members:
@@ -129,15 +129,15 @@ Custom Scoring Function
    custom_scorer = CustomScorer({'custom': 0.5})
    energy = custom_scorer.calculate_total_energy(coordinates)
 
-ML Rescoring
-^^^^^^^^^^^^
+PandaML Rescoring
+^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
    from scoring.ml_rescorer import MLRescorer
    
-   # Initialize ML rescorer
-   rescorer = MLRescorer(model_path='models/rescorer.pt')
+   # Initialize PandaML rescorer
+   rescorer = MLRescorer(model_path='models/pandaml_rescorer.pt')
    
    # Rescore poses
    poses = [pose1, pose2, pose3]  # List of poses
@@ -145,7 +145,7 @@ ML Rescoring
    
    for original, rescored in zip(poses, rescored_poses):
        print(f"Original score: {original.score:.3f}")
-       print(f"ML score: {rescored.ml_score:.3f}")
+       print(f"PandaML score: {rescored.ml_score:.3f}")
        print(f"Confidence: {rescored.confidence:.3f}")
 
 Feature Extraction
@@ -153,7 +153,7 @@ Feature Extraction
 
 .. code-block:: python
 
-   # Extract features for ML scoring
+   # Extract features for PandaML scoring
    features = rescorer.extract_features(pose, receptor)
    
    print(f"Feature vector shape: {features.shape}")
@@ -218,20 +218,20 @@ Analyze energy contributions:
        
        return components
 
-Vina Scoring
-^^^^^^^^^^^^
+PandaCore Scoring
+^^^^^^^^^^^^^^^^^
 
-Use AutoDock Vina-style scoring:
+Use PandaCore scoring algorithm:
 
 .. code-block:: python
 
-   # Calculate Vina score
-   vina_score = scorer.calculate_vina_score(coordinates)
-   print(f"Vina score: {vina_score:.3f}")
+   # Calculate PandaCore score
+   pandacore_score = scorer.calculate_pandacore_score(coordinates)
+   print(f"PandaCore score: {pandacore_score:.3f}")
    
-   # Get detailed Vina terms
-   vina_terms = scorer.get_vina_terms(coordinates)
-   for term, value in vina_terms.items():
+   # Get detailed PandaCore terms
+   pandacore_terms = scorer.get_pandacore_terms(coordinates)
+   for term, value in pandacore_terms.items():
        print(f"{term}: {value:.4f}")
 
 Performance Optimization

@@ -15,8 +15,8 @@ Here's a complete example of performing molecular docking with PandaDock:
    
    # Initialize the docking engine
    docker = PandaDock(
-       engine='ml',           # Use ML-enhanced docking
-       scoring='vina',        # AutoDock Vina scoring function
+       engine='pandaml',      # Use PandaML algorithm
+       scoring='pandaml',     # PandaML scoring function
        exhaustiveness=8,      # Search thoroughness
        num_poses=10          # Number of poses to generate
    )
@@ -80,8 +80,8 @@ Customize docking behavior with various options:
 
    # Advanced configuration
    docker = PandaDock(
-       engine='physics',              # Available: 'physics', 'ml', 'ga'
-       scoring='vina',               # Available: 'vina', 'chemplp', 'custom'
+       engine='pandaphysics',         # Available: 'pandacore', 'pandaml', 'pandaphysics'
+       scoring='pandaphysics',        # Available: 'pandacore', 'pandaml', 'pandaphysics'
        exhaustiveness=16,            # Higher = more thorough (1-32)
        num_poses=20,                # Number of output poses (1-100)
        energy_range=3.0,            # kcal/mol range for poses
@@ -95,32 +95,32 @@ Docking Engines
 
 Choose the appropriate docking engine for your needs:
 
-**Physics Engine (Default)**
+**PandaCore Algorithm (Baseline)**
 - Fast and reliable
-- Based on AutoDock Vina algorithm
+- Robust baseline performance
 - Good for general-purpose docking
 
 .. code-block:: python
 
-   docker = PandaDock(engine='physics')
+   docker = PandaDock(engine='pandacore')
 
-**Machine Learning Engine**
-- State-of-the-art accuracy
-- Slower but more precise
+**PandaML Algorithm (Advanced)**
+- Superior affinity prediction (R² = 0.845)
+- Machine learning-enhanced accuracy
 - Best for drug discovery projects
 
 .. code-block:: python
 
-   docker = PandaDock(engine='ml')
+   docker = PandaDock(engine='pandaml')
 
-**Genetic Algorithm Engine**
-- Excellent for flexible receptors
-- Good conformational sampling
-- Best for induced-fit docking
+**PandaPhysics Algorithm (Specialized)**
+- Excellent for metal complexes
+- Physics-based coordination modeling
+- Best for metalloproteins and complex chemistry
 
 .. code-block:: python
 
-   docker = PandaDock(engine='ga')
+   docker = PandaDock(engine='pandaphysics')
 
 Working with Results
 --------------------
@@ -203,7 +203,7 @@ Screen large compound libraries:
        receptor='protein.pdb',
        center=[25.0, 30.0, 15.0],
        size=[20.0, 20.0, 20.0],
-       engine='ml'
+       engine='pandaml'
    )
    
    # Screen a compound library

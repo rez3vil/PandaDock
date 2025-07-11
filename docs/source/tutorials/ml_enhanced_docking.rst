@@ -320,7 +320,7 @@ Train models on your specific data:
    
    # Use custom model for docking
    docker = PandaDock(
-       engine='ml',
+       engine='pandaml',
        model_path='custom_model/best_model.pt'
    )
 
@@ -333,7 +333,7 @@ Understand what the model is learning:
 
    # Enable feature attribution
    docker = PandaDock(
-       engine='ml',
+       engine='pandaml',
        model_type='transformer',
        explainable_ai=True,
        ml_config={
@@ -576,8 +576,8 @@ Performance Considerations
 - Process ligands in batches
 - Clear GPU cache between runs
 
-**Model Selection:**
-- Transformer: Best accuracy, slower
+**PandaML Model Selection:**
+- Transformer: Best accuracy (R² = 0.845), slower
 - Graph: Good for novel scaffolds
 - CNN: Fastest, good for screening
 

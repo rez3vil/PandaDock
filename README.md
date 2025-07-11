@@ -44,11 +44,11 @@
 ---
 
 
-## 🎯 Overview
+##  Overview
 
 PandaDock is a comprehensive molecular docking software that combines multiple docking strategies in a unified framework. It features **three novel PandaDock algorithms** - PandaCore, PandaML, and PandaPhysics - for protein-ligand docking with comprehensive analysis and reporting capabilities.
 
-## 🏆 Comprehensive Benchmark Results
+##  Comprehensive Benchmark Results
 
 **Large-scale evaluation on 5,316 PDBbind complexes (15,948 total docking runs):**
 
@@ -122,14 +122,14 @@ PandaDock is a comprehensive molecular docking software that combines multiple d
   <img src="benchmarks/metal_full_benchmark/metal_coordination_analysis.png" alt="Metal Coordination Analysis" width="700"/>
 </p>
 
-## ✨ Key Features
+##  Key Features
 
-### 🧬 **Three Novel PandaDock Algorithms**
+###  **Three Novel PandaDock Algorithms**
 - **PandaCore**: Robust baseline algorithm with excellent general performance
 - **PandaML**: Advanced machine learning-based algorithm with superior affinity prediction
 - **PandaPhysics**: Physics-based algorithm specialized for metal coordination and complex chemistry
 
-### 🚀 **Advanced Capabilities**
+###  **Advanced Capabilities**
 - **Flexible Docking**: Side-chain flexibility with rotamer library sampling
 - **Metal Coordination**: Specialized handling of metal-containing complexes
 - **Comprehensive Scoring**: Physics-based + ML rescoring with detailed energy breakdown
@@ -142,7 +142,7 @@ PandaDock is a comprehensive molecular docking software that combines multiple d
 - **Memory Efficient**: Optimized for large-scale virtual screening
 - **Extensible Architecture**: Easy to add new docking algorithms
 
-## 🛠️ Installation
+##  Installation
 
 ### Quick Install
 ```bash
@@ -175,7 +175,7 @@ cd pandadock
 pip install -e .[all]
 ```
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Basic Docking with Novel PandaDock Algorithms
 ```bash
@@ -218,7 +218,7 @@ for pose in results[:5]:
     print(f"  IC50: {pose.get_ic50()*1e9:.1f} nM")
 ```
 
-## 🔬 Algorithm Modes
+##  Algorithm Modes
 
 ### Precise Mode (PandaPhysics)
 ```bash
@@ -299,7 +299,7 @@ export PANDADOCK_CACHE_DIR=/tmp/pandadock
 export PANDADOCK_DEFAULT_ALGORITHM=pandaml
 ```
 
-## 📊 Output and Analysis
+##  Output and Analysis
 
 ### HTML Reports
 PandaDock generates comprehensive HTML reports including:
@@ -358,15 +358,15 @@ rescorer.load_model('pandaml_model.pkl')
 rescored_poses = rescorer.rescore_poses(poses)
 ```
 
-## 📈 Comprehensive Benchmarking
+##  Comprehensive Benchmarking
 
 ### Validated Performance Metrics
 
 **PDBbind Dataset (285 complexes):**
-- ✅ **Affinity Prediction**: Up to R² = 0.878 (PandaML)
-- ✅ **Pose Accuracy**: Up to 48.8% success rate (PandaPhysics)
-- ✅ **Speed**: 26-43 seconds per complex
-- ✅ **Metal Specialization**: Comprehensive analysis of 93 metal complexes
+-  **Affinity Prediction**: Up to R² = 0.878 (PandaML)
+-  **Pose Accuracy**: Up to 48.8% success rate (PandaPhysics)
+-  **Speed**: 26-43 seconds per complex
+-  **Metal Specialization**: Comprehensive analysis of 93 metal complexes
 
 **Algorithm Specializations:**
 - **PandaML**: Superior for affinity prediction and general docking
@@ -376,7 +376,7 @@ rescored_poses = rescorer.rescore_poses(poses)
 ### Complete Performance Analysis
 
 <details>
-<summary>📊 View All Comprehensive Benchmark Results</summary>
+<summary> View All Comprehensive Benchmark Results</summary>
 
 #### Master Benchmark Figure (5,316 Complexes)
 ![Master Benchmark](benchmarks/comprehesive_benchmark/master_publication_figure.png)
@@ -413,7 +413,7 @@ rescored_poses = rescorer.rescore_poses(poses)
 
 </details>
 
-## 📈 Performance Summary
+##  Performance Summary
 
 ### Validation Scale
 - **5,316 protein-ligand complexes** from complete PDBbind database
@@ -435,7 +435,7 @@ rescored_poses = rescorer.rescore_poses(poses)
 - **Metal coordination mastery**: Superior coordination scoring with physics-based modeling
 - **Diverse metal chemistry**: Zinc (40.0%), Calcium (21.7%), Magnesium (15.0%) dominate dataset
 
-## 🤝 Contributing
+##  Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
@@ -447,11 +447,11 @@ pip install -e .[dev]
 pytest tests/
 ```
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📚 Citation
+##  Citation
 
 If you use PandaDock in your research, please cite:
 
@@ -465,13 +465,13 @@ If you use PandaDock in your research, please cite:
 }
 ```
 
-## 🆘 Support
+##  Support
 
 - **Documentation**: [https://pandadock.readthedocs.io/](https://pandadock.readthedocs.io/)
 - **Issues**: [GitHub Issues](https://github.com/pritampanda15/pandadock/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/pritampanda15/pandadock/discussions)
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 PandaDock builds upon the scientific contributions of:
 - **Molecular Docking**: Classical docking methodologies and scoring functions
@@ -482,7 +482,7 @@ PandaDock builds upon the scientific contributions of:
 
 ---
 
-## 📞 Contact
+##  Contact
 
 - GitHub: [@pritampanda15](https://github.com/pritampanda15)
 - Email: [pritam@stanford.edu](mailto:pritam@stanford.edu)
@@ -490,10 +490,10 @@ PandaDock builds upon the scientific contributions of:
 
 ---
 
-## ⚠️ Disclaimer
+##  Disclaimer
 
 > PandaDock is intended for research purposes.  
 > Always verify docking predictions through experimental validation.
 > The PandaDock algorithms (PandaCore, PandaML, PandaPhysics) are proprietary to this software.
 
-**Dock Smarter. Discover Faster. 🐼⚗️**
+**Dock Smarter. Discover Faster. 🐼**

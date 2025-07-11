@@ -16,24 +16,24 @@ Overview of Docking Modes
      - Use Case
      - Memory
      - Best For
-   * - Physics
+   * - PandaPhysics
      - Fast
      - Good
      - General docking
      - Low
      - Most applications
-   * - ML Enhanced
+   * - PandaML
      - Medium
      - Excellent
      - Drug discovery
      - Medium
      - High accuracy needs
-   * - Genetic Algorithm
+   * - PandaCore
      - Slow
      - Very Good
      - Flexible receptors
      - High
-     - Induced fit docking
+     - Baseline algorithm
    * - Hybrid
      - Medium
      - Excellent
@@ -41,13 +41,13 @@ Overview of Docking Modes
      - Medium
      - Production use
 
-Physics-Based Docking
+PandaPhysics Algorithm
 ---------------------
 
-The physics-based mode uses classical force fields and energy minimization for pose prediction.
+The PandaPhysics algorithm uses classical force fields and energy minimization for pose prediction.
 
 **Key Features:**
-- AutoDock Vina-inspired algorithm
+- Physics-based docking algorithm
 - Fast and reliable
 - Good balance of speed and accuracy
 - Low memory requirements
@@ -65,7 +65,7 @@ The physics-based mode uses classical force fields and energy minimization for p
    from pandadock import PandaDock
    
    docker = PandaDock(
-       engine='physics',
+       engine='pandaphysics',
        exhaustiveness=8,        # Search thoroughness (1-32)
        num_poses=10,           # Number of output poses
        energy_range=3.0,       # Energy range for poses (kcal/mol)
@@ -85,7 +85,7 @@ The physics-based mode uses classical force fields and energy minimization for p
        size=[20.0, 20.0, 20.0]
    )
    
-   print(f"Physics docking completed in {results.runtime:.2f} seconds")
+   print(f"PandaPhysics docking completed in {results.runtime:.2f} seconds")
    print(f"Best score: {results.best_pose.score:.3f}")
 
 **Performance Tips:**
@@ -93,10 +93,10 @@ The physics-based mode uses classical force fields and energy minimization for p
 - Use ``exhaustiveness=16`` for accurate docking
 - Enable parallel processing for multiple ligands
 
-Machine Learning Enhanced Docking
-----------------------------------
+PandaML Algorithm
+----------------
 
-ML-enhanced mode uses deep learning models trained on experimental binding data.
+PandaML algorithm uses deep learning models trained on experimental binding data.
 
 **Key Features:**
 - State-of-the-art accuracy
@@ -115,7 +115,7 @@ ML-enhanced mode uses deep learning models trained on experimental binding data.
 .. code-block:: python
 
    docker = PandaDock(
-       engine='ml',
+       engine='pandaml',
        model_type='transformer',    # transformer, cnn, graph
        ensemble_size=5,            # Number of ensemble models
        uncertainty=True,           # Calculate prediction uncertainty
@@ -142,12 +142,12 @@ ML-enhanced mode uses deep learning models trained on experimental binding data.
        print(f"Uncertainty: {pose.uncertainty:.3f}")
        print(f"Predicted IC50: {pose.predicted_ic50:.2e} nM")
 
-**Advanced ML Configuration:**
+**Advanced PandaML Configuration:**
 
 .. code-block:: python
 
    docker = PandaDock(
-       engine='ml',
+       engine='pandaml',
        ml_config={
            'model_path': 'models/protein_specific.pt',  # Custom model
            'feature_extraction': 'graph',              # graph, grid, sequence
@@ -159,10 +159,10 @@ ML-enhanced mode uses deep learning models trained on experimental binding data.
        }
    )
 
-Genetic Algorithm Docking
---------------------------
+PandaCore Algorithm
+------------------
 
-GA mode uses evolutionary algorithms for conformational sampling and optimization.
+PandaCore algorithm uses evolutionary algorithms for conformational sampling and optimization.
 
 **Key Features:**
 - Excellent conformational sampling
@@ -181,7 +181,7 @@ GA mode uses evolutionary algorithms for conformational sampling and optimizatio
 .. code-block:: python
 
    docker = PandaDock(
-       engine='ga',
+       engine='pandacore',
        population_size=150,        # GA population size
        generations=300,            # Number of generations
        mutation_rate=0.02,         # Mutation probability
@@ -195,7 +195,7 @@ GA mode uses evolutionary algorithms for conformational sampling and optimizatio
 
 .. code-block:: python
 
-   # GA docking with flexible receptor
+   # PandaCore docking with flexible receptor
    results = docker.dock(
        receptor='protein.pdb',
        ligand='ligand.sdf',
@@ -204,24 +204,24 @@ GA mode uses evolutionary algorithms for conformational sampling and optimizatio
        flexible_residues=['ARG123', 'TYR456']  # Flexible residues
    )
    
-   # Access GA-specific results
+   # Access PandaCore-specific results
    print(f"Generations: {results.generations_completed}")
    print(f"Final population diversity: {results.final_diversity:.3f}")
 
-**GA Operators Customization:**
+**PandaCore Operators Customization:**
 
 .. code-block:: python
 
    from pandadock.ga import custom_operators
    
    docker = PandaDock(
-       engine='ga',
+       engine='pandacore',
        ga_config={
            'mutation_operators': ['gaussian', 'uniform', 'adaptive'],
            'crossover_operators': ['uniform', 'single_point'],
            'selection_pressure': 2.0,
            'niching': True,           # Maintain diverse solutions
-           'adaptive_parameters': True # Adapt GA parameters during run
+           'adaptive_parameters': True # Adapt PandaCore parameters during run
        }
    )
 
@@ -243,9 +243,9 @@ Hybrid mode combines multiple approaches for optimal results.
    docker = PandaDock(
        engine='hybrid',
        hybrid_config={
-           'stage1': 'physics',       # Initial sampling
-           'stage2': 'ml',           # Refinement
-           'stage3': 'physics',      # Final optimization
+           'stage1': 'pandaphysics',  # Initial sampling
+           'stage2': 'pandaml',      # Refinement
+           'stage3': 'pandaphysics', # Final optimization
            'consensus_scoring': True, # Use multiple scoring functions
            'pose_clustering': True   # Cluster similar poses
        }
@@ -278,7 +278,7 @@ Enable receptor flexibility in any docking mode.
 
    # Specify flexible residues
    docker = PandaDock(
-       engine='ml',  # Can be used with any engine
+       engine='pandaml',  # Can be used with any engine
        flexible_residues=['ARG123', 'TYR456', 'ASP789'],
        flexibility_config={
            'backbone_flexibility': False,   # Keep backbone rigid
@@ -293,7 +293,7 @@ Enable receptor flexibility in any docking mode.
 .. code-block:: python
 
    docker = PandaDock(
-       engine='ga',
+       engine='pandacore',
        auto_flexible=True,
        flexibility_config={
            'detection_method': 'b_factor',  # b_factor, cavity, contact
@@ -313,9 +313,9 @@ Use multiple docking modes and combine results.
    
    # Define multiple docking protocols
    protocols = [
-       {'engine': 'physics', 'exhaustiveness': 16},
-       {'engine': 'ml', 'ensemble_size': 3},
-       {'engine': 'ga', 'generations': 200}
+       {'engine': 'pandaphysics', 'exhaustiveness': 16},
+       {'engine': 'pandaml', 'ensemble_size': 3},
+       {'engine': 'pandacore', 'generations': 200}
    ]
    
    # Consensus docking
@@ -342,7 +342,7 @@ Optimized configurations for different screening scenarios.
 .. code-block:: python
 
    docker = PandaDock(
-       engine='physics',
+       engine='pandaphysics',
        screening_mode='hts',
        exhaustiveness=4,           # Fast screening
        num_poses=3,               # Few poses per ligand
@@ -356,7 +356,7 @@ Optimized configurations for different screening scenarios.
 .. code-block:: python
 
    docker = PandaDock(
-       engine='ml',
+       engine='pandaml',
        screening_mode='lead_opt',
        exhaustiveness=16,          # Thorough sampling
        num_poses=10,              # More poses for analysis
@@ -369,7 +369,7 @@ Optimized configurations for different screening scenarios.
 .. code-block:: python
 
    docker = PandaDock(
-       engine='ga',
+       engine='pandacore',
        screening_mode='fragment',
        fragment_config={
            'min_heavy_atoms': 6,      # Minimum fragment size
@@ -387,7 +387,7 @@ Performance Optimization
 .. code-block:: python
 
    docker = PandaDock(
-       engine='physics',
+       engine='pandaphysics',
        memory_efficient=True,
        memory_config={
            'max_memory_gb': 4,        # Memory limit
@@ -402,7 +402,7 @@ Performance Optimization
 .. code-block:: python
 
    docker = PandaDock(
-       engine='ml',
+       engine='pandaml',
        gpu_acceleration=True,
        gpu_config={
            'device': 'cuda:0',       # GPU device
@@ -417,9 +417,9 @@ Choosing the Right Mode
 
 **Decision Tree:**
 
-1. **Need highest accuracy?** → Use ML Enhanced mode
-2. **Have flexible receptor?** → Use Genetic Algorithm mode  
-3. **Large-scale screening?** → Use Physics mode
+1. **Need highest accuracy?** → Use PandaML algorithm
+2. **Have flexible receptor?** → Use PandaCore algorithm  
+3. **Large-scale screening?** → Use PandaPhysics algorithm
 4. **Production deployment?** → Use Hybrid mode
 5. **Uncertain about target?** → Use Consensus docking
 
@@ -433,19 +433,19 @@ Choosing the Right Mode
      - Recommended Mode
      - Configuration
    * - Virtual screening (>10K compounds)
-     - Physics
+     - PandaPhysics
      - ``exhaustiveness=4-8``
    * - Lead optimization (<100 compounds)
-     - ML Enhanced
+     - PandaML
      - ``ensemble_size=5, uncertainty=True``
    * - Novel target (no known binders)
-     - Genetic Algorithm
+     - PandaCore
      - ``generations=500, diversity=True``
    * - Allosteric sites
      - Consensus
-     - ``[physics, ml, ga]``
+     - ``[pandaphysics, pandaml, pandacore]``
    * - Fragment-based drug design
-     - Genetic Algorithm
+     - PandaCore
      - ``fragment_mode=True``
    * - Production pipeline
      - Hybrid
