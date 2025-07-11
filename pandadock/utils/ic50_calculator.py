@@ -61,7 +61,7 @@ class IC50Calculator:
             return float('inf')  # No binding
         
         # Calculate dissociation constant
-        kd = np.exp(-delta_g / self.kT_kcal)
+        kd = np.exp(delta_g / self.kT_kcal)
         
         # IC50 approximation for competitive inhibition
         ic50 = kd * (1 + protein_conc / kd)
@@ -315,7 +315,7 @@ class IC50Calculator:
         le = self.calculate_ligand_efficiency(delta_g, num_heavy_atoms)
         lipe = self.calculate_lipophilic_efficiency(delta_g, logp)
         
-        assessment['ic50'] = ic50
+        assessment['ic50'] = ic50 * 1e9  # Convert from M to nM
         assessment['delta_g'] = delta_g
         assessment['ligand_efficiency'] = le
         assessment['lipophilic_efficiency'] = lipe

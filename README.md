@@ -1,6 +1,9 @@
 # PandaDock
 
-**Python-based Molecular Docking Platform featuring Novel PandaDock Algorithms for Drug Discovery, Bioinformatics, and Computational Chemistry.** **A Modular, Multi-Strategy, High-Performance Molecular Docking Software**
+**PandaDock: A Python-Powered, Multi-Strategy Molecular Docking Platform for Drug Discovery and Computational Chemistry**
+
+---
+
 
 <p align="center">
   <a href="https://github.com/pritampanda15/PandaDock">

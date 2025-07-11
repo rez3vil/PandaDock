@@ -450,17 +450,23 @@ class ScoringFunctions:
         distances = distance_matrix(coordinates, coordinates)
         clash_score = 0.0
         
-        # Van der Waals radii
-        vdw_radius = 1.7  # Simplified (carbon radius)
+        # Van der Waals radii (more realistic values)
+        vdw_radius = 1.4  # Reduced for organic molecules
         
         for i in range(len(coordinates)):
             for j in range(i + 1, len(coordinates)):
                 dist = distances[i, j]
-                min_distance = 2 * vdw_radius
+                
+                # Skip bonded atoms (typical bond lengths are 1.2-1.8 Å)
+                if dist < 2.0:  # These are likely bonded atoms
+                    continue
+                    
+                min_distance = 2 * vdw_radius  # 2.8 Å
                 
                 if dist < min_distance:
                     overlap = min_distance - dist
-                    clash_score += overlap * overlap  # Quadratic penalty
+                    # Use linear penalty to reduce oversensitivity
+                    clash_score += overlap
         
         return clash_score
     

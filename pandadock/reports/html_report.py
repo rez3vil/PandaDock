@@ -166,7 +166,7 @@ class HTMLReportGenerator:
                 'energy': pose.energy,
                 'binding_affinity': binding_affinity,
                 'ic50': ic50,
-                'ic50_nm': ic50 * 1e9 if ic50 != float('inf') else float('inf'),
+                'ic50_nm': ic50 if ic50 != float('inf') else float('inf'),
                 'ligand_efficiency': le,
                 'rmsd': pose.rmsd,
                 'confidence': pose.confidence,
@@ -719,7 +719,7 @@ class HTMLReportGenerator:
             
             const bestIC50 = summary.best_ic50;
             if (bestIC50 && bestIC50 !== Infinity) {
-                document.getElementById('best-ic50').textContent = (bestIC50 * 1e9).toFixed(1) + ' nM';
+                document.getElementById('best-ic50').textContent = bestIC50.toFixed(1) + ' nM';
             } else {
                 document.getElementById('best-ic50').textContent = '-';
             }
@@ -1026,7 +1026,7 @@ class HTMLReportGenerator:
             report_lines.append(f"  Score: {pose.score:.3f}")
             report_lines.append(f"  Energy: {pose.energy:.2f} kcal/mol")
             report_lines.append(f"  ΔG: {binding_affinity:.2f} kcal/mol")
-            report_lines.append(f"  IC50: {ic50*1e9:.1f} nM" if ic50 != float('inf') else "  IC50: -")
+            report_lines.append(f"  IC50: {ic50:.1f} nM" if ic50 != float('inf') else "  IC50: -")
             report_lines.append("")
         
         report_content = "\n".join(report_lines)
@@ -1094,7 +1094,7 @@ class HTMLReportGenerator:
                 pose.score,
                 pose.energy,
                 binding_affinity,
-                ic50 * 1e9 if ic50 != float('inf') else '',
+                ic50 if ic50 != float('inf') else '',
                 le,
                 pose.vdw_energy,
                 pose.electrostatic_energy,

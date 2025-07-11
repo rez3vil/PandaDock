@@ -48,22 +48,65 @@ class Pose:
     
     def get_binding_affinity(self) -> float:
         """Calculate binding affinity (ΔG) from score"""
-        # Convert score to binding affinity (kcal/mol)
-        # Lower scores indicate better binding, so we need negative ΔG for favorable binding
-        # Convert positive score to negative ΔG for thermodynamically favorable binding
-        return -self.score * 1.36  # Negative for favorable binding
+        # Convert score to realistic binding affinity
+        # Lower scores indicate better binding (more negative ΔG)
+        
+        # Handle different score ranges for different algorithms
+        if self.score < 0:
+            # Physics/precise mode: negative scores (e.g., -5 to -4)
+            # More negative scores = better binding
+            # Map score range -6 to -3 to binding affinity range -12 to -6 kcal/mol
+            score_clamped = max(-7.0, min(-2.0, self.score))
+            min_score, max_score = -6.0, -3.0
+            min_affinity, max_affinity = -12.0, -6.0
+            
+            if score_clamped <= min_score:
+                binding_affinity = min_affinity
+            elif score_clamped >= max_score:
+                binding_affinity = max_affinity
+            else:
+                # Linear interpolation: more negative score → more negative ΔG
+                slope = (max_affinity - min_affinity) / (max_score - min_score)
+                binding_affinity = min_affinity + slope * (score_clamped - min_score)
+        else:
+            # ML/balanced mode: positive scores (e.g., 0.1 to 0.4)
+            # Lower positive scores = better binding
+            # Map score range 0.1-0.4 to binding affinity range -12 to -6 kcal/mol
+            score_clamped = max(0.05, min(0.5, self.score))
+            min_score, max_score = 0.1, 0.4
+            min_affinity, max_affinity = -12.0, -6.0
+            
+            if score_clamped <= min_score:
+                binding_affinity = min_affinity
+            elif score_clamped >= max_score:
+                binding_affinity = max_affinity
+            else:
+                # Linear interpolation
+                slope = (max_affinity - min_affinity) / (max_score - min_score)
+                binding_affinity = min_affinity + slope * (score_clamped - min_score)
+        
+        return binding_affinity
     
     def get_ic50(self, temperature: float = 298.15) -> float:
         """Calculate IC50 from binding affinity"""
-        # ΔG = -RTln(Ki), assuming IC50 ≈ Ki
-        R = 1.987e-3  # kcal/mol/K
-        delta_g = self.get_binding_affinity()
+        # ΔG = RT ln(Kd), so Kd = exp(ΔG/RT)
+        # For favorable binding, ΔG < 0, so Kd will be < 1 M (nanomolar range)
+        # For competitive inhibition, IC50 ≈ Ki ≈ Kd
         
-        if delta_g >= 0:
-            return float('inf')
+        R = 1.987e-3  # kcal/(mol·K)
+        binding_affinity = self.get_binding_affinity()  # Negative for favorable binding
         
-        ki = np.exp(-delta_g / (R * temperature))
-        return ki * 1e9  # Convert to nM
+        if binding_affinity >= 0:
+            return float('inf')  # No binding
+        
+        # Calculate Kd (dissociation constant) in M
+        # ΔG = RT ln(Kd) → Kd = exp(ΔG/RT)
+        kd = np.exp(binding_affinity / (R * temperature))
+        
+        # Convert to nM (IC50 ≈ Kd for competitive inhibition)
+        ic50_nM = kd * 1e9
+        
+        return ic50_nM
     
     def calculate_ligand_efficiency(self, num_heavy_atoms: int) -> float:
         """Calculate ligand efficiency (LE)"""
@@ -346,6 +389,24 @@ class DockingEngine(ABC):
         
         return True
     
+    def _generate_basic_bonds(self, coordinates: np.ndarray) -> List[Tuple[int, int, str]]:
+        """Generate basic bonds based on atomic distances"""
+        bonds = []
+        
+        # Typical bond distances (in Angstroms)
+        # C-C: 1.4-1.6, C-O: 1.2-1.5, C-N: 1.3-1.5
+        max_bond_distance = 1.8  # Maximum distance to consider a bond
+        
+        for i in range(len(coordinates)):
+            for j in range(i + 1, len(coordinates)):
+                distance = np.linalg.norm(coordinates[i] - coordinates[j])
+                
+                # If atoms are close enough, consider them bonded
+                if distance <= max_bond_distance:
+                    bonds.append((i, j, 'single'))
+        
+        return bonds
+    
     def save_poses(self, poses: List[Pose], output_dir: str):
         """Save poses to output directory in multiple formats"""
         import os
@@ -414,6 +475,10 @@ class DockingEngine(ABC):
                 if 'bonds' in self.ligand:
                     bonds = self.ligand['bonds']
             
+            # If no bonds available, generate basic connectivity based on distance
+            if not bonds and len(pose.coordinates) > 1:
+                bonds = self._generate_basic_bonds(pose.coordinates)
+            
             # Molecule block
             num_atoms = len(pose.coordinates)
             num_bonds = len(bonds)
@@ -456,9 +521,11 @@ class DockingEngine(ABC):
         with open(filename, 'w') as f:
             f.write("Rank,Pose_ID,Score,Energy,Confidence,Binding_Affinity,IC50_nM,Ligand_Efficiency,Clash_Score\n")
             for i, pose in enumerate(poses):
+                num_heavy_atoms = len(pose.coordinates) if hasattr(pose, 'coordinates') and pose.coordinates is not None else 13
+                ligand_efficiency = pose.calculate_ligand_efficiency(num_heavy_atoms)
                 f.write(f"{i+1},{pose.pose_id},{pose.score:.6f},{pose.energy:.6f},"
                        f"{pose.confidence:.6f},{pose.get_binding_affinity():.6f},"
-                       f"{pose.get_ic50():.1f},{pose.ligand_efficiency:.6f},{pose.clash_score:.6f}\n")
+                       f"{pose.get_ic50():.1f},{ligand_efficiency:.6f},{pose.clash_score:.6f}\n")
     
     def _save_poses_as_multi_sdf(self, poses: List[Pose], filename: str):
         """Save all poses in a single multi-structure SDF file"""
@@ -476,6 +543,10 @@ class DockingEngine(ABC):
                         atom_types = self.ligand['atom_types']
                     if 'bonds' in self.ligand:
                         bonds = self.ligand['bonds']
+                
+                # If no bonds available, generate basic bonds based on distances
+                if not bonds:
+                    bonds = self._generate_basic_bonds(pose.coordinates)
                 
                 # Molecule block
                 num_atoms = len(pose.coordinates)
