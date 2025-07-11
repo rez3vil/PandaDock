@@ -4,10 +4,9 @@
 
 <p align="center">
   <a href="https://github.com/pritampanda15/PandaDock">
-    <img src="https://github.com/pritampanda15/PandaDock/blob/main/logo/logo_new.png" width="1000" alt="PandaDock Logo"/>
+    <img src="https://github.com/pritampanda15/PandaDock/blob/main/logo/logo_new.png" width="500" alt="PandaDock Logo"/>
   </a>
 </p>
-
 <p align="center">
   <a href="https://pypi.org/project/pandadock/">
     <img src="https://img.shields.io/pypi/v/pandadock.svg" alt="PyPI Version">
@@ -28,7 +27,6 @@
     <img src="https://static.pepy.tech/badge/pandadock" alt="Downloads">
   </a>
 </p>
-
 <p align="center">
   <a href="https://www.python.org/downloads/">
     <img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="Python 3.8+">
