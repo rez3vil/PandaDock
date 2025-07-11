@@ -1,0 +1,18 @@
+# Read the Docs configuration file
+version: 2
+
+# Build documentation in the docs/ directory with Sphinx
+sphinx:
+  configuration: docs/source/conf.py
+
+# Build documentation in additional formats such as PDF
+formats:
+  - pdf
+
+# Python requirements
+python:
+  version: "3.11"
+  install:
+    - requirements: docs/requirements.txt
+    - method: pip
+      path: .

@@ -1,41 +1,17 @@
-# Read the Docs configuration file for PandaDock
-# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
-
-# Required
+# ReadTheDocs configuration for PandaDock
 version: 2
 
-# Set the version of Python and other tools you might need
+# Build environment
 build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
-  jobs:
-    post_build:
-      # Copy benchmark images to the build directory
-      - cp -r benchmarks/comprehesive_benchmark/_build/html/_static/
-      - cp -r benchmarks/metal_full_benchmark/_build/html/_static/
 
-# Build documentation in the docs/ directory with Sphinx
+# Sphinx configuration
 sphinx:
   configuration: docs/source/conf.py
-  builder: html
-  fail_on_warning: false
 
-# Build documentation in additional formats
-formats:
-  - pdf
-  - epub
-
-# Python requirements for building documentation
+# Python requirements
 python:
   install:
     - requirements: docs/requirements.txt
-    - method: pip
-      path: .
-      extra_requirements:
-        - docs
-
-# Include benchmark images and data
-submodules:
-  include: all
-  recursive: false
