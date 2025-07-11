@@ -79,6 +79,7 @@ Documentation Contents
    user_guide/configuration
    user_guide/docking_modes
    user_guide/metal_docking
+   user_guide/comprehensive_benchmarks
    user_guide/scoring_functions
    user_guide/analysis
 
@@ -108,44 +109,51 @@ Documentation Contents
    changelog
    license
 
-Performance Benchmarks
-----------------------
+Comprehensive Benchmarks
+-------------------------
 
-PandaDock has been benchmarked against established docking software:
+PandaDock has undergone extensive evaluation on the complete PDBbind database:
 
-.. list-table:: PandaDock Algorithm Performance (285 PDBbind complexes)
+.. list-table:: PandaDock Algorithm Performance (5,316 PDBbind complexes)
    :header-rows: 1
-   :widths: 25 20 20 20 15
+   :widths: 20 15 15 15 15 15
 
    * - Algorithm
      - Affinity R²
+     - Pearson R
      - Success Rate (%)
      - Mean RMSD (Å)
      - Speed (s)
    * - **PandaML**
-     - **0.878**
-     - **46.7**
-     - **3.22**
-     - **26.1**
+     - **0.845**
+     - **0.919**
+     - **49.0**
+     - **3.11**
+     - **26.7**
    * - **PandaPhysics**
-     - 0.671
-     - **48.8**
-     - 2.18
-     - 42.9
+     - 0.769
+     - 0.877
+     - 48.3
+     - 3.20
+     - 45.6
    * - **PandaCore**
-     - 0.738
-     - 46.3
-     - 3.63
-     - 32.9
+     - 0.709
+     - 0.842
+     - 47.1
+     - 3.31
+     - 33.7
 
-*Success Rate = RMSD < 2Å. Benchmarked on diverse protein-ligand complexes.*
+*Success Rate = RMSD < 2Å. Benchmarked on 5,316 complexes from complete PDBbind database.*
 
-**Metal vs Non-Metal Specialization:**
+**Comprehensive Validation:**
 
-- **93 metal complexes** (32.6%) vs **192 non-metal complexes** (67.4%) analyzed
-- **PandaPhysics** excels at metal coordination chemistry  
-- **PandaML** maintains consistent performance across both complex types
-- Metal complexes are 32% more challenging computationally
+- **5,316 complexes evaluated** across complete PDBbind database (15,948 total docking runs)
+- **PandaML** achieves superior affinity prediction with R² = 0.845 and Pearson R = 0.919
+- **Consistent performance** across all algorithms with ~47-49% success rates
+- **Robust across molecular diversity** from 15-79 heavy atom ligands
+- **Computational efficiency** with PandaML optimal at 26.7s per complex
+
+For detailed analysis, see :doc:`user_guide/comprehensive_benchmarks`.
 
 Citation
 --------

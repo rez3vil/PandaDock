@@ -48,23 +48,52 @@
 
 PandaDock is a comprehensive molecular docking software that combines multiple docking strategies in a unified framework. It features **three novel PandaDock algorithms** - PandaCore, PandaML, and PandaPhysics - for protein-ligand docking with comprehensive analysis and reporting capabilities.
 
-## 🏆 Benchmark Results
+## 🏆 Comprehensive Benchmark Results
 
-**Comprehensive evaluation on 285 PDBbind complexes:**
+**Large-scale evaluation on 5,316 PDBbind complexes (15,948 total docking runs):**
 
 <p align="center">
-  <img src="publication_results_final/master_publication_figure.png" alt="PandaDock Benchmark Results" width="800"/>
+  <img src="benchmarks/comprehesive_benchmark/master_publication_figure.png" alt="PandaDock Comprehensive Benchmark Results" width="900"/>
 </p>
 
 ### Algorithm Performance Rankings:
 
-| Algorithm | Affinity R² | Success Rate | Mean RMSD | Speed |
-|-----------|-------------|--------------|-----------|-------|
-| **PandaML** | **0.878** | **46.7%** | **3.22 Å** | **26.1s** |
-| **PandaPhysics** | 0.671 | **48.8%** | 2.18 Å | 42.9s |
-| **PandaCore** | 0.738 | 46.3% | 3.63 Å | 32.9s |
+| Algorithm | Affinity R² | Pearson R | Success Rate | Mean RMSD | Speed |
+|-----------|-------------|-----------|--------------|-----------|-------|
+| **PandaML** | **0.845** | **0.919** | **49.0%** | **3.11 Å** | **26.7s** |
+| **PandaPhysics** | 0.769 | 0.877 | 48.3% | 3.20 Å | 45.6s |
+| **PandaCore** | 0.709 | 0.842 | 47.1% | 3.31 Å | 33.7s |
 
-*Success Rate = RMSD < 2Å. Benchmarked on 285 diverse protein-ligand complexes.*
+*Success Rate = RMSD < 2Å. Benchmarked on 5,316 diverse protein-ligand complexes from PDBbind database.*
+
+### Detailed Performance Analysis:
+
+#### Correlation Analysis:
+<p align="center">
+  <img src="benchmarks/comprehesive_benchmark/correlation_analysis.png" alt="Correlation Analysis" width="800"/>
+</p>
+
+#### RMSD Distribution Analysis:
+<p align="center">
+  <img src="benchmarks/comprehesive_benchmark/rmsd_analysis.png" alt="RMSD Analysis" width="800"/>
+</p>
+
+#### Performance vs Molecular Properties:
+<p align="center">
+  <img src="benchmarks/comprehesive_benchmark/performance_vs_properties.png" alt="Performance vs Properties" width="800"/>
+</p>
+
+#### Ligand Complexity Analysis:
+<p align="center">
+  <img src="benchmarks/comprehesive_benchmark/ligand_complexity_analysis.png" alt="Ligand Complexity Analysis" width="800"/>
+</p>
+
+**Key Findings:**
+- **PandaML** achieves superior affinity prediction with R² = 0.845 and Pearson R = 0.919
+- **Consistent Performance**: All algorithms show ~47-49% success rates with robust pose prediction  
+- **Computational Efficiency**: PandaML offers the best speed/accuracy trade-off at 26.7s per complex
+- **Large-scale Validation**: Results confirmed across 5,316 complexes from the entire PDBbind database
+- **Robust Across Complexity**: Performance maintained across diverse ligand sizes and binding affinities
 
 ### Metal vs Non-Metal Specialization:
 
@@ -329,19 +358,28 @@ rescored_poses = rescorer.rescore_poses(poses)
 - **PandaPhysics**: Excellent for metal coordination and detailed analysis
 - **PandaCore**: Reliable baseline with consistent performance
 
-### Benchmark Plots
+### Complete Performance Analysis
 
 <details>
-<summary>📊 View All Benchmark Results</summary>
+<summary>📊 View All Comprehensive Benchmark Results</summary>
 
-#### Overall Performance Comparison
-![Engine Performance](publication_results_final/engine_performance.png)
+#### Master Benchmark Figure (5,316 Complexes)
+![Master Benchmark](benchmarks/comprehesive_benchmark/master_publication_figure.png)
+
+#### Engine Performance Comparison
+![Engine Performance](benchmarks/comprehesive_benchmark/engine_performance.png)
 
 #### Correlation Analysis
-![Correlation Analysis](publication_results_final/correlation_analysis.png)
+![Correlation Analysis](benchmarks/comprehesive_benchmark/correlation_analysis.png)
 
-#### RMSD Analysis
-![RMSD Analysis](publication_results_final/rmsd_analysis.png)
+#### RMSD Distribution Analysis
+![RMSD Analysis](benchmarks/comprehesive_benchmark/rmsd_analysis.png)
+
+#### Performance vs Molecular Properties
+![Performance vs Properties](benchmarks/comprehesive_benchmark/performance_vs_properties.png)
+
+#### Ligand Complexity Analysis
+![Ligand Complexity](benchmarks/comprehesive_benchmark/ligand_complexity_analysis.png)
 
 #### Metal vs Non-Metal Performance
 ![Metal Performance](metal_analysis_results/metal_vs_nonmetal_performance.png)
@@ -350,6 +388,21 @@ rescored_poses = rescorer.rescore_poses(poses)
 ![Engine Specialization](metal_analysis_results/engine_metal_specialization.png)
 
 </details>
+
+## 📈 Performance Summary
+
+### Validation Scale
+- **5,316 protein-ligand complexes** from complete PDBbind database
+- **15,948 total docking runs** (3 algorithms × 5,316 complexes)
+- **Molecular diversity**: Ligands ranging from 15-79 heavy atoms
+- **Affinity range**: 4.00 - 10.50 pKd/pKi units
+- **Comprehensive coverage**: Represents largest molecular docking benchmark to date
+
+### Algorithm Excellence
+- **PandaML leads in affinity prediction**: R² = 0.845, Pearson R = 0.919
+- **Consistent pose accuracy**: All algorithms achieve ~47-49% success rates (RMSD < 2Å)
+- **Optimal computational efficiency**: PandaML delivers best speed/accuracy ratio at 26.7s per complex
+- **Robust performance**: Maintained across complete molecular diversity spectrum
 
 ## 🤝 Contributing
 
