@@ -1,0 +1,21 @@
+REMARK PandaDock generated pose
+REMARK Pose ID: ml_pose_28
+REMARK Score: 0.298
+REMARK Energy: -6.74 kcal/mol
+REMARK Confidence: 0.702
+REMARK Binding Affinity: -3.15 kcal/mol
+REMARK IC50: 4935694.2 nM
+HETATM    1  O   LIG A   1     -14.943 -19.262   9.075  1.00 20.00           O 
+HETATM    2  C   LIG A   1     -15.374 -18.050   8.396  1.00 20.00           C 
+HETATM    3  C   LIG A   1     -15.435 -16.947   9.065  1.00 20.00           C 
+HETATM    4  C   LIG A   1     -16.126 -18.238   7.090  1.00 20.00           C 
+HETATM    5  C   LIG A   1     -15.828 -15.864   8.476  1.00 20.00           C 
+HETATM    6  C   LIG A   1     -14.696 -16.807  10.349  1.00 20.00           C 
+HETATM    7  C   LIG A   1     -16.627 -16.056   7.229  1.00 20.00           C 
+HETATM    8  C   LIG A   1     -16.655 -17.153   6.660  1.00 20.00           C 
+HETATM    9  C   LIG A   1     -16.258 -19.699   6.508  1.00 20.00           C 
+HETATM   10  C   LIG A   1     -13.298 -16.325  10.277  1.00 20.00           C 
+HETATM   11  C   LIG A   1     -15.490 -15.870  11.365  1.00 20.00           C 
+HETATM   12  C   LIG A   1     -17.634 -20.268   6.679  1.00 20.00           C 
+HETATM   13  C   LIG A   1     -15.736 -19.561   5.172  1.00 20.00           C 
+END

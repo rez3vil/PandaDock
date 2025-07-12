@@ -1,0 +1,2178 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PandaDock Docking Report</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            color: #4CAF50;
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            color: #666;
+            margin-top: 10px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            color: #4CAF50;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .summary-card {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        .summary-card h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .summary-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .pose-row {
+            cursor: pointer;
+        }
+        .pose-row.selected {
+            background-color: #e8f5e8;
+        }
+        .chart-container {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .interaction-details {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .energy-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .energy-item {
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .energy-label {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .energy-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .tabs {
+            display: flex;
+            background-color: #f0f0f0;
+            border-radius: 8px 8px 0 0;
+        }
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .tab.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: white;
+            border-radius: 0 0 8px 8px;
+            border: 1px solid #ddd;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+        }
+        .logo {
+            width: 60px;
+            height: 60px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pose-details {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .pose-details.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <div class="logo">PD</div>
+                <div>
+                    <h1>PandaDock Docking Report</h1>
+                    <div class="subtitle">
+                        Generated on 2025-07-12T10:21:44.132173 | Version 1.0.0
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Executive Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h3>Total Poses</h3>
+                    <div class="summary-value" id="total-poses">-</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Best Score</h3>
+                    <div class="summary-value" id="best-score">-</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Best Binding Affinity</h3>
+                    <div class="summary-value" id="best-affinity">-</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Best IC50</h3>
+                    <div class="summary-value" id="best-ic50">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Detailed Results</h2>
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('poses')">Poses</button>
+                <button class="tab" onclick="showTab('interactions')">Interactions</button>
+                <button class="tab" onclick="showTab('energies')">Energies</button>
+                <button class="tab" onclick="showTab('properties')">Properties</button>
+            </div>
+
+            <div id="poses-tab" class="tab-content active">
+                <div class="table-container">
+                    <table id="poses-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Pose ID</th>
+                                <th>Score</th>
+                                <th>Energy (kcal/mol)</th>
+                                <th>ΔG (kcal/mol)</th>
+                                <th>IC50 (nM)</th>
+                                <th>LE (kcal/mol/atom)</th>
+                                <th>Interactions</th>
+                                <th>Clash Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="poses-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="interactions-tab" class="tab-content">
+                <div class="interaction-details">
+                    <h3>Interaction Statistics</h3>
+                    <div id="interaction-stats"></div>
+                </div>
+            </div>
+
+            <div id="energies-tab" class="tab-content">
+                <div class="chart-container">
+                    <h3>Energy Breakdown</h3>
+                    <div id="energy-chart"></div>
+                </div>
+            </div>
+
+            <div id="properties-tab" class="tab-content">
+                <div class="chart-container">
+                    <h3>Molecular Properties</h3>
+                    <div id="properties-chart"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Generated by PandaDock v1.0.0 | 
+               <a href="https://github.com/pandadock/pandadock" target="_blank">GitHub</a> | 
+               <a href="https://pandadock.readthedocs.io" target="_blank">Documentation</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Report data
+        const reportData = {
+  "metadata": {
+    "timestamp": "2025-07-12T10:21:44.132173",
+    "pandadock_version": "1.0.0",
+    "docking_mode": "balanced",
+    "scoring_function": "pandacore",
+    "num_poses": 10,
+    "flexible_residues": []
+  },
+  "summary": {
+    "total_poses": 10,
+    "best_score": 0.12516618366642196,
+    "worst_score": 0.27653265505754476,
+    "mean_score": 0.2078280870244666,
+    "score_range": 0.1513664713911228,
+    "best_energy": -8.630337592362922,
+    "worst_energy": -5.184448332159939,
+    "mean_energy": -6.487248073303164,
+    "energy_range": 3.445889260202983,
+    "best_binding_affinity": -6.9352057971973675,
+    "mean_binding_affinity": -4.019117991255362,
+    "best_ic50": 8240.172405708661,
+    "mean_ic50": 4023289.819420668
+  },
+  "poses": [
+    {
+      "rank": 1,
+      "pose_id": "ml_pose_25",
+      "score": 0.12516618366642196,
+      "energy": -5.423562371643391,
+      "binding_affinity": -6.9352057971973675,
+      "ic50": 8240.172405708661,
+      "ic50_nm": 8240.172405708661,
+      "ligand_efficiency": -0.5334773690151822,
+      "rmsd": null,
+      "confidence": 0.874833816333578,
+      "clash_score": 0.0,
+      "binding_site_coverage": 0.0,
+      "energy_breakdown": {
+        "vdw": 0.27830616622367704,
+        "electrostatic": 0.0,
+        "hbond": -6.0,
+        "hydrophobic": -4.0,
+        "solvation": -1.305311403750827,
+        "entropy": 2.2
+      },
+      "interactions": {
+        "hbonds": 0,
+        "hydrophobic": 0,
+        "salt_bridges": 0
+      },
+      "flexible_residues": [],
+      "coordinates": [
+        [
+          -17.595306541698314,
+          -17.221216998998248,
+          8.640280896296943
+        ],
+        [
+          -16.22417696274607,
+          -17.555166406103197,
+          8.342042823299414
+        ],
+        [
+          -15.769987167025672,
+          -17.355761412764483,
+          7.060626249474524
+        ],
+        [
+          -15.299444398835575,
+          -18.1787384608632,
+          9.255609973533316
+        ],
+        [
+          -14.599459577013445,
+          -17.604020447605603,
+          6.624852997202112
+        ],
+        [
+          -16.871619838784117,
+          -16.819569412068606,
+          6.064023723947733
+        ],
+        [
+          -13.655304106923964,
+          -18.18692136524198,
+          7.597019266697197
+        ],
+        [
+          -14.016191086189924,
+          -18.456353985875673,
+          8.856840850917838
+        ],
+        [
+          -15.821136853996016,
+          -18.421412150950005,
+          10.651484058070979
+        ],
+        [
+          -16.609965412717617,
+          -15.168837080866641,
+          5.890700205973651
+        ],
+        [
+          -16.68352458760899,
+          -17.393555895346935,
+          4.744452306802128
+        ],
+        [
+          -16.057072577841716,
+          -19.951892976511203,
+          10.98821733676095
+        ],
+        [
+          -14.896810888618543,
+          -17.786553406804238,
+          11.623849311023228
+        ]
+      ]
+    },
+    {
+      "rank": 2,
+      "pose_id": "ml_pose_27",
+      "score": 0.13660185301411976,
+      "energy": -6.446121356326297,
+      "binding_affinity": -6.089702328965851,
+      "ic50": 34336.68394258027,
+      "ic50_nm": 34336.68394258027,
+      "ligand_efficiency": -0.46843864068968083,
+      "rmsd": null,
+      "confidence": 0.8633981469858802,
+      "clash_score": 0.0,
+      "binding_site_coverage": 0.0,
+      "energy_breakdown": {
+        "vdw": 0.277166814543944,
+        "electrostatic": 0.0,
+        "hbond": -6.0,
+        "hydrophobic": -4.0,
+        "solvation": -1.3037646919476047,
+        "entropy": 2.2
+      },
+      "interactions": {
+        "hbonds": 0,
+        "hydrophobic": 0,
+        "salt_bridges": 0
+      },
+      "flexible_residues": [],
+      "coordinates": [
+        [
+          -14.015697339362264,
+          -17.31902473498847,
+          9.19973122976413
+        ],
+        [
+          -15.176317689522678,
+          -17.65687560344803,
+          8.596645725675833
+        ],
+        [
+          -15.988095592347173,
+          -18.62130607903368,
+          8.75280019710556
+        ],
+        [
+          -15.542537968661051,
+          -16.8474459718152,
+          7.387999789748726
+        ],
+        [
+          -17.162283478153142,
+          -18.862995466016123,
+          8.057666026891846
+        ],
+        [
+          -15.59429132701631,
+          -19.488920190129605,
+          10.044842519526071
+        ],
+        [
+          -17.620055960163818,
+          -18.17961616261516,
+          7.035188659685517
+        ],
+        [
+          -16.679345701931776,
+          -17.060384831635155,
+          6.718245948439341
+        ],
+        [
+          -14.720919665990607,
+          -15.604216919026339,
+          6.993388297208217
+        ],
+        [
+          -16.40677482691568,
+          -19.18690892013207,
+          11.305802426537976
+        ],
+        [
+          -15.87723361525881,
+          -20.991310450481453,
+          9.687473013098415
+        ],
+        [
+          -13.79165675777975,
+          -15.945769733690206,
+          5.77983028939542
+        ],
+        [
+          -15.524790076896942,
+          -14.335224936988467,
+          6.780385876922955
+        ]
+      ]
+    },
+    {
+      "rank": 3,
+      "pose_id": "ml_pose_15",
+      "score": 0.14374325048118375,
+      "energy": -6.9138622761864355,
+      "binding_affinity": -5.535416846447953,
+      "ic50": 87517.35730309226,
+      "ic50_nm": 87517.35730309226,
+      "ligand_efficiency": -0.4258012958806118,
+      "rmsd": null,
+      "confidence": 0.8562567495188163,
+      "clash_score": 0.0,
+      "binding_site_coverage": 0.0,
+      "energy_breakdown": {
+        "vdw": 0.29012134068449724,
+        "electrostatic": 0.0,
+        "hbond": -6.0,
+        "hydrophobic": -4.0,
+        "solvation": -1.304666386981488,
+        "entropy": 2.2
+      },
+      "interactions": {
+        "hbonds": 0,
+        "hydrophobic": 0,
+        "salt_bridges": 0
+      },
+      "flexible_residues": [],
+      "coordinates": [
+        [
+          -16.167446039225332,
+          -18.886655202740478,
+          9.704699346388537
+        ],
+        [
+          -15.78637957451528,
+          -18.028170131590407,
+          8.601705002320774
+        ],
+        [
+          -14.704167994958901,
+          -17.175978245819266,
+          8.661736797747995
+        ],
+        [
+          -16.598906224156824,
+          -18.044635301985235,
+          7.550086554483993
+        ],
+        [
+          -14.406021349609759,
+          -16.355734548524847,
+          7.663603615284973
+        ],
+        [
+          -13.814575272151615,
+          -17.257556059955323,
+          9.961486123387214
+        ],
+        [
+          -15.27271434085597,
+          -16.388685881185232,
+          6.50961866822778
+        ],
+        [
+          -16.455786763625923,
+          -17.18454465713925,
+          6.554054360688443
+        ],
+        [
+          -17.73269066606584,
+          -19.002375649144383,
+          7.448599153081375
+        ],
+        [
+          -12.636254847564281,
+          -18.072279380053704,
+          9.758347591400952
+        ],
+        [
+          -13.496703454495474,
+          -15.75696469600346,
+          10.227554708569023
+        ],
+        [
+          -19.175967114410703,
+          -18.192212382175896,
+          7.484894245112688
+        ],
+        [
+          -17.852386358364132,
+          -19.754207863682506,
+          6.21361383330628
+        ]
+      ]
+    },
+    {
+      "rank": 4,
+      "pose_id": "ml_pose_23",
+      "score": 0.16475579321751632,
+      "energy": -6.511359243610284,
+      "binding_affinity": -3.6308549399424566,
+      "ic50": 2179170.8017276847,
+      "ic50_nm": 2179170.8017276847,
+      "ligand_efficiency": -0.2792965338417274,
+      "rmsd": null,
+      "confidence": 0.8352442067824837,
+      "clash_score": 0.0,
+      "binding_site_coverage": 0.0,
+      "energy_breakdown": {
+        "vdw": 0.2777073857210324,
+        "electrostatic": 0.0,
+        "hbond": -6.0,
+        "hydrophobic": -4.0,
+        "solvation": -1.307498846066887,
+        "entropy": 2.2
+      },
+      "interactions": {
+        "hbonds": 0,
+        "hydrophobic": 0,
+        "salt_bridges": 0
+      },
+      "flexible_residues": [],
+      "coordinates": [
+        [
+          -16.03274865589266,
+          -16.302453740868135,
+          6.887476064611722
+        ],
+        [
+          -15.746882395663711,
+          -17.355349281323075,
+          7.7371039812841484
+        ],
+        [
+          -14.51314157245891,
+          -17.364947425993066,
+          8.335934641136847
+        ],
+        [
+          -16.825776810854517,
+          -18.2203483239325,
+          8.065829996614493
+        ],
+        [
+          -14.257763724566967,
+          -18.41925655085738,
+          9.306525694763229
+        ],
+        [
+          -13.41706955603674,
+          -16.38998021665245,
+          7.985294283597016
+        ],
+        [
+          -15.298757638566524,
+          -19.260159638759383,
+          9.703861333207698
+        ],
+        [
+          -16.58813349830006,
+          -19.191910299776172,
+          9.021095660195241
+        ],
+        [
+          -18.24574722365531,
+          -18.064264451800366,
+          7.415350364910989
+        ],
+        [
+          -13.286204849472412,
+          -15.279176307073083,
+          8.954960954028154
+        ],
+        [
+          -12.177966890313748,
+          -17.129960132271766,
+          7.7244740412096675
+        ],
+        [
+          -18.45411255804454,
+          -19.13323397078566,
+          6.617671116563573
+        ],
+        [
+          -19.25569462617394,
+          -17.988959659906953,
+          8.584421867877236
+        ]
+      ]
+    },
+    {
+      "rank": 5,
+      "pose_id": "ml_pose_12",
+      "score": 0.22611164192133482,
+      "energy": -5.86760156711944,
+      "binding_affinity": -3.0,
+      "ic50": 6320605.529804601,
+      "ic50_nm": 6320605.529804601,
+      "ligand_efficiency": -0.23076923076923078,
+      "rmsd": null,
+      "confidence": 0.7738883580786652,
+      "clash_score": 0.0,
+      "binding_site_coverage": 0.0,
+      "energy_breakdown": {
+        "vdw": 0.2796797739826711,
+        "electrostatic": 0.0,
+        "hbond": -6.0,
+        "hydrophobic": -4.0,
+        "solvation": -1.3037441706517576,
+        "entropy": 2.2
+      },
+      "interactions": {
+        "hbonds": 0,
+        "hydrophobic": 0,
+        "salt_bridges": 0
+      },
+      "flexible_residues": [],
+      "coordinates": [
+        [
+          -15.47947083803464,
+          -16.837165595866203,
+          9.92892881903197
+        ],
+        [
+          -15.60991504964948,
+          -17.444674395347747,
+          8.770230110938922
+        ],
+        [
+          -14.73885293284885,
+          -18.397942838039288,
+          8.29791906538929
+        ],
+        [
+          -16.59647097500187,
+          -17.093174466747,
+          7.939452738574005
+        ],
+        [
+          -14.79099562823421,
+          -18.968320393189366,
+          7.003617942337545
+        ],
+        [
+          -13.574344062434069,
+          -18.697918743358034,
+          9.13866249814214
+        ],
+        [
+          -15.9591259352495,
+          -18.556451478257443,
+          6.148870988373069
+        ],
+        [
+          -16.928290472906564,
+          -17.64490720139764,
+          6.6903871528190315
+        ],
+        [
+          -17.770748546565365,
+          -16.16943304173303,
+          8.314849279631396
+        ],
+        [
+          -13.660874711210372,
+          -20.01527048185671,
+          9.81956761661418
+        ],
+        [
+          -12.128822219360398,
+          -18.699058403338775,
+          8.367668406383519
+        ],
+        [
+          -17.67377428046111,
+          -14.828142982389926,
+          7.625090109483683
+        ],
+        [
+          -19.188314348043576,
+          -16.74753997847887,
+          8.294755272281208
+        ]
+      ]
+    },
+    {
+      "rank": 6,
+      "pose_id": "ml_pose_9",
+      "score": 0.23709637136381967,
+      "energy": -5.184448332159939,
+      "binding_affinity": -3.0,
+      "ic50": 6320605.529804601,
+      "ic50_nm": 6320605.529804601,
+      "ligand_efficiency": -0.23076923076923078,
+      "rmsd": null,
+      "confidence": 0.7629036286361803,
+      "clash_score": 0.0,
+      "binding_site_coverage": 0.0,
+      "energy_breakdown": {
+        "vdw": 0.2850753819096878,
+        "electrostatic": 0.0,
+        "hbond": -6.0,
+        "hydrophobic": -4.0,
+        "solvation": -1.2997120423758748,
+        "entropy": 2.2
+      },
+      "interactions": {
+        "hbonds": 0,
+        "hydrophobic": 0,
+        "salt_bridges": 0
+      },
+      "flexible_residues": [],
+      "coordinates": [
+        [
+          -17.01810364344329,
+          -17.64544363569554,
+          6.704904966909888
+        ],
+        [
+          -16.054851010880135,
+          -17.71590060639334,
+          7.86702200854238
+        ],
+        [
+          -15.192324293755417,
+          -18.777414897295678,
+          7.83414075534043
+        ],
+        [
+          -16.078458780453435,
+          -16.751417984277754,
+          8.6670179927743
+        ],
+        [
+          -14.349224788830602,
+          -18.779570747688545,
+          8.896805212849783
+        ],
+        [
+          -15.300954302986977,
+          -19.871076616987764,
+          6.79541905328113
+        ],
+        [
+          -14.389153614883428,
+          -17.7486450182362,
+          9.882998429127264
+        ],
+        [
+          -15.131866090264756,
+          -16.59563460538288,
+          9.705822409971226
+        ],
+        [
+          -16.978684731894827,
+          -15.38780640780282,
+          8.56006254130561
+        ],
+        [
+          -14.177109049800974,
+          -19.8511016057637,
+          5.770792580313056
+        ],
+        [
+          -15.16106369664951,
+          -21.25432775895885,
+          7.491577672409219
+        ],
+        [
+          -18.081270582945635,
+          -15.571575584373697,
+          9.58502122718667
+        ],
+        [
+          -16.186935413211003,
+          -14.150084531143207,
+          8.578415149989027
+        ]
+      ]
+    },
+    {
+      "rank": 7,
+      "pose_id": "ml_pose_17",
+      "score": 0.2459221106643008,
+      "energy": -7.897179526239529,
+      "binding_affinity": -3.0,
+      "ic50": 6320605.529804601,
+      "ic50_nm": 6320605.529804601,
+      "ligand_efficiency": -0.23076923076923078,
+      "rmsd": null,
+      "confidence": 0.7540778893356992,
+      "clash_score": 0.0,
+      "binding_site_coverage": 0.0,
+      "energy_breakdown": {
+        "vdw": 0.28038922942645306,
+        "electrostatic": 0.0,
+        "hbond": -6.0,
+        "hydrophobic": -4.0,
+        "solvation": -1.303283430203525,
+        "entropy": 2.2
+      },
+      "interactions": {
+        "hbonds": 0,
+        "hydrophobic": 0,
+        "salt_bridges": 0
+      },
+      "flexible_residues": [],
+      "coordinates": [
+        [
+          -13.730155020714747,
+          -17.927324653399246,
+          7.822771544196449
+        ],
+        [
+          -15.082620961307274,
+          -17.835001936821726,
+          8.111985445297988
+        ],
+        [
+          -15.622113212193558,
+          -16.516043352064173,
+          8.219477356576984
+        ],
+        [
+          -15.970345351477945,
+          -18.80157463779861,
+          8.167971220339343
+        ],
+        [
+          -16.956543571702678,
+          -16.408456581013343,
+          8.474426447007517
+        ],
+        [
+          -14.768637693263543,
+          -15.272726261882642,
+          8.054404073982894
+        ],
+        [
+          -17.819255242865783,
+          -17.407413952956585,
+          8.530330885283895
+        ],
+        [
+          -17.326469034367314,
+          -18.686207592571495,
+          8.479157601523378
+        ],
+        [
+          -15.386902290777236,
+          -20.255715830889038,
+          8.04263372505828
+        ],
+        [
+          -14.783914262496879,
+          -14.657672397547913,
+          6.668242165108056
+        ],
+        [
+          -15.108554055055134,
+          -14.233801160765676,
+          9.204778025348471
+        ],
+        [
+          -15.371951740762025,
+          -21.023977064909452,
+          9.461857770982432
+        ],
+        [
+          -16.172537563015876,
+          -21.074084577380027,
+          7.1019637392943205
+        ]
+      ]
+    },
+    {
+      "rank": 8,
+      "pose_id": "ml_pose_1",
+      "score": 0.24620626477537744,
+      "energy": -8.630337592362922,
+      "binding_affinity": -3.0,
+      "ic50": 6320605.529804601,
+      "ic50_nm": 6320605.529804601,
+      "ligand_efficiency": -0.23076923076923078,
+      "rmsd": null,
+      "confidence": 0.7537937352246226,
+      "clash_score": 0.0,
+      "binding_site_coverage": 0.0,
+      "energy_breakdown": {
+        "vdw": 0.285496157733597,
+        "electrostatic": 0.0,
+        "hbond": -6.0,
+        "hydrophobic": -4.0,
+        "solvation": -1.3024936189263618,
+        "entropy": 2.2
+      },
+      "interactions": {
+        "hbonds": 0,
+        "hydrophobic": 0,
+        "salt_bridges": 0
+      },
+      "flexible_residues": [],
+      "coordinates": [
+        [
+          -15.109563180084143,
+          -17.416887591566507,
+          10.007333419030779
+        ],
+        [
+          -15.593802173621166,
+          -17.67321643277691,
+          8.760000050063567
+        ],
+        [
+          -16.520131388442678,
+          -16.854592310748803,
+          8.148795795372592
+        ],
+        [
+          -14.963842119313705,
+          -18.509113599461642,
+          7.972985479735071
+        ],
+        [
+          -17.022080772201157,
+          -17.099593973696734,
+          6.892307238788647
+        ],
+        [
+          -17.18899920444418,
+          -15.776791226497078,
+          8.977270190469994
+        ],
+        [
+          -16.42897458199044,
+          -18.04952401634465,
+          6.163539240517596
+        ],
+        [
+          -15.336446460241078,
+          -18.932887302114754,
+          6.767960895011978
+        ],
+        [
+          -13.789400116615463,
+          -19.484271937306286,
+          8.601171486630525
+        ],
+        [
+          -16.522711906393248,
+          -14.338202679135843,
+          8.652520877199912
+        ],
+        [
+          -18.688781255436446,
+          -15.625718516799534,
+          8.835462659901003
+        ],
+        [
+          -14.238498504360745,
+          -20.867741179079946,
+          8.921928006486679
+        ],
+        [
+          -12.696768336855538,
+          -19.471459234471286,
+          7.638724660791651
+        ]
+      ]
+    },
+    {
+      "rank": 9,
+      "pose_id": "ml_pose_28",
+      "score": 0.2761447460830466,
+      "energy": -5.3585700597120995,
+      "binding_affinity": -3.0,
+      "ic50": 6320605.529804601,
+      "ic50_nm": 6320605.529804601,
+      "ligand_efficiency": -0.23076923076923078,
+      "rmsd": null,
+      "confidence": 0.7238552539169534,
+      "clash_score": 0.0,
+      "binding_site_coverage": 0.0,
+      "energy_breakdown": {
+        "vdw": 0.27652652043994164,
+        "electrostatic": 0.0,
+        "hbond": -6.0,
+        "hydrophobic": -4.0,
+        "solvation": -1.3084642274818943,
+        "entropy": 2.2
+      },
+      "interactions": {
+        "hbonds": 0,
+        "hydrophobic": 0,
+        "salt_bridges": 0
+      },
+      "flexible_residues": [],
+      "coordinates": [
+        [
+          -15.844253831858946,
+          -16.012591685464287,
+          7.109885144875918
+        ],
+        [
+          -15.831143593321453,
+          -17.146539206470734,
+          7.848922695112042
+        ],
+        [
+          -15.297413932389478,
+          -17.21151054066037,
+          9.237764446329725
+        ],
+        [
+          -16.07775025976952,
+          -18.461660910864104,
+          7.235494217699857
+        ],
+        [
+          -15.122730823020103,
+          -18.361535250381245,
+          9.75719711371969
+        ],
+        [
+          -15.01062939761443,
+          -15.863678722566005,
+          9.995646061426124
+        ],
+        [
+          -15.424106969407504,
+          -19.57322684748,
+          9.222149405003812
+        ],
+        [
+          -15.90801666740785,
+          -19.679349492826525,
+          7.815781365238474
+        ],
+        [
+          -16.593869274150165,
+          -18.315745878541257,
+          5.908647575855767
+        ],
+        [
+          -16.04370211687922,
+          -15.466349721954293,
+          10.893425036194978
+        ],
+        [
+          -13.630751118009798,
+          -15.961391772022957,
+          10.673056590968688
+        ],
+        [
+          -15.497202028561599,
+          -18.79859221969057,
+          4.82705105273892
+        ],
+        [
+          -17.81842998760991,
+          -19.247827751077644,
+          5.814979294836016
+        ]
+      ]
+    },
+    {
+      "rank": 10,
+      "pose_id": "ml_pose_16",
+      "score": 0.27653265505754476,
+      "energy": -6.639438407671313,
+      "binding_affinity": -3.0,
+      "ic50": 6320605.529804601,
+      "ic50_nm": 6320605.529804601,
+      "ligand_efficiency": -0.23076923076923078,
+      "rmsd": null,
+      "confidence": 0.7234673449424552,
+      "clash_score": 0.0,
+      "binding_site_coverage": 0.0,
+      "energy_breakdown": {
+        "vdw": 0.2686253700549626,
+        "electrostatic": 0.0,
+        "hbond": -6.0,
+        "hydrophobic": -4.0,
+        "solvation": -1.3090820651746036,
+        "entropy": 2.2
+      },
+      "interactions": {
+        "hbonds": 0,
+        "hydrophobic": 0,
+        "salt_bridges": 0
+      },
+      "flexible_residues": [],
+      "coordinates": [
+        [
+          -14.154835113934901,
+          -16.552336829677166,
+          7.7631612626274356
+        ],
+        [
+          -15.257975041410873,
+          -17.318292028721586,
+          8.121057324038546
+        ],
+        [
+          -16.426041630002846,
+          -17.23254950296681,
+          7.289035528451161
+        ],
+        [
+          -15.19425618596388,
+          -18.240316619669454,
+          9.252162740508709
+        ],
+        [
+          -17.447376415359116,
+          -18.107366267334946,
+          7.5350702958163325
+        ],
+        [
+          -16.43991527540009,
+          -16.249931251214868,
+          6.073181265768013
+        ],
+        [
+          -17.374308821709118,
+          -19.02363758606035,
+          8.504283245392553
+        ],
+        [
+          -16.285105590454187,
+          -19.15932868828654,
+          9.434730123972543
+        ],
+        [
+          -13.915421206158229,
+          -18.310068976780496,
+          10.057129634714636
+        ],
+        [
+          -16.14046239607569,
+          -17.00717009903114,
+          4.754447031936339
+        ],
+        [
+          -17.862880712713334,
+          -15.675188482709355,
+          6.150276412598798
+        ],
+        [
+          -14.208956483556378,
+          -17.551103524836265,
+          11.334629729052724
+        ],
+        [
+          -13.392465127261357,
+          -19.672710142711054,
+          10.07083540512223
+        ]
+      ]
+    }
+  ],
+  "interactions": {
+    "hbond_stats": {
+      "total": 0,
+      "average": 0.0,
+      "max": 0,
+      "min": 0
+    },
+    "hydrophobic_stats": {
+      "total": 0,
+      "average": 0.0,
+      "max": 0,
+      "min": 0
+    },
+    "salt_bridge_stats": {
+      "total": 0,
+      "average": 0.0,
+      "max": 0,
+      "min": 0
+    },
+    "interaction_frequency": {},
+    "best_interactions": {
+      "hbonds": [],
+      "hydrophobic": [],
+      "salt_bridges": []
+    }
+  },
+  "energy_analysis": {
+    "energy_contributions": {
+      "vdw_energy": {
+        "average": 0.2799094140720464,
+        "min": 0.2686253700549626,
+        "max": 0.29012134068449724,
+        "std": 0.0056229897236400195
+      },
+      "electrostatic_energy": {
+        "average": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "std": 0.0
+      },
+      "hbond_energy": {
+        "average": -6.0,
+        "min": -6.0,
+        "max": -6.0,
+        "std": 0.0
+      },
+      "hydrophobic_energy": {
+        "average": -4.0,
+        "min": -4.0,
+        "max": -4.0,
+        "std": 0.0
+      },
+      "solvation_energy": {
+        "average": -1.3048020883560822,
+        "min": -1.3090820651746036,
+        "max": -1.2997120423758748,
+        "std": 0.0027389612388533944
+      },
+      "entropy_energy": {
+        "average": 2.2,
+        "min": 2.2,
+        "max": 2.2,
+        "std": 0.0
+      }
+    },
+    "energy_correlations": {},
+    "energy_distribution": {
+      "poses": [
+        "ml_pose_25",
+        "ml_pose_27",
+        "ml_pose_15",
+        "ml_pose_23",
+        "ml_pose_12",
+        "ml_pose_9",
+        "ml_pose_17",
+        "ml_pose_1",
+        "ml_pose_28",
+        "ml_pose_16"
+      ],
+      "total_energy": [
+        -5.423562371643391,
+        -6.446121356326297,
+        -6.9138622761864355,
+        -6.511359243610284,
+        -5.86760156711944,
+        -5.184448332159939,
+        -7.897179526239529,
+        -8.630337592362922,
+        -5.3585700597120995,
+        -6.639438407671313
+      ],
+      "vdw": [
+        0.27830616622367704,
+        0.277166814543944,
+        0.29012134068449724,
+        0.2777073857210324,
+        0.2796797739826711,
+        0.2850753819096878,
+        0.28038922942645306,
+        0.285496157733597,
+        0.27652652043994164,
+        0.2686253700549626
+      ],
+      "electrostatic": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "hbond": [
+        -6.0,
+        -6.0,
+        -6.0,
+        -6.0,
+        -6.0,
+        -6.0,
+        -6.0,
+        -6.0,
+        -6.0,
+        -6.0
+      ],
+      "hydrophobic": [
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0
+      ],
+      "solvation": [
+        -1.305311403750827,
+        -1.3037646919476047,
+        -1.304666386981488,
+        -1.307498846066887,
+        -1.3037441706517576,
+        -1.2997120423758748,
+        -1.303283430203525,
+        -1.3024936189263618,
+        -1.3084642274818943,
+        -1.3090820651746036
+      ],
+      "entropy": [
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2
+      ]
+    }
+  },
+  "binding_analysis": {
+    "affinity_distribution": [
+      -6.9352057971973675,
+      -6.089702328965851,
+      -5.535416846447953,
+      -3.6308549399424566,
+      -3.0,
+      -3.0,
+      -3.0,
+      -3.0,
+      -3.0,
+      -3.0
+    ],
+    "ic50_distribution": [
+      8240.172405708661,
+      34336.68394258027,
+      87517.35730309226,
+      2179170.8017276847,
+      6320605.529804601,
+      6320605.529804601,
+      6320605.529804601,
+      6320605.529804601,
+      6320605.529804601,
+      6320605.529804601
+    ],
+    "ligand_efficiency_distribution": [
+      -0.5334773690151822,
+      -0.46843864068968083,
+      -0.4258012958806118,
+      -0.2792965338417274,
+      -0.23076923076923078,
+      -0.23076923076923078,
+      -0.23076923076923078,
+      -0.23076923076923078,
+      -0.23076923076923078,
+      -0.23076923076923078
+    ],
+    "drug_likeness_assessment": [
+      {
+        "ic50": 8241.172405708661,
+        "delta_g": -6.9352057971973675,
+        "ligand_efficiency": -0.5334773690151822,
+        "lipophilic_efficiency": 2.5840110003040513,
+        "lipinski_violations": 0,
+        "lipinski_compliant": true,
+        "veber_compliant": false,
+        "tpsa_estimate": 120,
+        "le_assessment": "excellent",
+        "lipe_assessment": "moderate",
+        "drug_likeness_score": 4,
+        "max_score": 10,
+        "drug_likeness_category": "moderate"
+      },
+      {
+        "ic50": 34337.68394258026,
+        "delta_g": -6.089702328965851,
+        "ligand_efficiency": -0.46843864068968083,
+        "lipophilic_efficiency": 1.964229001105168,
+        "lipinski_violations": 0,
+        "lipinski_compliant": true,
+        "veber_compliant": false,
+        "tpsa_estimate": 120,
+        "le_assessment": "excellent",
+        "lipe_assessment": "moderate",
+        "drug_likeness_score": 4,
+        "max_score": 10,
+        "drug_likeness_category": "moderate"
+      },
+      {
+        "ic50": 87518.35730309226,
+        "delta_g": -5.535416846447953,
+        "ligand_efficiency": -0.4258012958806118,
+        "lipophilic_efficiency": 1.5579008425291283,
+        "lipinski_violations": 0,
+        "lipinski_compliant": true,
+        "veber_compliant": false,
+        "tpsa_estimate": 120,
+        "le_assessment": "excellent",
+        "lipe_assessment": "moderate",
+        "drug_likeness_score": 4,
+        "max_score": 10,
+        "drug_likeness_category": "moderate"
+      },
+      {
+        "ic50": 2179171.801727684,
+        "delta_g": -3.6308549399424566,
+        "ligand_efficiency": -0.2792965338417274,
+        "lipophilic_efficiency": 0.16170852945953484,
+        "lipinski_violations": 0,
+        "lipinski_compliant": true,
+        "veber_compliant": false,
+        "tpsa_estimate": 120,
+        "le_assessment": "good",
+        "lipe_assessment": "poor",
+        "drug_likeness_score": 4,
+        "max_score": 10,
+        "drug_likeness_category": "moderate"
+      },
+      {
+        "ic50": 6320606.5298046,
+        "delta_g": -3.0,
+        "ligand_efficiency": -0.23076923076923078,
+        "lipophilic_efficiency": -0.3007587554830522,
+        "lipinski_violations": 0,
+        "lipinski_compliant": true,
+        "veber_compliant": false,
+        "tpsa_estimate": 120,
+        "le_assessment": "moderate",
+        "lipe_assessment": "poor",
+        "drug_likeness_score": 2,
+        "max_score": 10,
+        "drug_likeness_category": "poor"
+      },
+      {
+        "ic50": 6320606.5298046,
+        "delta_g": -3.0,
+        "ligand_efficiency": -0.23076923076923078,
+        "lipophilic_efficiency": -0.3007587554830522,
+        "lipinski_violations": 0,
+        "lipinski_compliant": true,
+        "veber_compliant": false,
+        "tpsa_estimate": 120,
+        "le_assessment": "moderate",
+        "lipe_assessment": "poor",
+        "drug_likeness_score": 2,
+        "max_score": 10,
+        "drug_likeness_category": "poor"
+      },
+      {
+        "ic50": 6320606.5298046,
+        "delta_g": -3.0,
+        "ligand_efficiency": -0.23076923076923078,
+        "lipophilic_efficiency": -0.3007587554830522,
+        "lipinski_violations": 0,
+        "lipinski_compliant": true,
+        "veber_compliant": false,
+        "tpsa_estimate": 120,
+        "le_assessment": "moderate",
+        "lipe_assessment": "poor",
+        "drug_likeness_score": 2,
+        "max_score": 10,
+        "drug_likeness_category": "poor"
+      },
+      {
+        "ic50": 6320606.5298046,
+        "delta_g": -3.0,
+        "ligand_efficiency": -0.23076923076923078,
+        "lipophilic_efficiency": -0.3007587554830522,
+        "lipinski_violations": 0,
+        "lipinski_compliant": true,
+        "veber_compliant": false,
+        "tpsa_estimate": 120,
+        "le_assessment": "moderate",
+        "lipe_assessment": "poor",
+        "drug_likeness_score": 2,
+        "max_score": 10,
+        "drug_likeness_category": "poor"
+      },
+      {
+        "ic50": 6320606.5298046,
+        "delta_g": -3.0,
+        "ligand_efficiency": -0.23076923076923078,
+        "lipophilic_efficiency": -0.3007587554830522,
+        "lipinski_violations": 0,
+        "lipinski_compliant": true,
+        "veber_compliant": false,
+        "tpsa_estimate": 120,
+        "le_assessment": "moderate",
+        "lipe_assessment": "poor",
+        "drug_likeness_score": 2,
+        "max_score": 10,
+        "drug_likeness_category": "poor"
+      },
+      {
+        "ic50": 6320606.5298046,
+        "delta_g": -3.0,
+        "ligand_efficiency": -0.23076923076923078,
+        "lipophilic_efficiency": -0.3007587554830522,
+        "lipinski_violations": 0,
+        "lipinski_compliant": true,
+        "veber_compliant": false,
+        "tpsa_estimate": 120,
+        "le_assessment": "moderate",
+        "lipe_assessment": "poor",
+        "drug_likeness_score": 2,
+        "max_score": 10,
+        "drug_likeness_category": "poor"
+      }
+    ]
+  },
+  "molecular_properties": {
+    "size_distribution": [
+      13,
+      13,
+      13,
+      13,
+      13,
+      13,
+      13,
+      13,
+      13,
+      13
+    ],
+    "flexibility_distribution": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "shape_descriptors": [
+      {
+        "radius_of_gyration": 2.5381103851789946,
+        "length": 3.9400024347743496,
+        "width": 4.783055895644562,
+        "height": 6.879397004221101
+      },
+      {
+        "radius_of_gyration": 2.54505986493089,
+        "length": 3.828399202384068,
+        "width": 6.656085513492986,
+        "height": 5.525972137142556
+      },
+      {
+        "radius_of_gyration": 2.5212974138752644,
+        "length": 6.539712266846422,
+        "width": 3.9972431676790467,
+        "height": 4.013940875262744
+      },
+      {
+        "radius_of_gyration": 2.5421439655801543,
+        "length": 7.0777277358601935,
+        "width": 3.9809833316863,
+        "height": 3.086190216644125
+      },
+      {
+        "radius_of_gyration": 2.5422456005119334,
+        "length": 7.059492128683178,
+        "width": 5.187127499466785,
+        "height": 3.780057830658901
+      },
+      {
+        "radius_of_gyration": 2.544836499544012,
+        "length": 3.904161533144661,
+        "width": 7.104243227815644,
+        "height": 4.112205848814208
+      },
+      {
+        "radius_of_gyration": 2.5372344689584305,
+        "length": 4.0891002221510355,
+        "width": 6.840283416614351,
+        "height": 2.7936156058743755
+      },
+      {
+        "radius_of_gyration": 2.5340389121517775,
+        "length": 5.992012918580908,
+        "width": 6.529538499944103,
+        "height": 3.843794178513183
+      },
+      {
+        "radius_of_gyration": 2.542596090404523,
+        "length": 4.187678869600113,
+        "width": 4.212999770872232,
+        "height": 6.066373983456058
+      },
+      {
+        "radius_of_gyration": 2.545975144468636,
+        "length": 4.470415585451978,
+        "width": 3.9975216600016985,
+        "height": 6.580182697116385
+      }
+    ]
+  },
+  "comparison_data": {
+    "score_vs_energy": [
+      [
+        0.12516618366642196,
+        -5.423562371643391
+      ],
+      [
+        0.13660185301411976,
+        -6.446121356326297
+      ],
+      [
+        0.14374325048118375,
+        -6.9138622761864355
+      ],
+      [
+        0.16475579321751632,
+        -6.511359243610284
+      ],
+      [
+        0.22611164192133482,
+        -5.86760156711944
+      ],
+      [
+        0.23709637136381967,
+        -5.184448332159939
+      ],
+      [
+        0.2459221106643008,
+        -7.897179526239529
+      ],
+      [
+        0.24620626477537744,
+        -8.630337592362922
+      ],
+      [
+        0.2761447460830466,
+        -5.3585700597120995
+      ],
+      [
+        0.27653265505754476,
+        -6.639438407671313
+      ]
+    ],
+    "score_vs_interactions": [
+      [
+        0.12516618366642196,
+        0
+      ],
+      [
+        0.13660185301411976,
+        0
+      ],
+      [
+        0.14374325048118375,
+        0
+      ],
+      [
+        0.16475579321751632,
+        0
+      ],
+      [
+        0.22611164192133482,
+        0
+      ],
+      [
+        0.23709637136381967,
+        0
+      ],
+      [
+        0.2459221106643008,
+        0
+      ],
+      [
+        0.24620626477537744,
+        0
+      ],
+      [
+        0.2761447460830466,
+        0
+      ],
+      [
+        0.27653265505754476,
+        0
+      ]
+    ],
+    "energy_vs_interactions": [
+      [
+        -5.423562371643391,
+        0
+      ],
+      [
+        -6.446121356326297,
+        0
+      ],
+      [
+        -6.9138622761864355,
+        0
+      ],
+      [
+        -6.511359243610284,
+        0
+      ],
+      [
+        -5.86760156711944,
+        0
+      ],
+      [
+        -5.184448332159939,
+        0
+      ],
+      [
+        -7.897179526239529,
+        0
+      ],
+      [
+        -8.630337592362922,
+        0
+      ],
+      [
+        -5.3585700597120995,
+        0
+      ],
+      [
+        -6.639438407671313,
+        0
+      ]
+    ],
+    "affinity_vs_efficiency": [
+      [
+        -6.9352057971973675,
+        -0.5334773690151822
+      ],
+      [
+        -6.089702328965851,
+        -0.46843864068968083
+      ],
+      [
+        -5.535416846447953,
+        -0.4258012958806118
+      ],
+      [
+        -3.6308549399424566,
+        -0.2792965338417274
+      ],
+      [
+        -3.0,
+        -0.23076923076923078
+      ],
+      [
+        -3.0,
+        -0.23076923076923078
+      ],
+      [
+        -3.0,
+        -0.23076923076923078
+      ],
+      [
+        -3.0,
+        -0.23076923076923078
+      ],
+      [
+        -3.0,
+        -0.23076923076923078
+      ],
+      [
+        -3.0,
+        -0.23076923076923078
+      ]
+    ]
+  }
+};
+        
+        // Initialize report
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeReport();
+        });
+        
+        function initializeReport() {
+            updateSummary();
+            populatePosesTable();
+            updateInteractionStats();
+            updateEnergyChart();
+            updatePropertiesChart();
+        }
+        
+        function updateSummary() {
+            const summary = reportData.summary;
+            
+            document.getElementById('total-poses').textContent = summary.total_poses || '-';
+            document.getElementById('best-score').textContent = (summary.best_score || 0).toFixed(3);
+            document.getElementById('best-affinity').textContent = (summary.best_binding_affinity || 0).toFixed(2) + ' kcal/mol';
+            
+            const bestIC50 = summary.best_ic50;
+            if (bestIC50 && bestIC50 !== Infinity) {
+                document.getElementById('best-ic50').textContent = bestIC50.toFixed(1) + ' nM';
+            } else {
+                document.getElementById('best-ic50').textContent = '-';
+            }
+        }
+        
+        function populatePosesTable() {
+            const tbody = document.getElementById('poses-tbody');
+            tbody.innerHTML = '';
+            
+            reportData.poses.forEach((pose, index) => {
+                const row = document.createElement('tr');
+                row.className = 'pose-row';
+                row.onclick = () => showPoseDetails(index);
+                
+                const totalInteractions = pose.interactions.hbonds + 
+                                        pose.interactions.hydrophobic + 
+                                        pose.interactions.salt_bridges;
+                
+                row.innerHTML = `
+                    <td>${pose.rank}</td>
+                    <td>${pose.pose_id}</td>
+                    <td>${pose.score.toFixed(3)}</td>
+                    <td>${pose.energy.toFixed(2)}</td>
+                    <td>${pose.binding_affinity.toFixed(2)}</td>
+                    <td>${pose.ic50_nm === Infinity ? '-' : pose.ic50_nm.toFixed(1)}</td>
+                    <td>${pose.ligand_efficiency.toFixed(3)}</td>
+                    <td>${totalInteractions}</td>
+                    <td>${pose.clash_score.toFixed(2)}</td>
+                `;
+                
+                tbody.appendChild(row);
+                
+                // Add details row
+                const detailRow = document.createElement('tr');
+                detailRow.innerHTML = `
+                    <td colspan="9">
+                        <div class="pose-details" id="pose-details-${index}">
+                            <h4>Energy Breakdown</h4>
+                            <div class="energy-breakdown">
+                                <div class="energy-item">
+                                    <div class="energy-label">van der Waals</div>
+                                    <div class="energy-value">${pose.energy_breakdown.vdw.toFixed(2)}</div>
+                                </div>
+                                <div class="energy-item">
+                                    <div class="energy-label">Electrostatic</div>
+                                    <div class="energy-value">${pose.energy_breakdown.electrostatic.toFixed(2)}</div>
+                                </div>
+                                <div class="energy-item">
+                                    <div class="energy-label">H-bonds</div>
+                                    <div class="energy-value">${pose.energy_breakdown.hbond.toFixed(2)}</div>
+                                </div>
+                                <div class="energy-item">
+                                    <div class="energy-label">Hydrophobic</div>
+                                    <div class="energy-value">${pose.energy_breakdown.hydrophobic.toFixed(2)}</div>
+                                </div>
+                                <div class="energy-item">
+                                    <div class="energy-label">Solvation</div>
+                                    <div class="energy-value">${pose.energy_breakdown.solvation.toFixed(2)}</div>
+                                </div>
+                                <div class="energy-item">
+                                    <div class="energy-label">Entropy</div>
+                                    <div class="energy-value">${pose.energy_breakdown.entropy.toFixed(2)}</div>
+                                </div>
+                            </div>
+                            <h4>Interactions</h4>
+                            <p>Hydrogen bonds: ${pose.interactions.hbonds} | 
+                               Hydrophobic contacts: ${pose.interactions.hydrophobic} | 
+                               Salt bridges: ${pose.interactions.salt_bridges}</p>
+                            ${pose.flexible_residues.length > 0 ? 
+                              `<h4>Flexible Residues</h4><p>${pose.flexible_residues.join(', ')}</p>` : ''}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(detailRow);
+            });
+        }
+        
+        function showPoseDetails(index) {
+            // Hide all details
+            document.querySelectorAll('.pose-details').forEach(detail => {
+                detail.classList.remove('active');
+            });
+            
+            // Remove selection from all rows
+            document.querySelectorAll('.pose-row').forEach(row => {
+                row.classList.remove('selected');
+            });
+            
+            // Show selected details
+            const detail = document.getElementById(`pose-details-${index}`);
+            const row = document.querySelectorAll('.pose-row')[index];
+            
+            if (detail.classList.contains('active')) {
+                detail.classList.remove('active');
+                row.classList.remove('selected');
+            } else {
+                detail.classList.add('active');
+                row.classList.add('selected');
+            }
+        }
+        
+        function updateInteractionStats() {
+            const interactions = reportData.interactions;
+            const statsDiv = document.getElementById('interaction-stats');
+            
+            statsDiv.innerHTML = `
+                <div class="energy-breakdown">
+                    <div class="energy-item">
+                        <div class="energy-label">Hydrogen Bonds</div>
+                        <div class="energy-value">Avg: ${interactions.hbond_stats.average.toFixed(1)}</div>
+                        <div class="energy-label">Max: ${interactions.hbond_stats.max}</div>
+                    </div>
+                    <div class="energy-item">
+                        <div class="energy-label">Hydrophobic</div>
+                        <div class="energy-value">Avg: ${interactions.hydrophobic_stats.average.toFixed(1)}</div>
+                        <div class="energy-label">Max: ${interactions.hydrophobic_stats.max}</div>
+                    </div>
+                    <div class="energy-item">
+                        <div class="energy-label">Salt Bridges</div>
+                        <div class="energy-value">Avg: ${interactions.salt_bridge_stats.average.toFixed(1)}</div>
+                        <div class="energy-label">Max: ${interactions.salt_bridge_stats.max}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function updateEnergyChart() {
+            const energyDiv = document.getElementById('energy-chart');
+            const energyDist = reportData.energy_analysis.energy_distribution;
+            const energyContrib = reportData.energy_analysis.energy_contributions;
+            
+            if (energyDist.poses && energyDist.poses.length > 0) {
+                let html = '<div class="energy-analysis">';
+                
+                // Energy contributions overview
+                html += '<h4>Average Energy Contributions</h4>';
+                html += '<div class="energy-breakdown">';
+                
+                Object.keys(energyContrib).forEach(component => {
+                    const data = energyContrib[component];
+                    const color = component.includes('hbond') || component.includes('hydrophobic') || component.includes('solvation') ? '#4CAF50' : 
+                                 component.includes('vdw') || component.includes('entropy') ? '#f44336' : '#2196F3';
+                    
+                    html += `
+                        <div class="energy-item" style="border-left: 4px solid ${color}">
+                            <div class="energy-label">${component.replace('_', ' ').toUpperCase()}</div>
+                            <div class="energy-value">${data.average.toFixed(2)}</div>
+                            <div class="energy-label">Range: ${data.min.toFixed(2)} to ${data.max.toFixed(2)}</div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                
+                // Energy distribution table
+                html += '<h4>Energy Distribution Across Poses</h4>';
+                html += '<div class="table-container">';
+                html += '<table>';
+                html += '<thead><tr><th>Pose</th><th>Total</th><th>vdW</th><th>H-bonds</th><th>Hydrophobic</th><th>Solvation</th><th>Entropy</th></tr></thead>';
+                html += '<tbody>';
+                
+                energyDist.poses.forEach((pose, i) => {
+                    html += `<tr>
+                        <td>${pose}</td>
+                        <td>${energyDist.total_energy[i].toFixed(2)}</td>
+                        <td>${energyDist.vdw[i].toFixed(2)}</td>
+                        <td>${energyDist.hbond[i].toFixed(2)}</td>
+                        <td>${energyDist.hydrophobic[i].toFixed(2)}</td>
+                        <td>${energyDist.solvation[i].toFixed(2)}</td>
+                        <td>${energyDist.entropy[i].toFixed(2)}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div></div>';
+                energyDiv.innerHTML = html;
+            } else {
+                energyDiv.innerHTML = '<p>No energy data available</p>';
+            }
+        }
+        
+        function updatePropertiesChart() {
+            const propertiesDiv = document.getElementById('properties-chart');
+            const molecular = reportData.molecular_properties;
+            const binding = reportData.binding_analysis;
+            
+            let html = '<div class="properties-analysis">';
+            
+            // Molecular size and flexibility
+            html += '<h4>Molecular Properties Overview</h4>';
+            html += '<div class="energy-breakdown">';
+            
+            if (molecular.size_distribution && molecular.size_distribution.length > 0) {
+                const avgSize = molecular.size_distribution.reduce((a, b) => a + b, 0) / molecular.size_distribution.length;
+                const avgFlex = molecular.flexibility_distribution.reduce((a, b) => a + b, 0) / molecular.flexibility_distribution.length;
+                
+                html += `
+                    <div class="energy-item">
+                        <div class="energy-label">Average Molecular Size</div>
+                        <div class="energy-value">${avgSize.toFixed(0)} atoms</div>
+                    </div>
+                    <div class="energy-item">
+                        <div class="energy-label">Average Flexibility</div>
+                        <div class="energy-value">${avgFlex.toFixed(1)} bonds</div>
+                    </div>
+                `;
+            }
+            
+            // Shape descriptors
+            if (molecular.shape_descriptors && molecular.shape_descriptors.length > 0) {
+                const avgShape = molecular.shape_descriptors[0];
+                html += `
+                    <div class="energy-item">
+                        <div class="energy-label">Radius of Gyration</div>
+                        <div class="energy-value">${avgShape.radius_of_gyration.toFixed(2)} Å</div>
+                    </div>
+                    <div class="energy-item">
+                        <div class="energy-label">Molecular Dimensions</div>
+                        <div class="energy-value">${avgShape.length.toFixed(1)} × ${avgShape.width.toFixed(1)} × ${avgShape.height.toFixed(1)} Å</div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            
+            // Drug-likeness assessment
+            if (binding.drug_likeness_assessment && binding.drug_likeness_assessment.length > 0) {
+                html += '<h4>Drug-likeness Assessment</h4>';
+                html += '<div class="table-container">';
+                html += '<table>';
+                html += '<thead><tr><th>Pose</th><th>LE</th><th>Lipinski</th><th>Veber</th><th>TPSA</th><th>Category</th></tr></thead>';
+                html += '<tbody>';
+                
+                binding.drug_likeness_assessment.forEach((assessment, i) => {
+                    const pose = reportData.poses[i];
+                    html += `<tr>
+                        <td>${pose.pose_id}</td>
+                        <td>${assessment.ligand_efficiency.toFixed(3)}</td>
+                        <td>${assessment.lipinski_compliant ? 'Pass' : 'Fail'}</td>
+                        <td>${assessment.veber_compliant ? 'Pass' : 'Fail'}</td>
+                        <td>${assessment.tpsa_estimate}</td>
+                        <td style="color: ${assessment.drug_likeness_category === 'good' ? 'green' : 
+                                              assessment.drug_likeness_category === 'moderate' ? 'orange' : 'red'}">
+                            ${assessment.drug_likeness_category}
+                        </td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div>';
+            }
+            
+            html += '</div>';
+            propertiesDiv.innerHTML = html;
+        }
+        
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
+        

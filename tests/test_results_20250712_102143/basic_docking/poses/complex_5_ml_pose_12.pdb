@@ -1,0 +1,25 @@
+REMARK PandaDock protein-ligand complex
+REMARK Pose ID: ml_pose_12
+REMARK Score: 0.226
+REMARK Energy: -5.87 kcal/mol
+REMARK Binding Affinity: -3.00 kcal/mol
+REMARK IC50: 6320605.5 nM
+REMARK
+REMARK Warning: Protein structure not available for complex
+TER
+REMARK Ligand structure
+HETATM    1  O   LIG B   1     -15.479 -16.837   9.929  1.00 20.00           O 
+HETATM    2  C   LIG B   1     -15.610 -17.445   8.770  1.00 20.00           C 
+HETATM    3  C   LIG B   1     -14.739 -18.398   8.298  1.00 20.00           C 
+HETATM    4  C   LIG B   1     -16.596 -17.093   7.939  1.00 20.00           C 
+HETATM    5  C   LIG B   1     -14.791 -18.968   7.004  1.00 20.00           C 
+HETATM    6  C   LIG B   1     -13.574 -18.698   9.139  1.00 20.00           C 
+HETATM    7  C   LIG B   1     -15.959 -18.556   6.149  1.00 20.00           C 
+HETATM    8  C   LIG B   1     -16.928 -17.645   6.690  1.00 20.00           C 
+HETATM    9  C   LIG B   1     -17.771 -16.169   8.315  1.00 20.00           C 
+HETATM   10  C   LIG B   1     -13.661 -20.015   9.820  1.00 20.00           C 
+HETATM   11  C   LIG B   1     -12.129 -18.699   8.368  1.00 20.00           C 
+HETATM   12  C   LIG B   1     -17.674 -14.828   7.625  1.00 20.00           C 
+HETATM   13  C   LIG B   1     -19.188 -16.748   8.295  1.00 20.00           C 
+TER
+END
