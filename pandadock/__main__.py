@@ -228,10 +228,21 @@ def run_docking(config: PandaDockConfig, ligand_file: str = None):
             engine.save_poses(results, poses_dir)
         
         # Generate report
-        print("📊 Generating interactive HTML report...")
-        logger.info("Generating report")
         report_generator = HTMLReportGenerator(config)
-        report_generator.generate_report(results)
+        if config.io.report_format == 'json':
+            json_output_path = os.path.join(config.io.output_dir, "pandadock_report.json")
+            print("📊 Generating JSON report...")
+            logger.info("Generating JSON report")
+            report_generator.export_data(results, format='json', output_path=json_output_path)
+        elif config.io.report_format == 'csv':
+            csv_output_path = os.path.join(config.io.output_dir, "pandadock_report.csv")
+            print("📊 Generating CSV report...")
+            logger.info("Generating CSV report")
+            report_generator.export_data(results, format='csv', output_path=csv_output_path)
+        else: # Default to HTML
+            print("📊 Generating interactive HTML report...")
+            logger.info("Generating HTML report")
+            report_generator.generate_report(results)
         
         print(f"✅ Docking completed successfully!")
         print(f"📂 Results saved to: {config.io.output_dir}")

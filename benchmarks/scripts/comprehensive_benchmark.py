@@ -26,10 +26,20 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import multiprocessing as mp
 from scipy import stats
 import json
+import subprocess
+import tempfile
+import zipfile
+import requests
+from io import BytesIO
+import csv
+import shutil
 
 # Add PandaDock to path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
+
+from pandadock.utils.math_utils import calculate_rmsd
+from pandadock.io.ligand_preparer import LigandPreparer as Ligand
 
 warnings.filterwarnings('ignore')
 
@@ -68,19 +78,62 @@ class BenchmarkResult:
     ligand_atoms: int
     protein_atoms: int
     binding_site_volume: float
+    crystal_coords: np.ndarray
+    docked_coords: np.ndarray
 
 class ComprehensiveBenchmark:
     """Comprehensive benchmark class for PandaDock evaluation"""
 
-    def __init__(self, pdbbind_dir: str, output_dir: str):
+    def __init__(self, pdbbind_dir: str, output_dir: str, grid_center_file: Optional[str] = None):
         self.pdbbind_dir = Path(pdbbind_dir)
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.INFO)
         self.results: List[BenchmarkResult] = []
         
-        # Initialize engines (simplified for this demonstration)
+        # Initialize engines
         self.engines = ['pandacore', 'pandaml', 'pandaphysics']
+        
+        self.download_pdbbind_subset()
+        self.grid_centers = self._load_grid_centers(grid_center_file)
+
+    def download_pdbbind_subset(self):
+        """Download a small subset of the PDBbind dataset."""
+        if not any(self.pdbbind_dir.iterdir()):
+            self.logger.info("PDBbind directory is empty. Downloading a small subset...")
+            url = "https://github.com/pritam-d/PDBbind_subset/archive/refs/heads/main.zip"
+            try:
+                r = requests.get(url)
+                z = zipfile.ZipFile(BytesIO(r.content))
+                z.extractall(self.pdbbind_dir)
+                extracted_dir = self.pdbbind_dir / "PDBbind_subset-main"
+                for item in extracted_dir.iterdir():
+                    os.rename(item, self.pdbbind_dir / item.name)
+                os.rmdir(extracted_dir)
+                self.logger.info("PDBbind subset downloaded and extracted successfully.")
+            except Exception as e:
+                self.logger.error(f"Failed to download PDBbind subset: {e}")
+
+    def _load_grid_centers(self, grid_center_file: Optional[str]) -> Dict[str, List[float]]:
+        """Load grid center coordinates from a CSV file."""
+        centers = {}
+        if grid_center_file and Path(grid_center_file).exists():
+            self.logger.info(f"Loading grid centers from {grid_center_file}")
+            with open(grid_center_file, 'r') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    try:
+                        pdb_code = row['ProteinID']
+                        x = float(row['X'])
+                        y = float(row['Y'])
+                        z = float(row['Z'])
+                        centers[pdb_code] = [x, y, z]
+                    except KeyError as e:
+                        self.logger.warning(f"Skipping row in {grid_center_file} due to missing key: {e}. Row: {row}")
+                    except ValueError as e:
+                        self.logger.warning(f"Skipping row in {grid_center_file} due to invalid coordinate: {e}. Row: {row}")
+        return centers
 
     def load_all_pdbbind_complexes(self) -> List[Dict]:
         """Load all available PDBbind complexes from directory structure"""
@@ -104,7 +157,7 @@ class ComprehensiveBenchmark:
                 # Load experimental affinity from index if available
                 exp_affinity = self._get_experimental_affinity(pdb_code)
                 
-                complexes.append({
+                complex_data = {
                     'pdb_code': pdb_code,
                     'protein_file': protein_file,
                     'ligand_file': ligand_file,
@@ -112,7 +165,13 @@ class ComprehensiveBenchmark:
                     'ligand_atoms': self._estimate_ligand_atoms(ligand_file),
                     'protein_atoms': self._estimate_protein_atoms(protein_file),
                     'binding_site_volume': self._estimate_binding_site_volume()
-                })
+                }
+                
+                # Add grid center if available
+                if pdb_code in self.grid_centers:
+                    complex_data['center'] = self.grid_centers[pdb_code]
+                
+                complexes.append(complex_data)
                 valid_complexes += 1
         
         self.logger.info(f"Loaded {valid_complexes} valid complexes for benchmarking")
@@ -150,8 +209,9 @@ class ComprehensiveBenchmark:
     def _estimate_ligand_atoms(self, ligand_file: Path) -> int:
         """Estimate number of heavy atoms in ligand"""
         try:
-            # Simple estimation based on file size or content
-            return np.random.randint(15, 80)  # Typical drug-like molecules
+            ligand_preparer = Ligand()
+            ligand_data = ligand_preparer.prepare_from_file(str(ligand_file))
+            return ligand_data['num_heavy_atoms']
         except:
             return 30
 
@@ -165,58 +225,103 @@ class ComprehensiveBenchmark:
             return 2000
 
     def _estimate_binding_site_volume(self) -> float:
-        """Estimate binding site volume in Ų"""
+        """Estimate binding site volume in Å³"""
         return np.random.uniform(200, 1500)  # Typical binding site volumes
 
-    def simulate_docking_result(self, complex_data: Dict, engine_name: str) -> BenchmarkResult:
-        """Simulate realistic docking results for a complex"""
+    def run_docking_result(self, complex_data: Dict, engine_name: str) -> BenchmarkResult:
+        """Run docking for a single complex and return the result"""
+        self.logger.info(f"Running docking for {complex_data['pdb_code']} with {engine_name}")
         start_time = time.time()
         
-        # Base prediction on experimental affinity with engine-specific performance
-        exp_affinity = complex_data['experimental_affinity']
-        ligand_atoms = complex_data['ligand_atoms']
-        
-        # Engine-specific performance characteristics
-        engine_params = {
-            'pandacore': {'accuracy': 0.8, 'speed': 1.0, 'noise': 1.2},
-            'pandaml': {'accuracy': 0.9, 'speed': 0.7, 'noise': 0.8},
-            'pandaphysics': {'accuracy': 0.85, 'speed': 1.5, 'noise': 1.0}
-        }
-        
-        params = engine_params.get(engine_name, engine_params['pandacore'])
-        
-        # Predict affinity with realistic correlation
-        noise = np.random.normal(0, params['noise'])
-        predicted_affinity = exp_affinity + noise
-        
-        # RMSD simulation based on affinity and ligand complexity
-        base_rmsd = 2.5 - (exp_affinity - 4) * 0.15  # Higher affinity = lower RMSD
-        ligand_complexity_factor = 1 + (ligand_atoms - 30) * 0.02  # Larger ligands harder
-        engine_factor = params['accuracy']
-        
-        rmsd = abs(np.random.exponential(base_rmsd * ligand_complexity_factor / engine_factor))
-        
-        # Ensure realistic RMSD range
-        rmsd = np.clip(rmsd, 0.5, 15.0)
-        
-        # Simulate docking time based on engine and ligand size
-        base_time = ligand_atoms * 0.5 * params['speed']
-        docking_time = base_time + np.random.exponential(10)
-        
-        return BenchmarkResult(
-            pdb_code=complex_data['pdb_code'],
-            predicted_score=-predicted_affinity,  # Docking scores are typically negative
-            predicted_affinity=predicted_affinity,
-            experimental_affinity=exp_affinity,
-            rmsd_best_pose=rmsd,
-            success_rate=float(rmsd < 2.0),
-            docking_time=docking_time,
-            num_poses=10,
-            engine_type=engine_name,
-            ligand_atoms=ligand_atoms,
-            protein_atoms=complex_data['protein_atoms'],
-            binding_site_volume=complex_data['binding_site_volume']
-        )
+        tmpdir_path = tempfile.mkdtemp()
+        output_dir = Path(tmpdir_path)
+        self.logger.info(f"Temporary directory for docking: {tmpdir_path}")
+
+        try:
+            crystal_ligand_preparer = Ligand()
+            crystal_ligand_data = crystal_ligand_preparer.prepare_from_file(str(complex_data['ligand_file']))
+            crystal_coords = crystal_ligand_data['coordinates']
+            np.save(output_dir / "crystal_coords.npy", crystal_coords)
+
+            cmd = [
+                "python", "-m", "pandadock",
+                "--protein", str(complex_data['protein_file']),
+                "--ligand", str(complex_data['ligand_file']),
+                "--scoring", engine_name,
+                "--out", str(output_dir),
+                "--report-format", "json"
+            ]
+            
+            if 'center' in complex_data:
+                cmd.extend(["--center", str(complex_data['center'][0]), 
+                            str(complex_data['center'][1]), str(complex_data['center'][2])])
+            
+            
+            self.logger.info(f"Executing command: {' '.join(cmd)}")
+            self.logger.info(f"Contents of temporary directory: {os.listdir(tmpdir_path)}")
+            process = subprocess.run(cmd, check=True, capture_output=True, text=True)
+            self.logger.info(f"Docking process completed for {complex_data['pdb_code']} with {engine_name}")
+            self.logger.info(f"Stdout: {process.stdout}")
+            self.logger.info(f"Stderr: {process.stderr}")
+            
+            results_file = output_dir / "pandadock_report.json"
+            with open(results_file, 'r') as f:
+                results_data = json.load(f)
+            self.logger.info(f"Successfully loaded results from {results_file}")
+            
+            best_pose_data = results_data['poses'][0]
+            predicted_score = best_pose_data['score']
+            
+            # Use the binding affinity calculated by the Pose class and convert to pKd
+            binding_affinity = best_pose_data.get('binding_affinity', -predicted_score)
+            
+            # Convert ΔG to pKd for direct comparison with experimental data
+            # pKd = -ΔG / (2.303 × RT)
+            R = 1.987e-3  # kcal/(mol·K)
+            T = 298.15    # K
+            predicted_affinity = -binding_affinity / (2.303 * R * T)  # Convert to pKd 
+            
+            docked_coords = np.array(best_pose_data['coordinates'])
+            np.save(output_dir / "docked_coords.npy", docked_coords)
+
+            crystal_coords = np.load(output_dir / "crystal_coords.npy")
+            docked_coords = np.load(output_dir / "docked_coords.npy")
+            self.logger.info(f"Crystal coords shape (from file): {crystal_coords.shape}")
+            self.logger.info(f"Crystal coords sample (from file): {crystal_coords[:5]}")
+            self.logger.info(f"Docked coords shape (from file): {docked_coords.shape}")
+            self.logger.info(f"Docked coords sample (from file): {docked_coords[:5]}")
+            self.logger.info(f"Full pandadock_report.json content: {results_data}")
+            
+            rmsd = calculate_rmsd(crystal_coords, docked_coords)
+            self.logger.info(f"Calculated RMSD: {rmsd}")
+            
+            docking_time = time.time() - start_time
+            
+            return BenchmarkResult(
+                    pdb_code=complex_data['pdb_code'],
+                    predicted_score=predicted_score,
+                    predicted_affinity=predicted_affinity,
+                    experimental_affinity=complex_data['experimental_affinity'],
+                    rmsd_best_pose=rmsd,
+                    success_rate=float(rmsd < 2.0),
+                    docking_time=docking_time,
+                    num_poses=len(results_data['poses']),
+                    engine_type=engine_name,
+                    ligand_atoms=complex_data['ligand_atoms'],
+                    protein_atoms=complex_data['protein_atoms'],
+                    binding_site_volume=complex_data['binding_site_volume'],
+                    crystal_coords=crystal_coords,
+                    docked_coords=docked_coords
+                )
+        except (subprocess.CalledProcessError, FileNotFoundError, json.JSONDecodeError, IndexError) as e:
+            if isinstance(e, subprocess.CalledProcessError):
+                self.logger.error(f"Docking failed for {complex_data['pdb_code']} with {engine_name}. Stderr: {e.stderr}")
+            else:
+                self.logger.error(f"Docking failed for {complex_data['pdb_code']} with {engine_name}: {e}")
+            return None
+        finally:
+            if os.path.exists(tmpdir_path):
+                shutil.rmtree(tmpdir_path)
 
     def run_benchmark_parallel(self, max_complexes: Optional[int] = None, n_workers: int = 4):
         """Run benchmark on all complexes using parallel processing"""
@@ -229,33 +334,19 @@ class ComprehensiveBenchmark:
         self.logger.info(f"Starting benchmark on {len(complexes)} complexes with {len(self.engines)} engines")
         self.logger.info(f"Total docking jobs: {total_jobs}")
         
-        # Create all jobs
-        jobs = []
-        for complex_data in complexes:
-            for engine in self.engines:
-                jobs.append((complex_data, engine))
-        
-        # Process jobs in batches to simulate realistic timing
-        batch_size = min(50, len(jobs))
-        completed_jobs = 0
-        
-        for i in range(0, len(jobs), batch_size):
-            batch = jobs[i:i+batch_size]
-            self.logger.info(f"Processing batch {i//batch_size + 1}/{(len(jobs)-1)//batch_size + 1}")
+        with ProcessPoolExecutor(max_workers=n_workers) as executor:
+            futures = {executor.submit(self.run_docking_result, complex_data, engine): (complex_data, engine)
+                       for complex_data in complexes for engine in self.engines}
             
-            for complex_data, engine in batch:
-                try:
-                    result = self.simulate_docking_result(complex_data, engine)
+            for future in as_completed(futures):
+                result = future.result()
+                if result:
                     self.results.append(result)
-                    completed_jobs += 1
-                    
-                    if completed_jobs % 50 == 0:
-                        self.logger.info(f"Completed {completed_jobs}/{total_jobs} jobs ({completed_jobs/total_jobs*100:.1f}%)")
-                        
-                except Exception as e:
-                    self.logger.error(f"Failed to dock {complex_data['pdb_code']} with {engine}: {e}")
-        
-        self.logger.info(f"Benchmark completed. Generated {len(self.results)} results from {completed_jobs} jobs")
+                
+                if len(self.results) % 10 == 0:
+                    self.logger.info(f"Completed {len(self.results)}/{total_jobs} jobs")
+
+        self.logger.info(f"Benchmark completed. Generated {len(self.results)} results.")
 
     def analyze_and_plot(self):
         """Generate comprehensive analysis and publication plots"""
@@ -499,7 +590,7 @@ class ComprehensiveBenchmark:
         accuracy_by_size = []
         for size_bin in ['Very Small', 'Small', 'Medium', 'Large', 'Very Large']:
             for engine in engines:
-                subset = df_with_bins[(df_with_bins['ligand_size_bin'] == size_bin) & 
+                subset = df_with_bins[(df_with_bins['ligand_size_bin'] == size_bin) &
                                     (df_with_bins['engine_type'] == engine)]
                 if len(subset) > 1:
                     correlation = np.corrcoef(subset['experimental_affinity'], 
@@ -521,7 +612,7 @@ class ComprehensiveBenchmark:
         success_by_size = []
         for size_bin in ['Very Small', 'Small', 'Medium', 'Large', 'Very Large']:
             for engine in engines:
-                subset = df_with_bins[(df_with_bins['ligand_size_bin'] == size_bin) & 
+                subset = df_with_bins[(df_with_bins['ligand_size_bin'] == size_bin) &
                                     (df_with_bins['engine_type'] == engine)]
                 if len(subset) > 0:
                     success_rate = (subset['rmsd_best_pose'] < 2.0).mean()
@@ -555,10 +646,10 @@ class ComprehensiveBenchmark:
         properties = [
             ('experimental_affinity', 'Experimental Affinity (pKd/pKi)', 'rmsd_best_pose', 'RMSD (Å)'),
             ('ligand_atoms', 'Ligand Heavy Atoms', 'docking_time', 'Docking Time (s)'),
-            ('binding_site_volume', 'Binding Site Volume (Ų)', 'rmsd_best_pose', 'RMSD (Å)'),
+            ('binding_site_volume', 'Binding Site Volume (Å³)', 'rmsd_best_pose', 'RMSD (Å)'),
             ('experimental_affinity', 'Experimental Affinity (pKd/pKi)', 'docking_time', 'Docking Time (s)'),
             ('ligand_atoms', 'Ligand Heavy Atoms', 'predicted_affinity', 'Predicted Affinity'),
-            ('binding_site_volume', 'Binding Site Volume (Ų)', 'docking_time', 'Docking Time (s)')
+            ('binding_site_volume', 'Binding Site Volume (Å³)', 'docking_time', 'Docking Time (s)')
         ]
         
         for i, (x_prop, x_label, y_prop, y_label) in enumerate(properties):
@@ -596,7 +687,10 @@ class ComprehensiveBenchmark:
                       alpha=0.6, s=50, color=colors[i])
             
             # Perfect correlation line
-            lims = [ax.get_xlim()[0], ax.get_xlim()[1]]
+            lims = [
+                min(ax.get_xlim()[0], ax.get_ylim()[0]),
+                max(ax.get_xlim()[1], ax.get_ylim()[1])
+            ]
             ax.plot(lims, lims, 'k--', alpha=0.8, linewidth=2)
             
             # Statistics
@@ -640,7 +734,7 @@ class ComprehensiveBenchmark:
             engine_data = df[df['engine_type'] == engine]
             
             if len(engine_data) > 1:
-                r_value = np.corrcoef(engine_data['experimental_affinity'], 
+                pearson_r = np.corrcoef(engine_data['experimental_affinity'], 
                                     engine_data['predicted_affinity'])[0, 1]
                 rmse = np.sqrt(np.mean((engine_data['experimental_affinity'] - 
                                       engine_data['predicted_affinity'])**2))
@@ -763,9 +857,9 @@ class ComprehensiveBenchmark:
             # Dataset statistics
             f.write("## Dataset Statistics\n\n")
             f.write(f"- **Experimental Affinity Range:** {df['experimental_affinity'].min():.2f} - {df['experimental_affinity'].max():.2f} pKd/pKi\n")
-            f.write(f"- **Mean Experimental Affinity:** {df['experimental_affinity'].mean():.2f} ± {df['experimental_affinity'].std():.2f}\n")
+            f.write(f"- **Mean Experimental Affinity:** {df['experimental_affinity'].mean():.2f} \u00b1 {df['experimental_affinity'].std():.2f}\n")
             f.write(f"- **Ligand Size Range:** {df['ligand_atoms'].min()} - {df['ligand_atoms'].max()} heavy atoms\n")
-            f.write(f"- **Mean Ligand Size:** {df['ligand_atoms'].mean():.1f} ± {df['ligand_atoms'].std():.1f} heavy atoms\n\n")
+            f.write(f"- **Mean Ligand Size:** {df['ligand_atoms'].mean():.1f} \u00b1 {df['ligand_atoms'].std():.1f} heavy atoms\n\n")
             
             # Engine performance
             f.write("## Engine Performance Summary\n\n")
@@ -787,16 +881,16 @@ class ComprehensiveBenchmark:
                     
                     f.write(f"- **Affinity Prediction:**\n")
                     f.write(f"  - Pearson correlation: {correlation:.3f}\n")
-                    f.write(f"  - R²: {correlation**2:.3f}\n")
+                    f.write(f"  - R\u00b2: {correlation**2:.3f}\n")
                     f.write(f"  - RMSE: {rmse:.3f}\n")
                     f.write(f"  - MAE: {mae:.3f}\n")
                 
                 # Pose prediction
                 f.write(f"- **Pose Prediction:**\n")
-                f.write(f"  - Mean RMSD: {engine_data['rmsd_best_pose'].mean():.3f} Å\n")
-                f.write(f"  - Median RMSD: {engine_data['rmsd_best_pose'].median():.3f} Å\n")
-                f.write(f"  - Success rate (RMSD < 2Å): {(engine_data['rmsd_best_pose'] < 2.0).mean():.3f}\n")
-                f.write(f"  - Success rate (RMSD < 3Å): {(engine_data['rmsd_best_pose'] < 3.0).mean():.3f}\n")
+                f.write(f"  - Mean RMSD: {engine_data['rmsd_best_pose'].mean():.3f} \u00c5\n")
+                f.write(f"  - Median RMSD: {engine_data['rmsd_best_pose'].median():.3f} \u00c5\n")
+                f.write(f"  - Success rate (RMSD < 2\u00c5): {(engine_data['rmsd_best_pose'] < 2.0).mean():.3f}\n")
+                f.write(f"  - Success rate (RMSD < 3\u00c5): {(engine_data['rmsd_best_pose'] < 3.0).mean():.3f}\n")
                 
                 # Computational efficiency
                 f.write(f"- **Computational Efficiency:**\n")
@@ -849,7 +943,7 @@ class ComprehensiveBenchmark:
                     for engine in engines:
                         engine_subset = subset[subset['engine_type'] == engine]
                         if len(engine_subset) > 0:
-                            f.write(f"- **{engine.upper()}:** RMSD = {engine_subset['rmsd_best_pose'].mean():.3f} Å, ")
+                            f.write(f"- **{engine.upper()}:** RMSD = {engine_subset['rmsd_best_pose'].mean():.3f} \u00c5, ")
                             f.write(f"Success = {(engine_subset['rmsd_best_pose'] < 2.0).mean():.3f}\n")
                     f.write("\n")
             
@@ -871,6 +965,12 @@ class ComprehensiveBenchmark:
         
         # Save as JSON for further analysis
         json_path = self.output_dir / "benchmark_results.json"
+        # Convert numpy arrays to lists for JSON serialization
+        df_json = df.copy()
+        for col in ['crystal_coords', 'docked_coords']:
+            if col in df_json.columns:
+                df_json[col] = df_json[col].apply(lambda x: x.tolist() if isinstance(x, np.ndarray) else x)
+        
         results_dict = {
             'metadata': {
                 'total_complexes': len(df['pdb_code'].unique()),
@@ -878,7 +978,7 @@ class ComprehensiveBenchmark:
                 'engines': list(df['engine_type'].unique()),
                 'date_generated': pd.Timestamp.now().isoformat()
             },
-            'results': df.to_dict('records')
+            'results': df_json.to_dict('records')
         }
         
         with open(json_path, 'w') as f:
@@ -890,21 +990,23 @@ def main():
     """Main function to run the comprehensive benchmark"""
     parser = argparse.ArgumentParser(description='PandaDock Comprehensive Benchmark')
     parser.add_argument('--pdbbind_dir', type=str, 
-                       default='/Users/pritam/PandaDock/benchmarks/PDbind',
+                       default='/Users/pritam/PandaDock/benchmarks/PDBbind',
                        help='Path to PDBbind database directory')
     parser.add_argument('--output_dir', type=str, default='publication_results', 
                        help='Output directory for results')
     parser.add_argument('--max_complexes', type=int, default=None, 
                        help='Maximum number of complexes to process (default: all)')
-    parser.add_argument('--n_workers', type=int, default=4,
+    parser.add_argument('--n_workers', type=int, default=mp.cpu_count(),
                        help='Number of parallel workers')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
+    parser.add_argument('--grid_center_file', type=str, default=None,
+                       help='Path to a CSV file containing grid center coordinates (pdb_code,x,y,z)')
     
     args = parser.parse_args()
 
     # Setup logging
     logging.basicConfig(
-        level=logging.INFO if args.verbose else logging.WARNING,
+        level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
 
@@ -917,7 +1019,7 @@ def main():
         print("🔢 Processing ALL available complexes")
 
     # Run benchmark
-    benchmark = ComprehensiveBenchmark(args.pdbbind_dir, args.output_dir)
+    benchmark = ComprehensiveBenchmark(args.pdbbind_dir, args.output_dir, args.grid_center_file)
     benchmark.run_benchmark_parallel(args.max_complexes, args.n_workers)
     
     print("\n📈 Generating comprehensive analysis and plots...")

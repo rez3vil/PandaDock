@@ -53,43 +53,55 @@ class Pose:
         
         # Handle different score ranges for different algorithms
         if self.score < 0:
-            # Physics/precise mode: negative scores (e.g., -5 to -4)
+            # Physics/precise mode: negative scores (can range widely)
             # More negative scores = better binding
-            # Map score range -6 to -3 to binding affinity range -12 to -6 kcal/mol
-            score_clamped = max(-7.0, min(-2.0, self.score))
-            min_score, max_score = -6.0, -3.0
-            min_affinity, max_affinity = -12.0, -6.0
+            # Map to binding affinity range -15 to -6 kcal/mol with proper clamping
             
-            if score_clamped <= min_score:
-                binding_affinity = min_affinity
-            elif score_clamped >= max_score:
-                binding_affinity = max_affinity
+            # Handle extreme negative scores properly
+            if self.score <= -15.0:
+                # Very negative scores -> excellent binding
+                binding_affinity = -15.0
+            elif self.score >= -1.0:
+                # Scores near zero -> poor binding
+                binding_affinity = -6.0
             else:
-                # Linear interpolation: more negative score → more negative ΔG
+                # Linear interpolation for scores between -15 and -1
+                # More negative score → more negative ΔG
+                min_score, max_score = -15.0, -1.0
+                min_affinity, max_affinity = -15.0, -6.0
+                
                 slope = (max_affinity - min_affinity) / (max_score - min_score)
-                binding_affinity = min_affinity + slope * (score_clamped - min_score)
+                binding_affinity = min_affinity + slope * (self.score - min_score)
         else:
-            # ML/balanced mode: positive scores (e.g., 0.1 to 0.4)
+            # ML/balanced mode: positive scores (observed range: 0.10-0.18)
             # Lower positive scores = better binding
-            # Map score range 0.1-0.4 to binding affinity range -12 to -6 kcal/mol
-            score_clamped = max(0.05, min(0.5, self.score))
-            min_score, max_score = 0.1, 0.4
-            min_affinity, max_affinity = -12.0, -6.0
+            # Map to experimental affinity range: 3.3-9.9 pKd → -4.5 to -13.5 kcal/mol
+            score_clamped = max(0.05, min(0.50, self.score))
             
-            if score_clamped <= min_score:
-                binding_affinity = min_affinity
-            elif score_clamped >= max_score:
-                binding_affinity = max_affinity
-            else:
-                # Linear interpolation
-                slope = (max_affinity - min_affinity) / (max_score - min_score)
-                binding_affinity = min_affinity + slope * (score_clamped - min_score)
+            # Expanded mapping to match experimental data spread
+            min_score, max_score = 0.05, 0.50
+            min_affinity, max_affinity = -4.5, -13.5  # Wider range to match experimental
+            
+            # Inverse relationship: lower score → stronger binding (more negative ΔG)
+            slope = (max_affinity - min_affinity) / (max_score - min_score)
+            binding_affinity = max_affinity - slope * (score_clamped - min_score)
         
         return binding_affinity
     
+    def get_pkd(self, temperature: float = 298.15) -> float:
+        """Convert binding affinity (ΔG) to pKd for direct comparison with experimental data"""
+        # pKd = -ΔG / (2.303 × RT)
+        # This converts kcal/mol to pKd units used in PDBbind
+        delta_g = self.get_binding_affinity()  # kcal/mol
+        R = 1.987e-3  # kcal/(mol·K)
+        
+        # Convert ΔG to pKd
+        pkd = -delta_g / (2.303 * R * temperature)
+        return pkd
+    
     def get_ic50(self, temperature: float = 298.15) -> float:
         """Calculate IC50 from binding affinity"""
-        # ΔG = RT ln(Kd), so Kd = exp(ΔG/RT)
+        # ΔG = -RT ln(Ka), so Ka = exp(-ΔG/RT) and Kd = 1/Ka = exp(ΔG/RT)
         # For favorable binding, ΔG < 0, so Kd will be < 1 M (nanomolar range)
         # For competitive inhibition, IC50 ≈ Ki ≈ Kd
         
@@ -100,7 +112,8 @@ class Pose:
             return float('inf')  # No binding
         
         # Calculate Kd (dissociation constant) in M
-        # ΔG = RT ln(Kd) → Kd = exp(ΔG/RT)
+        # ΔG = -RT ln(Ka) → ΔG = RT ln(Kd) → Kd = exp(ΔG/RT)
+        # Since ΔG is negative for favorable binding, Kd will be < 1
         kd = np.exp(binding_affinity / (R * temperature))
         
         # Convert to nM (IC50 ≈ Kd for competitive inhibition)
@@ -423,6 +436,11 @@ class DockingEngine(ABC):
             # Save as SDF
             sdf_filename = os.path.join(output_dir, f"pose_{i+1}_{pose.pose_id}.sdf")
             self._save_pose_as_sdf(pose, sdf_filename)
+            
+            # Save protein-ligand complex if requested
+            if hasattr(self.config, 'io') and hasattr(self.config.io, 'save_complex') and self.config.io.save_complex:
+                complex_filename = os.path.join(output_dir, f"complex_{i+1}_{pose.pose_id}.pdb")
+                self._save_complex_as_pdb(pose, complex_filename)
         
         # Save summary file with all poses and scores
         summary_filename = os.path.join(output_dir, "poses_summary.csv")
@@ -584,6 +602,62 @@ class DockingEngine(ABC):
                 f.write(f">  <Binding_Affinity>\n{pose.get_binding_affinity():.6f}\n\n")
                 f.write(f">  <IC50_nM>\n{pose.get_ic50():.1f}\n\n")
                 f.write("$$$$\n")
+    
+    def _save_complex_as_pdb(self, pose: Pose, filename: str):
+        """Save protein-ligand complex as PDB file"""
+        import os
+        
+        self.logger.info(f"Saving protein-ligand complex to {filename}")
+        
+        with open(filename, 'w') as f:
+            f.write("REMARK PandaDock protein-ligand complex\n")
+            f.write(f"REMARK Pose ID: {pose.pose_id}\n")
+            f.write(f"REMARK Score: {pose.score:.3f}\n")
+            f.write(f"REMARK Energy: {pose.energy:.2f} kcal/mol\n")
+            f.write(f"REMARK Binding Affinity: {pose.get_binding_affinity():.2f} kcal/mol\n")
+            f.write(f"REMARK IC50: {pose.get_ic50():.1f} nM\n")
+            f.write("REMARK\n")
+            
+            # First, write the protein structure
+            if hasattr(self, 'receptor') and self.receptor:
+                # If we have the receptor structure in memory
+                f.write("REMARK Protein structure\n")
+                # This would need actual protein structure data
+                # For now, we'll copy from the original protein file if available
+                if hasattr(self.config, 'io') and hasattr(self.config.io, 'protein_file'):
+                    try:
+                        with open(self.config.io.protein_file, 'r') as protein_f:
+                            for line in protein_f:
+                                if line.startswith(('ATOM', 'HETATM', 'TER')):
+                                    f.write(line)
+                    except (FileNotFoundError, AttributeError):
+                        f.write("REMARK Warning: Could not read protein file for complex\n")
+            else:
+                f.write("REMARK Warning: Protein structure not available for complex\n")
+            
+            # Add a separator
+            f.write("TER\n")
+            f.write("REMARK Ligand structure\n")
+            
+            # Write the ligand coordinates
+            atom_types = []
+            if hasattr(self, 'ligand') and self.ligand and 'atom_types' in self.ligand:
+                atom_types = self.ligand['atom_types']
+            
+            # Write ligand coordinates with proper atom types
+            atom_counter = 1
+            for i, coord in enumerate(pose.coordinates):
+                # Use actual atom type if available, otherwise default to carbon
+                atom_type = atom_types[i] if i < len(atom_types) else 'C'
+                atom_symbol = atom_type[:1]  # First character for element symbol
+                
+                f.write(f"HETATM{atom_counter:5d}  {atom_symbol:<3s} LIG B   1    "
+                       f"{coord[0]:8.3f}{coord[1]:8.3f}{coord[2]:8.3f}"
+                       f"  1.00 20.00           {atom_symbol:<2s}\n")
+                atom_counter += 1
+            
+            f.write("TER\n")
+            f.write("END\n")
     
     def get_engine_info(self) -> Dict[str, Any]:
         """Get information about the docking engine"""
