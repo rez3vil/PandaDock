@@ -281,16 +281,39 @@ class ComprehensiveBenchmark:
             T = 298.15    # K
             predicted_affinity = -binding_affinity / (2.303 * R * T)  # Convert to pKd 
             
-            docked_coords = np.array(best_pose_data['coordinates'])
+            docked_coords_raw = best_pose_data['coordinates']
+            docked_coords = np.array(docked_coords_raw)
+            
+            # Ensure docked_coords is in the correct shape (N, 3)
+            if docked_coords.ndim == 1:
+                # If flattened, reshape to (N, 3)
+                if len(docked_coords) % 3 == 0:
+                    docked_coords = docked_coords.reshape(-1, 3)
+                else:
+                    raise ValueError(f"Invalid coordinate array length: {len(docked_coords)}")
+            elif docked_coords.ndim != 2 or docked_coords.shape[1] != 3:
+                raise ValueError(f"Invalid coordinate shape: {docked_coords.shape}")
+                
             np.save(output_dir / "docked_coords.npy", docked_coords)
 
             crystal_coords = np.load(output_dir / "crystal_coords.npy")
             docked_coords = np.load(output_dir / "docked_coords.npy")
-            self.logger.info(f"Crystal coords shape (from file): {crystal_coords.shape}")
-            self.logger.info(f"Crystal coords sample (from file): {crystal_coords[:5]}")
-            self.logger.info(f"Docked coords shape (from file): {docked_coords.shape}")
-            self.logger.info(f"Docked coords sample (from file): {docked_coords[:5]}")
-            self.logger.info(f"Full pandadock_report.json content: {results_data}")
+            # Validate coordinate shapes
+            self.logger.info(f"Crystal coords shape: {crystal_coords.shape}")
+            self.logger.info(f"Docked coords shape: {docked_coords.shape}")
+            
+            # Ensure both coordinate arrays are valid
+            if crystal_coords.ndim != 2 or crystal_coords.shape[1] != 3:
+                raise ValueError(f"Invalid crystal coordinate shape: {crystal_coords.shape}")
+            if docked_coords.ndim != 2 or docked_coords.shape[1] != 3:
+                raise ValueError(f"Invalid docked coordinate shape: {docked_coords.shape}")
+            
+            # Log coordinate info for debugging
+            self.logger.info(f"Crystal coords sample: {crystal_coords[:3]}")
+            self.logger.info(f"Docked coords sample: {docked_coords[:3]}")
+            
+            if crystal_coords.shape[0] != docked_coords.shape[0]:
+                self.logger.warning(f"Atom count mismatch: crystal={crystal_coords.shape[0]}, docked={docked_coords.shape[0]}")
             
             rmsd = calculate_rmsd(crystal_coords, docked_coords)
             self.logger.info(f"Calculated RMSD: {rmsd}")

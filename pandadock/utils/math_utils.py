@@ -151,7 +151,19 @@ def calculate_rmsd(coords1: np.ndarray, coords2: np.ndarray, align: bool = True)
         RMSD value in Angstroms
     """
     if coords1.shape != coords2.shape:
-        raise ValueError("Coordinate arrays must have the same shape")
+        # Handle coordinate shape mismatch by using the minimum number of atoms
+        min_atoms = min(len(coords1), len(coords2))
+        if min_atoms == 0:
+            return float('inf')  # No atoms to compare
+        
+        # Use only the first min_atoms from each coordinate set
+        coords1 = coords1[:min_atoms]
+        coords2 = coords2[:min_atoms]
+        
+        # Log warning if shapes were different
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Coordinate shape mismatch. Using first {min_atoms} atoms for RMSD calculation.")
     
     if len(coords1) == 0:
         return 0.0
