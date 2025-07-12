@@ -260,39 +260,70 @@ class LigandPreparer:
         
         # Parse counts line
         counts_line = lines[3].strip()
-        num_atoms = int(counts_line[:3])
-        num_bonds = int(counts_line[3:6])
+        try:
+            num_atoms = int(counts_line[:3])
+            num_bonds = int(counts_line[3:6])
+        except (ValueError, IndexError):
+            raise ValueError(f"Invalid counts line in SDF: {counts_line}")
         
         # Parse atoms
         coordinates = []
         atom_types = []
         
-        for i in range(4, 4 + num_atoms):
-            if i >= len(lines):
-                raise ValueError(f"Incomplete SDF file: {file_path}")
-            
-            parts = lines[i].strip().split()
-            if len(parts) < 4:
-                raise ValueError(f"Invalid atom line in SDF: {lines[i]}")
-            
-            x, y, z = float(parts[0]), float(parts[1]), float(parts[2])
-            atom_type = parts[3]
-            
-            coordinates.append([x, y, z])
-            atom_types.append(atom_type)
+        atoms_parsed = 0
+        i = 4
         
-        # Parse bonds
-        bonds = []
-        for i in range(4 + num_atoms, 4 + num_atoms + num_bonds):
-            if i >= len(lines):
-                break
+        while atoms_parsed < num_atoms and i < len(lines):
+            line = lines[i].strip()
+            i += 1
             
-            parts = lines[i].strip().split()
+            # Skip empty lines and SDF terminators/metadata
+            if (not line or line.startswith('M  END') or line.startswith('$$$$') or 
+                line.startswith('M  ') or line.startswith('A  ') or line.startswith('V  ')):
+                continue
+                
+            parts = line.split()
+            if len(parts) < 4:
+                continue  # Skip invalid atom lines
+            
+            try:
+                x, y, z = float(parts[0]), float(parts[1]), float(parts[2])
+                atom_type = parts[3]
+                
+                coordinates.append([x, y, z])
+                atom_types.append(atom_type)
+                atoms_parsed += 1
+            except (ValueError, IndexError):
+                # Skip lines that can't be parsed as atom coordinates
+                continue
+        
+        # Parse bonds - start from current position after atoms
+        bonds = []
+        bonds_parsed = 0
+        
+        while bonds_parsed < num_bonds and i < len(lines):
+            line = lines[i].strip()
+            i += 1
+            
+            # Skip empty lines and SDF terminators/metadata
+            if (not line or line.startswith('M  END') or line.startswith('$$$$') or 
+                line.startswith('M  ') or line.startswith('A  ') or line.startswith('V  ')):
+                continue
+                
+            parts = line.split()
             if len(parts) >= 3:
-                atom1 = int(parts[0]) - 1  # Convert to 0-based
-                atom2 = int(parts[1]) - 1
-                bond_type = parts[2]
-                bonds.append((atom1, atom2, bond_type))
+                try:
+                    atom1 = int(parts[0]) - 1  # Convert to 0-based
+                    atom2 = int(parts[1]) - 1
+                    bond_type = parts[2]
+                    bonds.append((atom1, atom2, bond_type))
+                    bonds_parsed += 1
+                except (ValueError, IndexError):
+                    continue
+        
+        # Validate that we parsed the expected number of atoms
+        if atoms_parsed != num_atoms:
+            self.logger.warning(f"Expected {num_atoms} atoms but parsed {atoms_parsed} from {file_path}")
         
         ligand_data = {
             'name': name,
