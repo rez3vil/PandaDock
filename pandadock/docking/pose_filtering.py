@@ -148,8 +148,22 @@ class PoseFiltering:
         if not poses:
             return poses
         
+        # Filter out poses with None energy and collect valid energies
+        valid_poses = []
+        energies = []
+        
+        for pose in poses:
+            if pose.energy is not None:
+                valid_poses.append(pose)
+                energies.append(pose.energy)
+            else:
+                self.logger.warning(f"Pose {pose.pose_id} has None energy, skipping in energy filter")
+        
+        if not energies:
+            self.logger.warning("No poses with valid energy values found")
+            return poses  # Return original poses if none have valid energies
+        
         # Find reference energy (best pose)
-        energies = [pose.energy for pose in poses]
         min_energy = min(energies)
         max_energy = max(energies)
         
@@ -158,7 +172,7 @@ class PoseFiltering:
         
         # Filter poses within threshold of best energy
         filtered_poses = []
-        for pose in poses:
+        for pose in valid_poses:
             if pose.energy <= min_energy + threshold:
                 filtered_poses.append(pose)
         
