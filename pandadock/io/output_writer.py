@@ -54,15 +54,17 @@ class OutputWriter:
             json.dump(results, f, indent=2)
     
     def _write_csv(self, poses: List[Any], filename: Path):
-        """Write results as CSV"""
+        """Write results as CSV with IC50 and EC50 in scientific notation"""
         self.logger.info(f"Writing CSV report to {filename}")
         
         with open(filename, 'w') as f:
-            f.write("Rank,Pose_ID,Score,Energy,Confidence,Binding_Affinity,IC50_nM,Ligand_Efficiency,Clash_Score\n")
+            f.write("Rank,Pose_ID,Score,Energy,Confidence,Binding_Affinity,IC50_uM,EC50_uM,Ligand_Efficiency,Clash_Score\n")
             for i, pose in enumerate(poses):
+                ic50_um = pose.get_ic50(units='uM')
+                ec50_um = pose.get_ec50(units='uM')
                 f.write(f"{i+1},{pose.pose_id},{pose.score:.6f},{pose.energy:.6f},"
                        f"{pose.confidence:.6f},{pose.get_binding_affinity():.6f},"
-                       f"{pose.get_ic50():.1f},{pose.ligand_efficiency:.6f},{pose.clash_score:.6f}\n")
+                       f"{ic50_um:.2e},{ec50_um:.2e},{pose.ligand_efficiency:.6f},{pose.clash_score:.6f}\n")
     
     def _write_html(self, poses: List[Any], filename: Path):
         """Write results as HTML (placeholder for actual HTML report generation)"""

@@ -63,13 +63,13 @@ class Pose:
         elif self.score > 0:
             # CRITICAL: Map the actual observed range 0.10-0.16 to FULL experimental range
             # This is where 99%+ of scores fall in large datasets
-            score_clamped = max(0.095, min(0.170, self.score))  # Tight bounds around observed data
+            score_clamped = max(0.05, min(0.50, self.score))  # Expanded range for better discrimination
             
-            # Map this tiny range to full experimental spectrum
-            min_score, max_score = 0.095, 0.170  # Observed range in large datasets
-            min_affinity, max_affinity = -15.5, -4.0  # Full experimental range
+            # Map this range to full experimental spectrum with better granularity
+            min_score, max_score = 0.05, 0.50  # Expanded range to capture more variation
+            min_affinity, max_affinity = -14.0, -2.0  # Realistic experimental range
             
-            # HYPER-AGGRESSIVE: Every 0.001 difference in score = major affinity change
+            # Better discrimination: More gradual mapping
             slope = (max_affinity - min_affinity) / (max_score - min_score)
             base_affinity = min_affinity + slope * (score_clamped - min_score)
             
@@ -111,7 +111,8 @@ class Pose:
         
         # Combine all factors with bounds checking
         final_affinity = base_affinity + total_correction + score_variance_bonus
-        final_affinity = max(-16.0, min(-3.0, final_affinity))
+        # Improved bounds to prevent clustering at -1.0 kcal/mol
+        final_affinity = max(-16.0, min(-0.5, final_affinity))  # Allow even better binding discrimination
         
         return final_affinity
     
@@ -126,10 +127,10 @@ class Pose:
         pkd = -delta_g / (2.303 * R * temperature)
         return pkd
     
-    def get_ic50(self, temperature: float = 298.15) -> float:
-        """Calculate IC50 from binding affinity"""
+    def get_ic50(self, temperature: float = 298.15, units: str = 'uM') -> float:
+        """Calculate IC50 from binding affinity in specified units"""
         # ΔG = -RT ln(Ka), so Ka = exp(-ΔG/RT) and Kd = 1/Ka = exp(ΔG/RT)
-        # For favorable binding, ΔG < 0, so Kd will be < 1 M (nanomolar range)
+        # For favorable binding, ΔG < 0, so Kd will be < 1 M
         # For competitive inhibition, IC50 ≈ Ki ≈ Kd
         
         R = 1.987e-3  # kcal/(mol·K)
@@ -143,10 +144,58 @@ class Pose:
         # Since ΔG is negative for favorable binding, Kd will be < 1
         kd = np.exp(binding_affinity / (R * temperature))
         
-        # Convert to nM (IC50 ≈ Kd for competitive inhibition)
-        ic50_nM = kd * 1e9
+        # Convert to specified units (IC50 ≈ Kd for competitive inhibition)
+        if units.lower() == 'um':
+            return kd * 1e6  # Convert M to μM
+        elif units.lower() == 'nm':
+            return kd * 1e9  # Convert M to nM
+        elif units.lower() == 'mm':
+            return kd * 1e3  # Convert M to mM
+        else:  # M
+            return kd
+    
+    def get_ec50(self, temperature: float = 298.15, units: str = 'uM', hill_coefficient: float = 1.0) -> float:
+        """
+        Calculate EC50 from binding affinity for functional assays
         
-        return ic50_nM
+        EC50 is more appropriate for GABA_A receptors as it measures functional response
+        (channel opening/closing) rather than just binding affinity.
+        
+        For GABA_A receptors, typical EC50 values range from 0.1-1000 μM
+        """
+        R = 1.987e-3  # kcal/(mol·K)
+        binding_affinity = self.get_binding_affinity()  # Negative for favorable binding
+        
+        if binding_affinity >= 0:
+            return float('inf')  # No functional response
+        
+        # For functional assays, EC50 relates to binding affinity but includes
+        # receptor efficacy and cooperativity factors
+        # EC50 = Kd * (1 + cooperativity_factor) / efficacy
+        
+        # Calculate base Kd
+        kd = np.exp(binding_affinity / (R * temperature))
+        
+        # Apply functional response corrections for GABA_A receptors
+        # Based on experimental data: EC50 typically 10-100x higher than Kd due to:
+        # 1. Partial agonism effects
+        # 2. Receptor desensitization  
+        # 3. Cooperativity (Hill coefficient)
+        efficacy_factor = 0.1  # Typical for partial agonists like propofol
+        cooperativity_factor = 1.0 / hill_coefficient
+        
+        # Calculate EC50 considering functional factors
+        ec50 = kd * cooperativity_factor / efficacy_factor
+        
+        # Convert to specified units
+        if units.lower() == 'um':
+            return ec50 * 1e6  # Convert M to μM  
+        elif units.lower() == 'nm':
+            return ec50 * 1e9  # Convert M to nM
+        elif units.lower() == 'mm':
+            return ec50 * 1e3  # Convert M to mM
+        else:  # M
+            return ec50
     
     def get_correlation_optimized_score(self) -> float:
         """
@@ -429,9 +478,59 @@ class DockingEngine(ABC):
     def prepare_receptor(self, protein_file: str):
         """Prepare receptor for docking"""
         self.logger.info(f"Preparing receptor: {protein_file}")
-        # Implementation would load and prepare protein structure
-        # This is a placeholder for the actual implementation
-        pass
+        
+        # Store protein file path for complex saving
+        if not hasattr(self.config, 'io'):
+            from types import SimpleNamespace
+            self.config.io = SimpleNamespace()
+        self.config.io.protein_file = protein_file
+        
+        # Parse protein structure from file
+        self.receptor = self._parse_pdb_protein(protein_file)
+        self.logger.info(f"Loaded receptor with {len(self.receptor['coordinates'])} atoms")
+    
+    def _parse_pdb_protein(self, pdb_file: str) -> Dict[str, Any]:
+        """Parse protein coordinates from PDB file"""
+        coordinates = []
+        atom_types = []
+        atom_names = []
+        residue_names = []
+        residue_numbers = []
+        chain_ids = []
+        lines = []
+        
+        with open(pdb_file, 'r') as f:
+            for line in f:
+                if line.startswith('ATOM') or line.startswith('HETATM'):
+                    # Store the original line for complex saving
+                    lines.append(line.rstrip())
+                    
+                    # Extract coordinates and structural information
+                    x = float(line[30:38].strip())
+                    y = float(line[38:46].strip())
+                    z = float(line[46:54].strip())
+                    atom_name = line[12:16].strip()
+                    atom_type = line[76:78].strip() or atom_name[0]
+                    residue_name = line[17:20].strip()
+                    residue_number = int(line[22:26].strip())
+                    chain_id = line[21:22].strip()
+                    
+                    coordinates.append([x, y, z])
+                    atom_types.append(atom_type)
+                    atom_names.append(atom_name)
+                    residue_names.append(residue_name)
+                    residue_numbers.append(residue_number)
+                    chain_ids.append(chain_id)
+        
+        return {
+            'coordinates': np.array(coordinates),
+            'atom_types': atom_types,
+            'atom_names': atom_names,
+            'residue_names': residue_names,
+            'residue_numbers': residue_numbers,
+            'chain_ids': chain_ids,
+            'pdb_lines': lines  # Store original PDB lines for writing
+        }
     
     def prepare_ligand(self, ligand_file: str):
         """Prepare ligand for docking"""
@@ -657,7 +756,8 @@ class DockingEngine(ABC):
             f.write(f"REMARK Energy: {pose.energy:.2f} kcal/mol\n")
             f.write(f"REMARK Confidence: {pose.confidence:.3f}\n")
             f.write(f"REMARK Binding Affinity: {pose.get_binding_affinity():.2f} kcal/mol\n")
-            f.write(f"REMARK IC50: {pose.get_ic50():.1f} nM\n")
+            f.write(f"REMARK IC50: {pose.get_ic50(units='uM'):.2e} μM\n")
+            f.write(f"REMARK EC50: {pose.get_ec50(units='uM'):.2e} μM\n")
             
             # Get atom types from ligand if available
             atom_types = []
@@ -733,15 +833,17 @@ class DockingEngine(ABC):
             f.write("$$$$\n")
     
     def _save_poses_summary(self, poses: List[Pose], filename: str):
-        """Save poses summary as CSV file"""
+        """Save poses summary as CSV file with both IC50 and EC50 in scientific notation"""
         with open(filename, 'w') as f:
-            f.write("Rank,Pose_ID,Score,Energy,Confidence,Binding_Affinity,IC50_nM,Ligand_Efficiency,Clash_Score\n")
+            f.write("Rank,Pose_ID,Score,Energy,Confidence,Binding_Affinity,IC50_uM,EC50_uM,Ligand_Efficiency,Clash_Score\n")
             for i, pose in enumerate(poses):
                 num_heavy_atoms = len(pose.coordinates) if hasattr(pose, 'coordinates') and pose.coordinates is not None else 13
                 ligand_efficiency = pose.calculate_ligand_efficiency(num_heavy_atoms)
+                ic50_um = pose.get_ic50(units='uM')
+                ec50_um = pose.get_ec50(units='uM')
                 f.write(f"{i+1},{pose.pose_id},{pose.score:.6f},{pose.energy:.6f},"
                        f"{pose.confidence:.6f},{pose.get_binding_affinity():.6f},"
-                       f"{pose.get_ic50():.1f},{ligand_efficiency:.6f},{pose.clash_score:.6f}\n")
+                       f"{ic50_um:.2e},{ec50_um:.2e},{ligand_efficiency:.6f},{pose.clash_score:.6f}\n")
     
     def _save_poses_as_multi_sdf(self, poses: List[Pose], filename: str):
         """Save all poses in a single multi-structure SDF file"""
@@ -798,7 +900,8 @@ class DockingEngine(ABC):
                 f.write(f">  <Energy>\n{pose.energy:.6f}\n\n")
                 f.write(f">  <Confidence>\n{pose.confidence:.6f}\n\n")
                 f.write(f">  <Binding_Affinity>\n{pose.get_binding_affinity():.6f}\n\n")
-                f.write(f">  <IC50_nM>\n{pose.get_ic50():.1f}\n\n")
+                f.write(f">  <IC50_uM>\n{pose.get_ic50(units='uM'):.2e}\n\n")
+                f.write(f">  <EC50_uM>\n{pose.get_ec50(units='uM'):.2e}\n\n")
                 f.write("$$$$\n")
     
     def _save_complex_as_pdb(self, pose: Pose, filename: str):
@@ -813,23 +916,26 @@ class DockingEngine(ABC):
             f.write(f"REMARK Score: {pose.score:.3f}\n")
             f.write(f"REMARK Energy: {pose.energy:.2f} kcal/mol\n")
             f.write(f"REMARK Binding Affinity: {pose.get_binding_affinity():.2f} kcal/mol\n")
-            f.write(f"REMARK IC50: {pose.get_ic50():.1f} nM\n")
+            f.write(f"REMARK IC50: {pose.get_ic50(units='uM'):.2e} μM\n")
+            f.write(f"REMARK EC50: {pose.get_ec50(units='uM'):.2e} μM\n")
             f.write("REMARK\n")
             
             # First, write the protein structure
-            if hasattr(self, 'receptor') and self.receptor:
-                # If we have the receptor structure in memory
+            if hasattr(self, 'receptor') and self.receptor and 'pdb_lines' in self.receptor:
+                # Use the loaded receptor structure data
                 f.write("REMARK Protein structure\n")
-                # This would need actual protein structure data
-                # For now, we'll copy from the original protein file if available
-                if hasattr(self.config, 'io') and hasattr(self.config.io, 'protein_file'):
-                    try:
-                        with open(self.config.io.protein_file, 'r') as protein_f:
-                            for line in protein_f:
-                                if line.startswith(('ATOM', 'HETATM', 'TER')):
-                                    f.write(line)
-                    except (FileNotFoundError, AttributeError):
-                        f.write("REMARK Warning: Could not read protein file for complex\n")
+                for line in self.receptor['pdb_lines']:
+                    f.write(line + "\n")
+            elif hasattr(self.config, 'io') and hasattr(self.config.io, 'protein_file'):
+                # Fallback: try to read from original protein file
+                f.write("REMARK Protein structure\n")
+                try:
+                    with open(self.config.io.protein_file, 'r') as protein_f:
+                        for line in protein_f:
+                            if line.startswith(('ATOM', 'HETATM')):
+                                f.write(line)
+                except (FileNotFoundError, AttributeError) as e:
+                    f.write(f"REMARK Warning: Could not read protein file for complex: {e}\n")
             else:
                 f.write("REMARK Warning: Protein structure not available for complex\n")
             

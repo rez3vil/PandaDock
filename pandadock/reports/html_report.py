@@ -125,24 +125,33 @@ class HTMLReportGenerator:
         
         # Calculate binding affinities
         binding_affinities = []
-        ic50_values = []
+        ic50_values_um = []
+        ec50_values_um = []
         
         for pose in results:
             binding_affinity = pose.get_binding_affinity()
-            ic50 = pose.get_ic50()
+            ic50_um = pose.get_ic50(units='uM')
+            ec50_um = pose.get_ec50(units='uM')
             
             if binding_affinity != float('inf'):
                 binding_affinities.append(binding_affinity)
-            if ic50 != float('inf'):
-                ic50_values.append(ic50)
+            if ic50_um != float('inf'):
+                ic50_values_um.append(ic50_um)
+            if ec50_um != float('inf'):
+                ec50_values_um.append(ec50_um)
         
         if binding_affinities:
             summary['best_binding_affinity'] = min(binding_affinities)
             summary['mean_binding_affinity'] = sum(binding_affinities) / len(binding_affinities)
         
-        if ic50_values:
-            summary['best_ic50'] = min(ic50_values)
-            summary['mean_ic50'] = sum(ic50_values) / len(ic50_values)
+        if ic50_values_um:
+            summary['best_ic50'] = min(ic50_values_um)  # For backward compatibility
+            summary['best_ic50_um'] = min(ic50_values_um)
+            summary['mean_ic50_um'] = sum(ic50_values_um) / len(ic50_values_um)
+            
+        if ec50_values_um:
+            summary['best_ec50_um'] = min(ec50_values_um)
+            summary['mean_ec50_um'] = sum(ec50_values_um) / len(ec50_values_um)
         
         return summary
     
@@ -153,7 +162,8 @@ class HTMLReportGenerator:
         for i, pose in enumerate(results):
             # Calculate additional metrics
             binding_affinity = pose.get_binding_affinity()
-            ic50 = pose.get_ic50()
+            ic50_um = pose.get_ic50(units='uM')
+            ec50_um = pose.get_ec50(units='uM')
             
             # Estimate ligand efficiency
             num_heavy_atoms = len(pose.coordinates)  # Simplified
@@ -165,8 +175,10 @@ class HTMLReportGenerator:
                 'score': pose.score,
                 'energy': pose.energy,
                 'binding_affinity': binding_affinity,
-                'ic50': ic50,
-                'ic50_nm': ic50 if ic50 != float('inf') else float('inf'),
+                'ic50': ic50_um,  # For backward compatibility
+                'ic50_nm': ic50_um * 1000 if ic50_um != float('inf') else float('inf'),  # For backward compatibility
+                'ic50_um': ic50_um if ic50_um != float('inf') else float('inf'),
+                'ec50_um': ec50_um if ec50_um != float('inf') else float('inf'),
                 'ligand_efficiency': le,
                 'rmsd': pose.rmsd,
                 'confidence': pose.confidence,
@@ -629,6 +641,10 @@ class HTMLReportGenerator:
                     <h3>Best IC50</h3>
                     <div class="summary-value" id="best-ic50">-</div>
                 </div>
+                <div class="summary-card">
+                    <h3>Best EC50</h3>
+                    <div class="summary-value" id="best-ec50">-</div>
+                </div>
             </div>
         </div>
 
@@ -651,7 +667,8 @@ class HTMLReportGenerator:
                                 <th>Score</th>
                                 <th>Energy (kcal/mol)</th>
                                 <th>ΔG (kcal/mol)</th>
-                                <th>IC50 (nM)</th>
+                                <th>IC50 (μM)</th>
+                                <th>EC50 (μM)</th>
                                 <th>LE (kcal/mol/atom)</th>
                                 <th>Interactions</th>
                                 <th>Clash Score</th>
@@ -697,6 +714,29 @@ class HTMLReportGenerator:
         // Report data
         const reportData = {{REPORT_DATA}};
         
+        // Scientific notation formatter for HTML display
+        function formatScientificNotation(value, decimals = 2) {
+            if (value === null || value === undefined || value === Infinity || value === -Infinity) {
+                return '-';
+            }
+            
+            if (value === 0) {
+                return '0';
+            }
+            
+            const exponent = Math.floor(Math.log10(Math.abs(value)));
+            const mantissa = value / Math.pow(10, exponent);
+            
+            if (Math.abs(exponent) <= 2) {
+                // For small exponents, use regular notation
+                return value.toFixed(decimals);
+            }
+            
+            // Use scientific notation with × symbol
+            const mantissaFormatted = mantissa.toFixed(decimals);
+            return `${mantissaFormatted} × 10<sup>${exponent}</sup>`;
+        }
+        
         // Initialize report
         document.addEventListener('DOMContentLoaded', function() {
             initializeReport();
@@ -717,11 +757,18 @@ class HTMLReportGenerator:
             document.getElementById('best-score').textContent = (summary.best_score || 0).toFixed(3);
             document.getElementById('best-affinity').textContent = (summary.best_binding_affinity || 0).toFixed(2) + ' kcal/mol';
             
-            const bestIC50 = summary.best_ic50;
+            const bestIC50 = summary.best_ic50_um;
             if (bestIC50 && bestIC50 !== Infinity) {
-                document.getElementById('best-ic50').textContent = bestIC50.toFixed(1) + ' nM';
+                document.getElementById('best-ic50').innerHTML = formatScientificNotation(bestIC50, 2) + ' μM';
             } else {
                 document.getElementById('best-ic50').textContent = '-';
+            }
+            
+            const bestEC50 = summary.best_ec50_um;
+            if (bestEC50 && bestEC50 !== Infinity) {
+                document.getElementById('best-ec50').innerHTML = formatScientificNotation(bestEC50, 2) + ' μM';
+            } else {
+                document.getElementById('best-ec50').textContent = '-';
             }
         }
         
@@ -744,7 +791,8 @@ class HTMLReportGenerator:
                     <td>${pose.score.toFixed(3)}</td>
                     <td>${pose.energy.toFixed(2)}</td>
                     <td>${pose.binding_affinity.toFixed(2)}</td>
-                    <td>${pose.ic50_nm === Infinity ? '-' : pose.ic50_nm.toFixed(1)}</td>
+                    <td>${pose.ic50_um === Infinity ? '-' : formatScientificNotation(pose.ic50_um, 2)}</td>
+                    <td>${pose.ec50_um === Infinity ? '-' : formatScientificNotation(pose.ec50_um, 2)}</td>
                     <td>${pose.ligand_efficiency.toFixed(3)}</td>
                     <td>${totalInteractions}</td>
                     <td>${pose.clash_score.toFixed(2)}</td>
@@ -755,7 +803,7 @@ class HTMLReportGenerator:
                 // Add details row
                 const detailRow = document.createElement('tr');
                 detailRow.innerHTML = `
-                    <td colspan="9">
+                    <td colspan="10">
                         <div class="pose-details" id="pose-details-${index}">
                             <h4>Energy Breakdown</h4>
                             <div class="energy-breakdown">
@@ -1075,7 +1123,7 @@ class HTMLReportGenerator:
         
         # Header
         writer.writerow([
-            'Rank', 'Pose_ID', 'Score', 'Energy', 'Binding_Affinity', 'IC50_nM',
+            'Rank', 'Pose_ID', 'Score', 'Energy', 'Binding_Affinity', 'IC50_uM', 'EC50_uM',
             'Ligand_Efficiency', 'VdW_Energy', 'Electrostatic_Energy', 'HBond_Energy',
             'Hydrophobic_Energy', 'Solvation_Energy', 'Entropy_Energy', 'Clash_Score',
             'HBond_Count', 'Hydrophobic_Count', 'Salt_Bridge_Count', 'Flexible_Residues'
@@ -1084,7 +1132,8 @@ class HTMLReportGenerator:
         # Data rows
         for i, pose in enumerate(results):
             binding_affinity = pose.get_binding_affinity()
-            ic50 = pose.get_ic50()
+            ic50_um = pose.get_ic50(units='uM')
+            ec50_um = pose.get_ec50(units='uM')
             num_heavy_atoms = len(pose.coordinates)
             le = self.ic50_calc.calculate_ligand_efficiency(binding_affinity, num_heavy_atoms)
             
@@ -1094,7 +1143,8 @@ class HTMLReportGenerator:
                 pose.score,
                 pose.energy,
                 binding_affinity,
-                ic50 if ic50 != float('inf') else '',
+                f"{ic50_um:.2e}" if ic50_um != float('inf') else '',
+                f"{ec50_um:.2e}" if ec50_um != float('inf') else '',
                 le,
                 pose.vdw_energy,
                 pose.electrostatic_energy,
