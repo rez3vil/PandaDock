@@ -423,26 +423,6 @@ class ScoringFunctions:
             'atom_classifications': atom_classifications,
             'scoring_parameters': scoring_parameters
         }
-        
-        # Combining rules
-        epsilon = np.sqrt(params1['epsilon'] * params2['epsilon'])
-        sigma = (params1['sigma'] + params2['sigma']) / 2
-        
-        # Modified Lennard-Jones potential with softer repulsion
-        if distance < sigma:
-            # Soft repulsion for short distances
-            energy = epsilon * ((sigma / distance) ** 6 - 1)
-        else:
-            # Standard attractive term for longer distances
-            r_over_sigma = sigma / distance
-            r6 = r_over_sigma ** 6
-            r12 = r6 ** 2
-            energy = 4 * epsilon * (r12 - r6)
-        
-        # Clamp to reasonable range
-        energy = max(-1.0, min(5.0, energy))
-        
-        return energy
     
     def calculate_electrostatic_energy(self, coordinates: np.ndarray) -> float:
         """Calculate electrostatic energy"""
