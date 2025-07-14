@@ -99,64 +99,64 @@ run_test() {
 
 # Test 1: Basic docking with default settings
 run_test "basic_docking" \
-    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center $CENTER --size $SIZE" \
+    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center -15.7 -17.7 8.18 --size 40 40 40" \
     "pandadock_report.html"
 
 # Test 2: Balanced mode with ML rescoring
 run_test "balanced_ml_rescoring" \
-    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --mode balanced --center $CENTER --size $SIZE --ml-rescoring" \
+    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --mode balanced --center -15.7 -17.7 8.18 --size 40 40 40 --ml-rescoring" \
     "pandadock_report.html"
 
 # Test 3: Precise mode (physics-based)
 run_test "precise_mode" \
-    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --mode precise --center $CENTER --size $SIZE" \
+    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --mode precise --center -15.7 -17.7 8.18 --size 40 40 40" \
     "pandadock_report.html"
 
 # Test 4: Fast mode (GA-based)
 run_test "fast_mode" \
-    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --mode fast --center $CENTER --size $SIZE" \
+    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --mode fast --center -15.7 -17.7 8.18 --size 40 40 40" \
     "pandadock_report.html"
 
 # Test 5: JSON output format
 run_test "json_output" \
-    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center $CENTER --size $SIZE --report-format json" \
+    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center -15.7 -17.7 8.18 --size 40 40 40 --report-format json" \
     "pandadock_report.json"
 
 # Test 6: CSV output format
 run_test "csv_output" \
-    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center $CENTER --size $SIZE --report-format csv" \
+    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center -15.7 -17.7 8.18 --size 40 40 40 --report-format csv" \
     "pandadock_report.csv"
 
 # Test 7: Save complex functionality (the issue you reported)
 run_test "save_complex" \
-    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center $CENTER --size $SIZE --save-complex" \
+    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center -15.7 -17.7 8.18 --size 40 40 40 --save-complex" \
     "pandadock_report.html"
 
 # Test 8: Flexible residues
 run_test "flexible_residues" \
-    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center $CENTER --size $SIZE --flexible-residues 'ASN265'" \
+    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center -15.7 -17.7 8.18 --size 40 40 40 --flexible-residues 'ASN265'" \
     "pandadock_report.html"
 
 # Test 9: Different scoring functions
 for scoring in "pandacore" "pandaml" "pandaphysics"; do
     run_test "scoring_$scoring" \
-        "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center $CENTER --size $SIZE --scoring $scoring" \
+        "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center -15.7 -17.7 8.18 --size 40 40 40 --scoring $scoring" \
         "pandadock_report.html"
 done
 
 # Test 10: Multiple poses
 run_test "multiple_poses" \
-    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center $CENTER --size $SIZE --num-poses 20" \
+    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center -15.7 -17.7 8.18 --size 40 40 40 --num-poses 20" \
     "pandadock_report.html"
 
 # Test 11: High exhaustiveness
 run_test "high_exhaustiveness" \
-    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center $CENTER --size $SIZE --exhaustiveness 16" \
+    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --center -15.7 -17.7 8.18 --size 40 40 40 --exhaustiveness 16" \
     "pandadock_report.html"
 
 # Test 12: Combined options (most likely to reveal bugs)
 run_test "combined_options" \
-    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --mode balanced --center $CENTER --size $SIZE --flexible-residues 'ASN265' --ml-rescoring --save-complex --num-poses 15 --report-format csv" \
+    "python -m pandadock --protein $PROTEIN --ligand $LIGAND --mode balanced --center -15.7 -17.7 8.18 --size 40 40 40 --flexible-residues 'ASN265' --ml-rescoring --save-complex --num-poses 15 --report-format csv" \
     "pandadock_report.csv"
 
 echo -e "${YELLOW}🔍 Analyzing Results...${NC}"
