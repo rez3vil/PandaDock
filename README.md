@@ -43,11 +43,11 @@
 
 ---
 
-## 🔬 Overview
+##  Overview
 
 PandaDock is a comprehensive molecular docking software that combines multiple docking strategies in a unified framework. It features **three novel PandaDock algorithms** - PandaCore, PandaML, and PandaPhysics - for protein-ligand docking with comprehensive analysis and reporting capabilities.
 
-## 📊 Results Showcase
+##  Results Showcase
 
 ### Comprehensive Docking Analysis
 
@@ -79,7 +79,7 @@ PandaDock generates publication-quality visualizations and detailed analyses for
 ### Professional Interaction Visualization
 
 <p align="center">
-  <img src="demo_plots_output/pandamap_2d_ml_pose_1.png" alt="PandaMap 2D Interaction Analysis" width="600"/>
+  <img src="demo_plots_output/complex_interactions.png" alt="PandaMap 2D Interaction Analysis" width="600"/>
 </p>
 
 **PandaMap Integration Features:**
@@ -113,21 +113,21 @@ PandaDock generates publication-quality visualizations and detailed analyses for
 - **Affinity-Potency Relationships**: Direct correlation between binding affinity and inhibitory potency
 
 
-## ✨ Key Features
+##  Key Features
 
-### 🧬 **Three Novel PandaDock Algorithms**
+###  **Three Novel PandaDock Algorithms**
 - **PandaCore**: Robust baseline algorithm with excellent general performance
 - **PandaML**: Advanced machine learning-based algorithm with superior affinity prediction  
 - **PandaPhysics**: Physics-based algorithm specialized for metal coordination and complex chemistry
 
-### 🔬 **Advanced Analysis Capabilities**
+###  **Advanced Analysis Capabilities**
 - **PandaMap Integration**: Professional Discovery Studio-style interaction visualization
 - **Comprehensive Metrics**: IC50, EC50, binding affinity, and ligand efficiency calculations
 - **Publication-Quality Plots**: Master publication figures with statistical analysis
 - **Interactive 3D Visualization**: HTML-based molecular interaction viewers
 - **Professional Reports**: HTML reports with detailed pose analysis and energy breakdown
 
-### 🎯 **Docking Features**
+###  **Docking Features**
 - **Flexible Docking**: Side-chain flexibility with rotamer library sampling
 - **Metal Coordination**: Specialized handling of metal-containing complexes
 - **Multi-format Support**: SMILES, SDF, MOL2, PDB input formats
@@ -172,7 +172,7 @@ cd pandadock
 pip install -e .[all]
 ```
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Basic Docking with PandaMap Visualization
 ```bash
@@ -369,7 +369,7 @@ rescorer.load_model('pandaml_model.pkl')
 rescored_poses = rescorer.rescore_poses(poses)
 ```
 
-## 🎯 Why Choose PandaDock?
+##  Why Choose PandaDock?
 
 ### **Professional Visualization & Analysis**
 - **Publication-Ready Figures**: Generate comprehensive analysis plots ready for manuscripts
