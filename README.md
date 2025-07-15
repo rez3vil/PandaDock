@@ -178,7 +178,7 @@ pip install -e .[all]
 ```bash
 # PandaML with professional PandaMap interaction analysis
 pandadock --protein receptor.pdb --ligand ligand.sdf --mode balanced --scoring pandaml \
-          --pandamap --pandamap-3d --out results
+          --pandamap --pandamap-3d --all-outputs --out results
 
 # PandaPhysics with PandaMap for metal complexes
 pandadock --protein receptor.pdb --ligand ligand.sdf --mode precise --scoring pandaphysics \
@@ -186,14 +186,14 @@ pandadock --protein receptor.pdb --ligand ligand.sdf --mode precise --scoring pa
 
 # Fast screening with comprehensive analysis
 pandadock --protein receptor.pdb --screen ligands.smi --mode fast --scoring pandaml \
-          --num-poses 10 --pandamap --out screening_results
+          --num-poses 10 --pandamap --master-plot --out screening_results
 ```
 
 ### Example: GABA Receptor - Propofol Analysis
 ```bash
 # Reproduce the demo results shown above
 pandadock --protein gaba_receptor.pdb --ligand propofol.sdf --mode balanced \
-          --scoring pandaml --pandamap --pandamap-3d \
+          --scoring pandaml --pandamap --pandamap-3d --all-outputs \
           --flexible-residues "ASN265" --out gaba_propofol_analysis
 ```
 
@@ -250,12 +250,12 @@ pandadock --protein receptor.pdb --ligand ligand.sdf --mode precise --scoring pa
 ### Balanced Mode (PandaML)
 ```bash
 pandadock --protein receptor.pdb --ligand ligand.sdf --mode balanced --scoring pandaml \
-          --confidence-threshold 0.7 --ml-rescoring
+          --ml-rescoring --all-outputs
 ```
 
 **Features:**
 - Advanced machine learning pose generation
-- Superior binding affinity prediction (R² = 0.878)
+- Superior binding affinity prediction
 - Fast inference with deep learning confidence scoring
 - Hybrid ML/physics scoring approach
 
@@ -264,8 +264,7 @@ pandadock --protein receptor.pdb --ligand ligand.sdf --mode balanced --scoring p
 ### Fast Mode (PandaCore)
 ```bash
 pandadock --protein receptor.pdb --ligand ligand.sdf --mode fast --scoring pandacore \
-          --population-size 150 --generations 27000 \
-          --n-jobs 4
+          --num-poses 20 --exhaustiveness 8 --n-jobs 4
 ```
 
 **Features:**
