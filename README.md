@@ -54,7 +54,7 @@ PandaDock demonstrates exceptional structural accuracy with **sub-angstrom preci
 ### 🏆 Outstanding Performance Results
 
 <p align="center">
-  <img src="benchmarks/scripts/rmsd_excellence_results/rmsd_excellence_master_figure.png" alt="RMSD Excellence Master Dashboard" width="900"/>
+  <img src="https://raw.githubusercontent.com/pritampanda15/PandaDock/main/benchmarks/scripts/rmsd_excellence_results/rmsd_excellence_master_figure.png" alt="RMSD Excellence Master Dashboard" width="900"/>
 </p>
 
 **Key Achievements:**
@@ -66,7 +66,7 @@ PandaDock demonstrates exceptional structural accuracy with **sub-angstrom preci
 ### Structural Accuracy Validation
 
 <p align="center">
-  <img src="benchmarks/scripts/rmsd_excellence_results/rmsd_distribution_analysis.png" alt="RMSD Distribution Analysis" width="900"/>
+  <img src="https://raw.githubusercontent.com/pritampanda15/PandaDock/main/benchmarks/scripts/rmsd_excellence_results/rmsd_distribution_analysis.png" alt="RMSD Distribution Analysis" width="900"/>
 </p>
 
 **Statistical Excellence:**
@@ -111,7 +111,7 @@ python scripts/rmsd_excellence_benchmark.py --max_complexes 50 --output_dir cust
 PandaDock generates publication-quality visualizations and detailed analyses for molecular docking studies:
 
 <p align="center">
-  <img src="demo_plots_output/master_publication.png" alt="PandaDock Comprehensive Analysis" width="900"/>
+  <img src="https://raw.githubusercontent.com/pritampanda15/PandaDock/main/demo_plots_output/master_publication.png" alt="PandaDock Comprehensive Analysis" width="900"/>
 </p>
 
 **Key Features Demonstrated:**
@@ -123,7 +123,7 @@ PandaDock generates publication-quality visualizations and detailed analyses for
 ### Advanced Binding Metrics Analysis
 
 <p align="center">
-  <img src="demo_plots_output/binding_metrics_analysis.png" alt="Binding Metrics Analysis" width="900"/>
+  <img src="https://raw.githubusercontent.com/pritampanda15/PandaDock/main/demo_plots_output/binding_metrics_analysis.png" alt="Binding Metrics Analysis" width="900"/>
 </p>
 
 **Comprehensive Metrics Include:**
@@ -136,7 +136,7 @@ PandaDock generates publication-quality visualizations and detailed analyses for
 ### Professional Interaction Visualization
 
 <p align="center">
-  <img src="demo_plots_output/complex_interactions.png" alt="PandaMap 2D Interaction Analysis" width="600"/>
+  <img src="https://raw.githubusercontent.com/pritampanda15/PandaDock/main/demo_plots_output/complex_interactions.png" alt="PandaMap 2D Interaction Analysis" width="600"/>
 </p>
 
 **PandaMap Integration Features:**
@@ -148,7 +148,7 @@ PandaDock generates publication-quality visualizations and detailed analyses for
 ### Score Distribution & Confidence Analysis
 
 <p align="center">
-  <img src="demo_plots_output/score_distribution_analysis.png" alt="Score Distribution Analysis" width="900"/>
+  <img src="https://raw.githubusercontent.com/pritampanda15/PandaDock/main/demo_plots_output/score_distribution_analysis.png" alt="Score Distribution Analysis" width="900"/>
 </p>
 
 **Statistical Analysis Features:**
@@ -160,7 +160,7 @@ PandaDock generates publication-quality visualizations and detailed analyses for
 ### IC50/EC50 Potency Analysis
 
 <p align="center">
-  <img src="demo_plots_output/ic50_ec50_analysis.png" alt="IC50 EC50 Analysis" width="900"/>
+  <img src="https://raw.githubusercontent.com/pritampanda15/PandaDock/main/demo_plots_output/ic50_ec50_analysis.png" alt="IC50 EC50 Analysis" width="900"/>
 </p>
 
 **Drug Discovery Metrics:**
