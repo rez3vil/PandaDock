@@ -1,39 +1,138 @@
 Quick Start Guide
 ================
 
-This guide will get you up and running with PandaDock in just a few minutes.
+This guide will get you up and running with PandaDock's comprehensive analysis and visualization capabilities in just a few minutes.
 
-Basic Docking Workflow
------------------------
+Command-Line Interface (Recommended)
+------------------------------------
 
-Here's a complete example of performing molecular docking with PandaDock:
+The easiest way to get started with PandaDock is using the command-line interface with comprehensive visualization:
+
+**Basic Docking with All Outputs:**
+
+.. code-block:: bash
+
+   # Complete analysis with all visualizations
+   pandadock --protein protein.pdb --ligand ligand.sdf --all-outputs
+   
+   # Generates:
+   # - Master publication dashboard
+   # - Binding metrics analysis
+   # - Score distribution analysis
+   # - IC50/EC50 drug discovery metrics
+   # - Interactive HTML reports
+
+**Professional Interaction Analysis:**
+
+.. code-block:: bash
+
+   # PandaMap integration for professional interaction visualization
+   pandadock --protein protein.pdb --ligand ligand.sdf \
+             --pandamap --pandamap-3d --all-outputs
+   
+   # Generates:
+   # - 2D Discovery Studio-style interaction maps
+   # - 3D interactive molecular models (HTML)
+   # - Detailed interaction reports
+   # - Complete analysis dashboard
+
+**Algorithm-Specific Analysis:**
+
+.. code-block:: bash
+
+   # PandaML for superior affinity prediction
+   pandadock --protein protein.pdb --ligand ligand.sdf \
+             --scoring pandaml --master-plot --pandamap
+   
+   # PandaPhysics for metal complexes and detailed analysis
+   pandadock --protein protein.pdb --ligand ligand.sdf \
+             --scoring pandaphysics --flexible-residues "HIS57,SER195" \
+             --pandamap --all-outputs
+   
+   # PandaCore for fast, reliable docking
+   pandadock --protein protein.pdb --ligand ligand.sdf \
+             --scoring pandacore --plots --master-plot
+
+Python API Workflow
+--------------------
+
+For programmatic access and custom analysis:
 
 .. code-block:: python
 
    from pandadock import PandaDock
    import os
    
-   # Initialize the docking engine
+   # Initialize the docking engine with comprehensive analysis
    docker = PandaDock(
-       engine='pandaml',      # Use PandaML algorithm
-       scoring='pandaml',     # PandaML scoring function
-       exhaustiveness=8,      # Search thoroughness
-       num_poses=10          # Number of poses to generate
+       engine='pandaml',          # Use PandaML algorithm
+       scoring='pandaml',         # PandaML scoring function
+       exhaustiveness=8,          # Search thoroughness
+       num_poses=10,             # Number of poses to generate
+       generate_plots=True,       # Enable visualization
+       pandamap_analysis=True     # Enable PandaMap integration
    )
    
-   # Perform docking
+   # Perform docking with comprehensive analysis
    results = docker.dock(
        receptor='examples/protein.pdb',     # Protein structure
        ligand='examples/ligand.sdf',        # Ligand structure
        center=[25.0, 30.0, 15.0],          # Binding site center
        size=[20.0, 20.0, 20.0],            # Search box size
-       output_dir='docking_results/'       # Output directory
+       output_dir='docking_results/',       # Output directory
+       analysis_level='comprehensive'       # Full analysis suite
    )
    
-   # Print results
+   # Print results with comprehensive metrics
    print(f"Generated {len(results.poses)} poses")
    print(f"Best score: {results.best_pose.score:.3f}")
    print(f"Best binding affinity: {results.best_pose.binding_affinity:.2f} kcal/mol")
+   print(f"IC50 prediction: {results.best_pose.ic50:.2e} M")
+   print(f"Confidence score: {results.best_pose.confidence:.3f}")
+   
+   # Access generated visualizations
+   print("Generated visualizations:")
+   for plot_file in results.visualization_files:
+       print(f"  - {plot_file}")
+
+Generated Outputs Overview
+--------------------------
+
+PandaDock generates comprehensive publication-ready outputs:
+
+**Master Publication Dashboard:**
+
+.. image:: /_static/master_publication.png
+   :alt: Master Publication Dashboard
+   :width: 100%
+   :align: center
+
+**Professional Interaction Maps:**
+
+.. image:: /_static/pandamap_2d_ml_pose_1.png
+   :alt: PandaMap Professional Interaction Analysis
+   :width: 60%
+   :align: center
+
+**Complete Output Structure:**
+
+.. code-block:: text
+
+   docking_results/
+   ├── master_publication.png           # Main analysis dashboard
+   ├── binding_metrics_analysis.png     # Statistical validation
+   ├── score_distribution_analysis.png  # Score validation
+   ├── ic50_ec50_analysis.png           # Drug discovery metrics
+   ├── pandamap_2d_pose_1.png          # 2D interaction maps
+   ├── pandamap_3d_pose_1.html         # 3D interactive models
+   ├── complex_interactions.png         # Interaction networks
+   ├── pandadock_report.html           # Interactive HTML report
+   ├── pandadock_report.json           # Structured data
+   ├── detailed_analysis_report.txt     # Text summary
+   └── poses/                          # Molecular structures
+       ├── pose_1.pdb
+       ├── pose_2.pdb
+       └── complex_1.pdb
 
 Input File Formats
 ------------------
