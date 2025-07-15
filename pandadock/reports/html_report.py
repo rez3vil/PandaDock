@@ -17,6 +17,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from docking.base_engine import Pose
 from utils.ic50_calculator import IC50Calculator
 
+# Import new plotting modules
+try:
+    from .plot_generator import create_plots_for_pandadock
+    PLOTTING_AVAILABLE = True
+except ImportError:
+    PLOTTING_AVAILABLE = False
+
 
 class HTMLReportGenerator:
     """
@@ -39,7 +46,12 @@ class HTMLReportGenerator:
         # Report template
         self.html_template = self._get_html_template()
         
-        self.logger.info("Initialized HTMLReportGenerator")
+        # Plotting configuration
+        self.enable_plots = True
+        self.generate_interaction_maps = True
+        self.generate_txt_report = True
+        
+        self.logger.info("Initialized HTMLReportGenerator with plotting support: %s", PLOTTING_AVAILABLE)
     
     def generate_report(self, results: List[Pose], output_path: str = None) -> str:
         """
@@ -76,6 +88,189 @@ class HTMLReportGenerator:
         
         self.logger.info(f"HTML report generated: {output_path}")
         return output_path
+    
+    def generate_comprehensive_report(self, results: List[Pose], output_dir: str,
+                                    protein_name: str = None, ligand_name: str = None,
+                                    algorithm_info: Dict[str, Any] = None,
+                                    command_info: Dict[str, Any] = None) -> Dict[str, str]:
+        """
+        Generate comprehensive report with plots, interaction maps, and TXT report
+        
+        Args:
+            results: List of docked poses
+            output_dir: Output directory for all files
+            protein_name: Name of the protein target
+            ligand_name: Name of the ligand
+            algorithm_info: Algorithm information dictionary
+            command_info: Command information dictionary
+            
+        Returns:
+            Dictionary of generated file paths
+        """
+        self.logger.info(f"Generating comprehensive report for {len(results)} poses")
+        
+        if not results:
+            self.logger.warning("No results to report")
+            return {}
+        
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        generated_files = {}
+        
+        # 1. Generate standard HTML report
+        html_report_path = output_dir / "pandadock_report.html"
+        html_path = self.generate_report(results, str(html_report_path))
+        generated_files['html_report'] = html_path
+        
+        # 2. Generate CSV export
+        csv_path = output_dir / "pandadock_report.csv"
+        csv_export = self.export_data(results, format='csv', output_path=str(csv_path))
+        generated_files['csv_report'] = csv_export
+        
+        # 3. Generate JSON export
+        json_path = output_dir / "pandadock_report.json"
+        json_export = self.export_data(results, format='json', output_path=str(json_path))
+        generated_files['json_report'] = json_export
+        
+        # 4. Create poses summary CSV for plotting
+        poses_csv_path = output_dir / "poses" / "poses_summary.csv"
+        poses_csv_path.parent.mkdir(exist_ok=True)
+        poses_summary = self._create_poses_summary_csv(results, str(poses_csv_path))
+        generated_files['poses_csv'] = poses_summary
+        
+        # 5. Generate comprehensive plots if available
+        if PLOTTING_AVAILABLE and self.enable_plots:
+            try:
+                self.logger.info("Generating comprehensive plots...")
+                
+                # Set default values
+                if algorithm_info is None:
+                    algorithm_info = {
+                        'algorithm': 'PandaDock',
+                        'version': 'Latest',
+                        'scoring_function': self.config.scoring.scoring_function if self.config else 'Auto',
+                        'engine': self.config.docking.mode if self.config else 'Auto',
+                        'mode': self.config.docking.mode if self.config else 'Balanced'
+                    }
+                
+                if command_info is None:
+                    command_info = {
+                        'command': 'python -m pandadock',
+                        'protein': 'protein.pdb',
+                        'ligand': 'ligand.pdb',
+                        'center': 'Auto-detected',
+                        'size': 'Auto-detected',
+                        'exhaustiveness': self.config.docking.exhaustiveness if self.config else 'Default'
+                    }
+                
+                # Generate all plots
+                plot_files = create_plots_for_pandadock(
+                    output_dir=str(output_dir),
+                    poses_csv=poses_summary,
+                    poses_dir=str(poses_csv_path.parent),
+                    protein_name=protein_name,
+                    ligand_name=ligand_name,
+                    algorithm_info=algorithm_info,
+                    command_info=command_info
+                )
+                
+                generated_files.update(plot_files)
+                self.logger.info(f"Generated {len(plot_files)} plot files")
+                
+            except Exception as e:
+                self.logger.warning(f"Failed to generate plots: {e}")
+        
+        # 6. Generate interaction maps using PandaMap if available
+        if PLOTTING_AVAILABLE and self.generate_interaction_maps:
+            try:
+                self.logger.info("Generating 2D interaction maps with PandaMap...")
+                
+                # Try to use PandaMap integration
+                from .pandamap_integration import create_pandamap_visualizations
+                
+                poses_df = self._create_poses_dataframe(results)
+                pandamap_files = create_pandamap_visualizations(
+                    poses_df=poses_df,
+                    poses_dir=str(poses_csv_path.parent),
+                    output_dir=str(output_dir),
+                    top_n=3,
+                    generate_3d=False  # Only 2D for this function
+                )
+                
+                # Add PandaMap files to generated files
+                if pandamap_files and '2d_maps' in pandamap_files:
+                    generated_files['interaction_maps'] = pandamap_files['2d_maps']
+                    self.logger.info(f"Generated {len(pandamap_files['2d_maps'])} PandaMap interaction maps")
+                else:
+                    self.logger.info("PandaMap interaction maps not generated - skipping")
+                
+            except ImportError:
+                self.logger.info("PandaMap not available - skipping interaction maps")
+            except Exception as e:
+                self.logger.warning(f"Failed to generate PandaMap interaction maps: {e}")
+        
+        self.logger.info(f"Comprehensive report generation completed. Generated {len(generated_files)} files.")
+        return generated_files
+    
+    def _create_poses_summary_csv(self, results: List[Pose], output_path: str) -> str:
+        """Create poses summary CSV for plotting"""
+        import csv
+        
+        with open(output_path, 'w', newline='') as csvfile:
+            fieldnames = ['Rank', 'Pose_ID', 'Score', 'Energy', 'Confidence', 
+                         'Binding_Affinity', 'IC50_uM', 'EC50_uM', 'Ligand_Efficiency', 'Clash_Score']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            
+            writer.writeheader()
+            for i, pose in enumerate(results):
+                binding_affinity = pose.get_binding_affinity()
+                ic50_um = pose.get_ic50(units='uM')
+                ec50_um = pose.get_ec50(units='uM')
+                num_heavy_atoms = len(pose.coordinates)
+                le = self.ic50_calc.calculate_ligand_efficiency(binding_affinity, num_heavy_atoms)
+                
+                writer.writerow({
+                    'Rank': i + 1,
+                    'Pose_ID': pose.pose_id,
+                    'Score': pose.score,
+                    'Energy': pose.energy,
+                    'Confidence': pose.confidence,
+                    'Binding_Affinity': binding_affinity,
+                    'IC50_uM': f"{ic50_um:.2e}" if ic50_um != float('inf') else '',
+                    'EC50_uM': f"{ec50_um:.2e}" if ec50_um != float('inf') else '',
+                    'Ligand_Efficiency': le,
+                    'Clash_Score': pose.clash_score
+                })
+        
+        return output_path
+    
+    def _create_poses_dataframe(self, results: List[Pose]):
+        """Create pandas DataFrame from poses for plotting"""
+        import pandas as pd
+        
+        data = []
+        for i, pose in enumerate(results):
+            binding_affinity = pose.get_binding_affinity()
+            ic50_um = pose.get_ic50(units='uM')
+            ec50_um = pose.get_ec50(units='uM')
+            num_heavy_atoms = len(pose.coordinates)
+            le = self.ic50_calc.calculate_ligand_efficiency(binding_affinity, num_heavy_atoms)
+            
+            data.append({
+                'Rank': i + 1,
+                'Pose_ID': pose.pose_id,
+                'Score': pose.score,
+                'Energy': pose.energy,
+                'Confidence': pose.confidence,
+                'Binding_Affinity': binding_affinity,
+                'IC50_uM': f"{ic50_um:.2e}" if ic50_um != float('inf') else '',
+                'EC50_uM': f"{ec50_um:.2e}" if ec50_um != float('inf') else '',
+                'Ligand_Efficiency': le,
+                'Clash_Score': pose.clash_score
+            })
+        
+        return pd.DataFrame(data)
     
     def _prepare_report_data(self, results: List[Pose]) -> Dict[str, Any]:
         """Prepare data for HTML report"""

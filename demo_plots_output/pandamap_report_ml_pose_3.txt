@@ -1,0 +1,31 @@
+=============================================================================
+PandaMap Interaction Report
+=============================================================================
+
+Ligand: LIG:B:1
+Name: LIG
+Type: LIGAND
+
+------------------------------
+
+Interacting Chains: B, A
+Interacting Residues: 3
+
+------------------------------
+
+Interaction Summary:
+  Hydrogen Bonds: 1
+  Hydrophobic Interactions: 2
+
+------------------------------
+
+Hydrogen Bonds:
+  1. ARG269A  -- 3.38Å -- LIG
+
+------------------------------
+
+Hydrophobic Interactions:
+  1. MET286A  -- 3.59Å -- LIG
+  2. ILE227B  -- 3.99Å -- LIG
+
+=============================================================================

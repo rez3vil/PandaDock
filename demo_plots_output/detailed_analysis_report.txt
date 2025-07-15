@@ -1,0 +1,219 @@
+
+PandaDock Comprehensive Analysis Report
+=====================================
+
+Generated: 2025-07-15 00:16:14
+Target: GABA_A Receptor
+Ligand: Propofol
+
+ALGORITHM INFORMATION
+====================
+Algorithm: PandaDock
+Version: 1.0.0
+Scoring Function: PANDACORE
+Engine: Balanced
+Mode: balanced
+
+COMMAND EXECUTED
+===============
+Command: python -m pandadock --protein tests/beta-2_alpha-1.pdb --ligand tests/propofol.pdb --mode balanced --scoring pandacore --center -15.7 -17.7 8.18 --size 40.0 40.0 40.0 --out test_pandamap_working
+Protein File: tests/beta-2_alpha-1.pdb
+Ligand File: tests/propofol.pdb
+Search Center: -15.7 -17.7 8.18
+Search Size: 40.0 40.0 40.0
+Number of Poses: 10
+Exhaustiveness: 8
+
+SUMMARY STATISTICS
+=================
+Total Poses Generated: 10
+Best Binding Affinity: -0.619 kcal/mol
+Worst Binding Affinity: -3.195 kcal/mol
+Mean Binding Affinity: -1.910 ± 0.913 kcal/mol
+
+Best Docking Score: 0.1091
+Mean Docking Score: 0.1951 ± 0.0656
+
+Best IC50: 4.55e+03 μM
+Median IC50: 3.56e+04 μM
+Worst IC50: 3.52e+05 μM
+
+Best EC50: 4.55e+04 μM
+Median EC50: 3.56e+05 μM
+Worst EC50: 3.52e+06 μM
+
+High Potency Poses (IC50 < 10 μM): 0/10
+Moderate Potency Poses (10-100 μM): 0/10
+Low Potency Poses (≥ 100 μM): 10/10
+
+Mean Confidence: 0.805 ± 0.066
+High Confidence Poses (≥ 0.7): 10/10
+
+DETAILED POSE ANALYSIS
+=====================
+
+Pose 1: ml_pose_1
+--------------------------------
+Rank: 1
+Docking Score: 0.1091
+Energy: -5.413 kcal/mol
+Confidence: 0.891
+Binding Affinity: -2.992 kcal/mol
+IC50: 6.41e+03 μM
+EC50: 6.41e+04 μM
+Ligand Efficiency: -0.2301
+Clash Score: 0.0000
+
+Pose 2: ml_pose_3
+--------------------------------
+Rank: 2
+Docking Score: 0.1301
+Energy: -6.711 kcal/mol
+Confidence: 0.870
+Binding Affinity: -3.195 kcal/mol
+IC50: 4.55e+03 μM
+EC50: 4.55e+04 μM
+Ligand Efficiency: -0.2458
+Clash Score: 0.0000
+
+Pose 3: ml_pose_24
+--------------------------------
+Rank: 3
+Docking Score: 0.1478
+Energy: -5.893 kcal/mol
+Confidence: 0.852
+Binding Affinity: -2.779 kcal/mol
+IC50: 9.18e+03 μM
+EC50: 9.18e+04 μM
+Ligand Efficiency: -0.2138
+Clash Score: 0.0000
+
+Pose 4: ml_pose_4
+--------------------------------
+Rank: 4
+Docking Score: 0.1517
+Energy: -6.939 kcal/mol
+Confidence: 0.848
+Binding Affinity: -2.296 kcal/mol
+IC50: 2.08e+04 μM
+EC50: 2.08e+05 μM
+Ligand Efficiency: -0.1766
+Clash Score: 0.0000
+
+Pose 5: ml_pose_25
+--------------------------------
+Rank: 5
+Docking Score: 0.1736
+Energy: -6.605 kcal/mol
+Confidence: 0.826
+Binding Affinity: -1.989 kcal/mol
+IC50: 3.48e+04 μM
+EC50: 3.48e+05 μM
+Ligand Efficiency: -0.1530
+Clash Score: 0.0000
+
+Pose 6: ml_pose_10
+--------------------------------
+Rank: 6
+Docking Score: 0.1817
+Energy: -6.763 kcal/mol
+Confidence: 0.818
+Binding Affinity: -1.963 kcal/mol
+IC50: 3.64e+04 μM
+EC50: 3.64e+05 μM
+Ligand Efficiency: -0.1510
+Clash Score: 0.0000
+
+Pose 7: ml_pose_6
+--------------------------------
+Rank: 7
+Docking Score: 0.2161
+Energy: -5.507 kcal/mol
+Confidence: 0.784
+Binding Affinity: -1.256 kcal/mol
+IC50: 1.20e+05 μM
+EC50: 1.20e+06 μM
+Ligand Efficiency: -0.0966
+Clash Score: 0.0000
+
+Pose 8: ml_pose_15
+--------------------------------
+Rank: 8
+Docking Score: 0.2720
+Energy: -6.021 kcal/mol
+Confidence: 0.728
+Binding Affinity: -0.895 kcal/mol
+IC50: 2.21e+05 μM
+EC50: 2.21e+06 μM
+Ligand Efficiency: -0.0689
+Clash Score: 0.0000
+
+Pose 9: ml_pose_0
+--------------------------------
+Rank: 9
+Docking Score: 0.2792
+Energy: -6.945 kcal/mol
+Confidence: 0.721
+Binding Affinity: -1.112 kcal/mol
+IC50: 1.53e+05 μM
+EC50: 1.53e+06 μM
+Ligand Efficiency: -0.0856
+Clash Score: 0.0000
+
+Pose 10: ml_pose_23
+--------------------------------
+Rank: 10
+Docking Score: 0.2893
+Energy: -5.647 kcal/mol
+Confidence: 0.711
+Binding Affinity: -0.619 kcal/mol
+IC50: 3.52e+05 μM
+EC50: 3.52e+06 μM
+Ligand Efficiency: -0.0476
+Clash Score: 0.0000
+
+
+CORRELATION ANALYSIS
+===================
+Binding Affinity vs Energy: r = 0.128
+Docking Score vs Energy: r = 0.047
+Binding Affinity vs log(IC50): r = 1.000
+
+GENERATED FILES
+==============
+Binding Metrics: binding_metrics_analysis.png
+Score Distribution: score_distribution_analysis.png
+Ic50 Ec50: ic50_ec50_analysis.png
+Master Publication: master_publication.png
+Interaction Maps:
+  - Map 1: pandamap_2d_ml_pose_1.png
+  - Map 2: pandamap_2d_ml_pose_3.png
+  - Map 3: pandamap_2d_ml_pose_24.png
+
+
+POSE DATA (CSV FORMAT)
+=====================
+Rank,Pose_ID,Score,Energy,Confidence,Binding_Affinity,IC50_uM,EC50_uM,Ligand_Efficiency,Clash_Score
+1,ml_pose_1,0.1090564490616994,-5.412776914916094,0.8909435509383006,-2.991547697285309,6410.0,64100.0,-0.2301190536373314,0.0
+2,ml_pose_3,0.1300961657113111,-6.710739084402044,0.8699038342886889,-3.1953592036531866,4550.0,45500.0,-0.2457968618194758,0.0
+3,ml_pose_24,0.1477941798116677,-5.892786313792151,0.8522058201883322,-2.779180655994262,9180.0,91800.0,-0.213783127384174,0.0
+4,ml_pose_4,0.1516904378188774,-6.938764508936588,0.8483095621811225,-2.2955741127665625,20800.0,208000.0,-0.1765826240589663,0.0
+5,ml_pose_25,0.1736261814744879,-6.6047717765807885,0.8263738185255121,-1.9889171931914769,34800.0,348000.0,-0.1529936302454982,0.0
+6,ml_pose_10,0.1816718713653793,-6.762743102547508,0.8183281286346207,-1.962740098990258,36400.0,364000.0,-0.1509800076146352,0.0
+7,ml_pose_6,0.2161026071942158,-5.50680321335827,0.7838973928057842,-1.256267780830667,120000.0,1200000.0,-0.0966359831408205,0.0
+8,ml_pose_15,0.2719568657946539,-6.020748056061821,0.728043134205346,-0.8952464826199948,221000.0,2210000.0,-0.0688651140476919,0.0
+9,ml_pose_0,0.2792056795223858,-6.944831001483277,0.7207943204776142,-1.1122029023316529,153000.0,1530000.0,-0.0855540694101271,0.0
+10,ml_pose_23,0.2893211603769352,-5.646702270373645,0.7106788396230648,-0.6187565796883261,352000.0,3520000.0,-0.047596659976025,0.0
+
+
+ANALYSIS NOTES
+=============
+• IC50 values represent half-maximal inhibitory concentration
+• EC50 values represent half-maximal effective concentration  
+• Binding affinity calculated using thermodynamic relationship
+• Ligand efficiency normalizes binding affinity by molecular size
+• Confidence scores reflect docking algorithm certainty
+• All energy values in kcal/mol, concentrations in μM
+
+This report was generated by PandaDock comprehensive analysis system.
+For questions or support, please refer to the PandaDock documentation.

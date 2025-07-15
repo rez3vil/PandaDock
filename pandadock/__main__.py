@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Optional, List
 import json
 import logging
+import pandas as pd
 
 # Add PandaDock to path if running as script
 if __name__ == '__main__':
@@ -54,13 +55,24 @@ Examples:
   # Basic docking with PandaCore scoring
   pandadock --protein receptor.pdb --ligand ligand.sdf --mode balanced --scoring pandacore
 
-  # Physics-based docking with PandaPhysics scoring
+  # Physics-based docking with comprehensive plots
   pandadock --protein receptor.pdb --ligand ligand.sdf --mode precise \\
-           --flexible-residues "HIS57,SER195" --scoring pandaphysics --out report.html
+           --flexible-residues "HIS57,SER195" --scoring pandaphysics \\
+           --plots --interaction-maps --out results
+
+  # Docking with publication-ready outputs
+  pandadock --protein beta-2_alpha-1.pdb --ligand propofol.pdb --mode balanced \\
+           --scoring pandacore --flexible-residues "ASN265" \\
+           --center -15.7 -17.7 8.18 --size 40 40 40 \\
+           --all-outputs --protein-name "GABA_A Receptor" --ligand-name "Propofol"
+
+  # Professional interaction analysis with PandaMap
+  pandadock --protein receptor.pdb --ligand compound.sdf --mode precise \\
+           --pandamap --pandamap-3d --plots --out results
 
   # Fast virtual screening with PandaML scoring
   pandadock --protein receptor.pdb --screen ligands.smi --mode fast \\
-           --num-poses 5 --scoring pandaml --exhaustiveness 16
+           --num-poses 5 --scoring pandaml --exhaustiveness 16 --master-plot
 
   # Use custom configuration
   pandadock --config config.json
@@ -121,6 +133,26 @@ Examples:
                        choices=['html', 'json', 'csv'],
                        help='Report format (default: html)')
     
+    # Plotting and visualization
+    parser.add_argument('--plots', action='store_true',
+                       help='Generate comprehensive plots (binding metrics, IC50/EC50, master publication plot)')
+    parser.add_argument('--interaction-maps', action='store_true',
+                       help='Generate 2D interaction maps for top poses')
+    parser.add_argument('--master-plot', action='store_true',
+                       help='Generate publication-ready master plot')
+    parser.add_argument('--txt-report', action='store_true',
+                       help='Generate detailed TXT report with algorithm and command info')
+    parser.add_argument('--pandamap', action='store_true',
+                       help='Use PandaMap for professional protein-ligand interaction visualization (2D + 3D)')
+    parser.add_argument('--pandamap-3d', action='store_true',
+                       help='Generate interactive 3D visualizations using PandaMap')
+    parser.add_argument('--all-outputs', action='store_true',
+                       help='Generate all output formats (HTML, CSV, JSON, plots, interaction maps, TXT)')
+    parser.add_argument('--protein-name', type=str,
+                       help='Protein name for plot titles and reports')
+    parser.add_argument('--ligand-name', type=str,
+                       help='Ligand name for plot titles and reports')
+    
     # Configuration
     parser.add_argument('--config', '-c', type=str,
                        help='Configuration file (JSON format)')
@@ -175,6 +207,17 @@ def create_config_from_args(args: argparse.Namespace) -> PandaDockConfig:
     config.scoring.scoring_function = args.scoring
     config.scoring.use_ml_rescoring = args.ml_rescoring
     
+    # Plotting and visualization settings
+    config.enable_plots = args.plots or args.all_outputs
+    config.enable_interaction_maps = args.interaction_maps or args.all_outputs
+    config.enable_master_plot = args.master_plot or args.all_outputs
+    config.enable_txt_report = args.txt_report or args.all_outputs
+    config.enable_pandamap = args.pandamap or args.all_outputs
+    config.enable_pandamap_3d = args.pandamap_3d or args.pandamap or args.all_outputs
+    config.comprehensive_output = args.all_outputs
+    config.protein_name = args.protein_name
+    config.ligand_name = args.ligand_name
+    
     config.verbose = args.verbose
     config.debug = args.debug
     config.n_jobs = args.n_jobs
@@ -227,22 +270,137 @@ def run_docking(config: PandaDockConfig, ligand_file: str = None):
             logger.info(f"Saving poses to {poses_dir}")
             engine.save_poses(results, poses_dir)
         
-        # Generate report
+        # Generate comprehensive report with plots if requested
         report_generator = HTMLReportGenerator(config)
-        if config.io.report_format == 'json':
-            json_output_path = os.path.join(config.io.output_dir, "pandadock_report.json")
-            print("📊 Generating JSON report...")
-            logger.info("Generating JSON report")
-            report_generator.export_data(results, format='json', output_path=json_output_path)
-        elif config.io.report_format == 'csv':
-            csv_output_path = os.path.join(config.io.output_dir, "pandadock_report.csv")
-            print("📊 Generating CSV report...")
-            logger.info("Generating CSV report")
-            report_generator.export_data(results, format='csv', output_path=csv_output_path)
-        else: # Default to HTML
-            print("📊 Generating interactive HTML report...")
-            logger.info("Generating HTML report")
-            report_generator.generate_report(results)
+        
+        # Check if comprehensive plotting is enabled
+        if (hasattr(config, 'enable_plots') and config.enable_plots) or \
+           (hasattr(config, 'comprehensive_output') and config.comprehensive_output):
+            
+            print("🎨 Generating comprehensive plots and reports...")
+            logger.info("Generating comprehensive plots and reports")
+            
+            # Prepare names for plots
+            protein_name = getattr(config, 'protein_name', None) or Path(config.io.protein_file).stem
+            ligand_name = getattr(config, 'ligand_name', None) or Path(ligand_path).stem
+            
+            # Prepare algorithm and command information
+            algorithm_info = {
+                'algorithm': 'PandaDock',
+                'version': '1.0.0',
+                'scoring_function': config.scoring.scoring_function.upper(),
+                'engine': config.docking.mode.title(),
+                'mode': config.docking.mode
+            }
+            
+            # Build command from config
+            command_parts = ['python', '-m', 'pandadock']
+            command_parts.extend(['--protein', config.io.protein_file])
+            command_parts.extend(['--ligand', ligand_path])
+            command_parts.extend(['--mode', config.docking.mode])
+            command_parts.extend(['--scoring', config.scoring.scoring_function])
+            
+            if config.docking.flexible_residues:
+                command_parts.extend(['--flexible-residues', ','.join(config.docking.flexible_residues)])
+            if hasattr(config.io, 'center_x'):
+                command_parts.extend(['--center', str(config.io.center_x), str(config.io.center_y), str(config.io.center_z)])
+            if hasattr(config.io, 'size_x'):
+                command_parts.extend(['--size', str(config.io.size_x), str(config.io.size_y), str(config.io.size_z)])
+            command_parts.extend(['--out', config.io.output_dir])
+            
+            command_info = {
+                'command': ' '.join(command_parts),
+                'protein': config.io.protein_file,
+                'ligand': ligand_path,
+                'center': f"{getattr(config.io, 'center_x', 'auto')} {getattr(config.io, 'center_y', 'auto')} {getattr(config.io, 'center_z', 'auto')}",
+                'size': f"{getattr(config.io, 'size_x', 22.5)} {getattr(config.io, 'size_y', 22.5)} {getattr(config.io, 'size_z', 22.5)}",
+                'exhaustiveness': config.docking.exhaustiveness
+            }
+            
+            # Generate comprehensive report
+            generated_files = report_generator.generate_comprehensive_report(
+                results=results,
+                output_dir=config.io.output_dir,
+                protein_name=protein_name,
+                ligand_name=ligand_name,
+                algorithm_info=algorithm_info,
+                command_info=command_info
+            )
+            
+            # Generate PandaMap visualizations if requested
+            if (hasattr(config, 'enable_pandamap') and config.enable_pandamap):
+                print("🗺️  Generating PandaMap professional interaction visualizations...")
+                logger.info("Generating PandaMap visualizations")
+                
+                try:
+                    from pandadock.reports.pandamap_integration import create_pandamap_visualizations
+                    
+                    # Create poses DataFrame
+                    poses_data = []
+                    for i, pose in enumerate(results):
+                        binding_affinity = pose.get_binding_affinity()
+                        ic50_um = pose.get_ic50(units='uM')
+                        
+                        poses_data.append({
+                            'Rank': i + 1,
+                            'Pose_ID': pose.pose_id,
+                            'Binding_Affinity': binding_affinity,
+                            'IC50_uM': f"{ic50_um:.2e}" if ic50_um != float('inf') else ''
+                        })
+                    
+                    poses_df = pd.DataFrame(poses_data)
+                    
+                    # Generate PandaMap visualizations
+                    pandamap_files = create_pandamap_visualizations(
+                        poses_df=poses_df,
+                        poses_dir=os.path.join(config.io.output_dir, "poses"),
+                        output_dir=config.io.output_dir,
+                        top_n=3,
+                        generate_3d=getattr(config, 'enable_pandamap_3d', False)
+                    )
+                    
+                    # Add to generated files
+                    if pandamap_files:
+                        generated_files.update(pandamap_files)
+                        
+                        map_count = len(pandamap_files.get('2d_maps', []))
+                        viz_count = len(pandamap_files.get('3d_maps', []))
+                        print(f"   🗺️  Generated {map_count} PandaMap 2D interaction maps")
+                        if viz_count > 0:
+                            print(f"   🌐 Generated {viz_count} interactive 3D visualizations")
+                    
+                except ImportError:
+                    print("   ⚠️  PandaMap not available - install with: pip install pandamap")
+                    logger.warning("PandaMap not available for visualization")
+                except Exception as e:
+                    print(f"   ⚠️  PandaMap visualization failed: {e}")
+                    logger.warning(f"PandaMap visualization failed: {e}")
+            
+            # Report generated files
+            plot_count = sum(1 for k, v in generated_files.items() if 'plot' in k.lower() or 'map' in k.lower())
+            print(f"✨ Generated {len(generated_files)} output files:")
+            print(f"   📊 Plots: {plot_count}")
+            print(f"   📄 Reports: {len(generated_files) - plot_count}")
+            
+            if 'master_publication' in generated_files:
+                print(f"   🏆 Master publication plot: {Path(generated_files['master_publication']).name}")
+            
+        else:
+            # Standard report generation
+            if config.io.report_format == 'json':
+                json_output_path = os.path.join(config.io.output_dir, "pandadock_report.json")
+                print("📊 Generating JSON report...")
+                logger.info("Generating JSON report")
+                report_generator.export_data(results, format='json', output_path=json_output_path)
+            elif config.io.report_format == 'csv':
+                csv_output_path = os.path.join(config.io.output_dir, "pandadock_report.csv")
+                print("📊 Generating CSV report...")
+                logger.info("Generating CSV report")
+                report_generator.export_data(results, format='csv', output_path=csv_output_path)
+            else: # Default to HTML
+                print("📊 Generating interactive HTML report...")
+                logger.info("Generating HTML report")
+                report_generator.generate_report(results)
         
         print(f"✅ Docking completed successfully!")
         print(f"📂 Results saved to: {config.io.output_dir}")
