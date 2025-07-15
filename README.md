@@ -4,7 +4,6 @@
 
 ---
 
-
 <p align="center">
   <a href="https://github.com/pritampanda15/PandaDock">
     <img src="https://github.com/pritampanda15/PandaDock/blob/main/logo/logo_new.png" width="500" alt="PandaDock Logo"/>
@@ -44,98 +43,95 @@
 
 ---
 
-
-##  Overview
+## 🔬 Overview
 
 PandaDock is a comprehensive molecular docking software that combines multiple docking strategies in a unified framework. It features **three novel PandaDock algorithms** - PandaCore, PandaML, and PandaPhysics - for protein-ligand docking with comprehensive analysis and reporting capabilities.
 
-##  Comprehensive Benchmark Results
+## 📊 Results Showcase
 
-**Large-scale evaluation on 5,316 PDBbind complexes (15,948 total docking runs):**
+### Comprehensive Docking Analysis
 
-<p align="center">
-  <img src="benchmarks/comprehesive_benchmark/master_publication_figure.png" alt="PandaDock Comprehensive Benchmark Results" width="900"/>
-</p>
-
-### Algorithm Performance Rankings:
-
-| Algorithm | Affinity R² | Pearson R | Success Rate | Mean RMSD | Speed |
-|-----------|-------------|-----------|--------------|-----------|-------|
-| **PandaML** | **0.845** | **0.919** | **49.0%** | **3.11 Å** | **26.7s** |
-| **PandaPhysics** | 0.769 | 0.877 | 48.3% | 3.20 Å | 45.6s |
-| **PandaCore** | 0.709 | 0.842 | 47.1% | 3.31 Å | 33.7s |
-
-*Success Rate = RMSD < 2Å. Benchmarked on 5,316 diverse protein-ligand complexes from PDBbind database.*
-
-### Detailed Performance Analysis:
-
-#### Correlation Analysis:
-<p align="center">
-  <img src="benchmarks/comprehesive_benchmark/correlation_analysis.png" alt="Correlation Analysis" width="800"/>
-</p>
-
-#### RMSD Distribution Analysis:
-<p align="center">
-  <img src="benchmarks/comprehesive_benchmark/rmsd_analysis.png" alt="RMSD Analysis" width="800"/>
-</p>
-
-#### Performance vs Molecular Properties:
-<p align="center">
-  <img src="benchmarks/comprehesive_benchmark/performance_vs_properties.png" alt="Performance vs Properties" width="800"/>
-</p>
-
-#### Ligand Complexity Analysis:
-<p align="center">
-  <img src="benchmarks/comprehesive_benchmark/ligand_complexity_analysis.png" alt="Ligand Complexity Analysis" width="800"/>
-</p>
-
-**Key Findings:**
-- **PandaML** achieves superior affinity prediction with R² = 0.845 and Pearson R = 0.919
-- **Consistent Performance**: All algorithms show ~47-49% success rates with robust pose prediction  
-- **Computational Efficiency**: PandaML offers the best speed/accuracy trade-off at 26.7s per complex
-- **Large-scale Validation**: Results confirmed across 5,316 complexes from the entire PDBbind database
-- **Robust Across Complexity**: Performance maintained across diverse ligand sizes and binding affinities
-
-### Metal vs Non-Metal Specialization:
+PandaDock generates publication-quality visualizations and detailed analyses for molecular docking studies:
 
 <p align="center">
-  <img src="benchmarks/metal_full_benchmark/metal_master_figure.png" alt="Comprehensive Metal vs Non-Metal Analysis" width="900"/>
+  <img src="demo_plots_output/master_publication.png" alt="PandaDock Comprehensive Analysis" width="900"/>
 </p>
 
-**Comprehensive Metal Analysis (Full PDBbind Dataset):**
-- **1,982 metal complexes** (37.3%) vs **3,334 non-metal complexes** (62.7%) analyzed
-- **PandaPhysics excels with metals**: 56.6% success rate vs 49.6% for non-metals
-- **PandaML maintains balance**: 47.8% vs 51.2% success rates respectively
-- **Metal complexity confirmed**: Higher computational demands with specialized coordination chemistry
+**Key Features Demonstrated:**
+- **Multi-dimensional Analysis**: Binding affinity vs energy correlation, score distributions, IC50 potency analysis
+- **Pose Ranking**: Systematic evaluation of docking poses with confidence scoring
+- **Ligand Efficiency**: Comprehensive efficiency metrics and binding affinity rankings
+- **Publication-Ready Metrics**: Professional tables with binding affinity, IC50, EC50, and confidence scores
 
-#### Metal Distribution Analysis:
+### Advanced Binding Metrics Analysis
+
 <p align="center">
-  <img src="benchmarks/metal_full_benchmark/metal_type_analysis.png" alt="Metal Type Distribution" width="700"/>
+  <img src="demo_plots_output/binding_metrics_analysis.png" alt="Binding Metrics Analysis" width="900"/>
 </p>
 
-#### Metal vs Non-Metal Performance:
+**Comprehensive Metrics Include:**
+- **Binding Affinity Distribution**: Statistical analysis with mean and standard deviation
+- **Docking Energy Analysis**: Energy landscape evaluation with confidence correlation
+- **ΔG Distribution**: Thermodynamic analysis relative to worst pose
+- **Ligand Efficiency**: Efficiency calculations with molecular weight considerations
+- **Pose Ranking Trends**: Systematic evaluation of binding affinity across pose rankings
+
+### Professional Interaction Visualization
+
 <p align="center">
-  <img src="benchmarks/metal_full_benchmark/metal_vs_nonmetal_performance.png" alt="Metal vs Non-Metal Performance" width="700"/>
+  <img src="demo_plots_output/pandamap_2d_ml_pose_1.png" alt="PandaMap 2D Interaction Analysis" width="600"/>
 </p>
 
-#### Metal Coordination Analysis:
+**PandaMap Integration Features:**
+- **Discovery Studio-Style Visualization**: Professional 2D interaction maps
+- **Detailed Interaction Analysis**: Hydrogen bonds, hydrophobic contacts, and salt bridges
+- **Residue-Level Detail**: Precise interaction distances and types
+- **Publication-Quality Graphics**: Clean, professional visualization suitable for manuscripts
+
+### Score Distribution & Confidence Analysis
+
 <p align="center">
-  <img src="benchmarks/metal_full_benchmark/metal_coordination_analysis.png" alt="Metal Coordination Analysis" width="700"/>
+  <img src="demo_plots_output/score_distribution_analysis.png" alt="Score Distribution Analysis" width="900"/>
 </p>
 
-##  Key Features
+**Statistical Analysis Features:**
+- **Score Distribution with KDE**: Kernel density estimation for score patterns
+- **Confidence Analysis**: High-confidence pose identification (threshold-based)
+- **Energy-Score Correlation**: Relationship between docking scores and binding energies
+- **Pose Quality Assessment**: Comprehensive ranking and validation metrics
 
-###  **Three Novel PandaDock Algorithms**
+### IC50/EC50 Potency Analysis
+
+<p align="center">
+  <img src="demo_plots_output/ic50_ec50_analysis.png" alt="IC50 EC50 Analysis" width="900"/>
+</p>
+
+**Drug Discovery Metrics:**
+- **IC50 Distribution Analysis**: Comprehensive potency distribution with median values
+- **EC50 Correlation**: Perfect correlation analysis between IC50 and EC50 values
+- **Potency Classification**: Categorization into high, moderate, low, and very low potency ranges
+- **Affinity-Potency Relationships**: Direct correlation between binding affinity and inhibitory potency
+
+
+## ✨ Key Features
+
+### 🧬 **Three Novel PandaDock Algorithms**
 - **PandaCore**: Robust baseline algorithm with excellent general performance
-- **PandaML**: Advanced machine learning-based algorithm with superior affinity prediction
+- **PandaML**: Advanced machine learning-based algorithm with superior affinity prediction  
 - **PandaPhysics**: Physics-based algorithm specialized for metal coordination and complex chemistry
 
-###  **Advanced Capabilities**
+### 🔬 **Advanced Analysis Capabilities**
+- **PandaMap Integration**: Professional Discovery Studio-style interaction visualization
+- **Comprehensive Metrics**: IC50, EC50, binding affinity, and ligand efficiency calculations
+- **Publication-Quality Plots**: Master publication figures with statistical analysis
+- **Interactive 3D Visualization**: HTML-based molecular interaction viewers
+- **Professional Reports**: HTML reports with detailed pose analysis and energy breakdown
+
+### 🎯 **Docking Features**
 - **Flexible Docking**: Side-chain flexibility with rotamer library sampling
 - **Metal Coordination**: Specialized handling of metal-containing complexes
-- **Comprehensive Scoring**: Physics-based + ML rescoring with detailed energy breakdown
 - **Multi-format Support**: SMILES, SDF, MOL2, PDB input formats
-- **Interactive Reports**: HTML reports with pose visualization and analysis
+- **Confidence Scoring**: ML-based confidence assessment for pose reliability
 
 ### ⚡ **Performance Features**
 - **GPU Acceleration**: CUDA support for ML models
@@ -176,24 +172,38 @@ cd pandadock
 pip install -e .[all]
 ```
 
-##  Quick Start
+## 🚀 Quick Start
 
-### Basic Docking with Novel PandaDock Algorithms
+### Basic Docking with PandaMap Visualization
 ```bash
-# PandaML algorithm (best overall performance)
-pandadock --protein receptor.pdb --ligand ligand.sdf --mode balanced --scoring pandaml
+# PandaML with professional PandaMap interaction analysis
+pandadock --protein receptor.pdb --ligand ligand.sdf --mode balanced --scoring pandaml \
+          --pandamap --pandamap-3d --out results
 
-# PandaPhysics algorithm (best for metal complexes)
+# PandaPhysics with PandaMap for metal complexes
 pandadock --protein receptor.pdb --ligand ligand.sdf --mode precise --scoring pandaphysics \
-          --flexible-residues "HIS57,SER195" --out results.html
+          --flexible-residues "HIS57,SER195" --pandamap --out results
 
-# PandaCore algorithm (reliable baseline)
-pandadock --protein receptor.pdb --ligand ligand.sdf --mode fast --scoring pandacore
-
-# Fast virtual screening with PandaML
+# Fast screening with comprehensive analysis
 pandadock --protein receptor.pdb --screen ligands.smi --mode fast --scoring pandaml \
-          --num-poses 5 --exhaustiveness 16
+          --num-poses 10 --pandamap --out screening_results
 ```
+
+### Example: GABA Receptor - Propofol Analysis
+```bash
+# Reproduce the demo results shown above
+pandadock --protein gaba_receptor.pdb --ligand propofol.sdf --mode balanced \
+          --scoring pandaml --pandamap --pandamap-3d \
+          --flexible-residues "ASN265" --out gaba_propofol_analysis
+```
+
+**Generated Output:**
+- `master_publication.png` - Comprehensive analysis dashboard
+- `binding_metrics_analysis.png` - Detailed binding metrics
+- `pandamap_2d_*.png` - Professional 2D interaction maps  
+- `pandamap_3d_*.html` - Interactive 3D visualizations
+- `ic50_ec50_analysis.png` - Drug potency analysis
+- `score_distribution_analysis.png` - Statistical validation
 
 ### Python API
 ```python
@@ -359,82 +369,24 @@ rescorer.load_model('pandaml_model.pkl')
 rescored_poses = rescorer.rescore_poses(poses)
 ```
 
-##  Comprehensive Benchmarking
+## 🎯 Why Choose PandaDock?
 
-### Validated Performance Metrics
+### **Professional Visualization & Analysis**
+- **Publication-Ready Figures**: Generate comprehensive analysis plots ready for manuscripts
+- **PandaMap Integration**: Discovery Studio-quality 2D interaction maps and 3D visualizations  
+- **Statistical Validation**: Complete binding metrics with confidence scoring and distribution analysis
+- **Drug Discovery Metrics**: IC50, EC50, ligand efficiency, and potency classification
 
-**PDBbind Dataset (285 complexes):**
--  **Affinity Prediction**: Up to R² = 0.878 (PandaML)
--  **Pose Accuracy**: Up to 48.8% success rate (PandaPhysics)
--  **Speed**: 26-43 seconds per complex
--  **Metal Specialization**: Comprehensive analysis of 93 metal complexes
-
-**Algorithm Specializations:**
-- **PandaML**: Superior for affinity prediction and general docking
-- **PandaPhysics**: Excellent for metal coordination and detailed analysis
+### **Three Specialized Algorithms**
+- **PandaML**: Superior machine learning-based affinity prediction
+- **PandaPhysics**: Excellent for metal coordination and detailed analysis  
 - **PandaCore**: Reliable baseline with consistent performance
 
-### Complete Performance Analysis
-
-<details>
-<summary> View All Comprehensive Benchmark Results</summary>
-
-#### Master Benchmark Figure (5,316 Complexes)
-![Master Benchmark](benchmarks/comprehesive_benchmark/master_publication_figure.png)
-
-#### Engine Performance Comparison
-![Engine Performance](benchmarks/comprehesive_benchmark/engine_performance.png)
-
-#### Correlation Analysis
-![Correlation Analysis](benchmarks/comprehesive_benchmark/correlation_analysis.png)
-
-#### RMSD Distribution Analysis
-![RMSD Analysis](benchmarks/comprehesive_benchmark/rmsd_analysis.png)
-
-#### Performance vs Molecular Properties
-![Performance vs Properties](benchmarks/comprehesive_benchmark/performance_vs_properties.png)
-
-#### Ligand Complexity Analysis
-![Ligand Complexity](benchmarks/comprehesive_benchmark/ligand_complexity_analysis.png)
-
-#### Metal vs Non-Metal Performance (Full Dataset)
-![Metal Performance](benchmarks/metal_full_benchmark/metal_vs_nonmetal_performance.png)
-
-#### Metal Type Distribution
-![Metal Types](benchmarks/metal_full_benchmark/metal_type_analysis.png)
-
-#### Metal Coordination Analysis
-![Metal Coordination](benchmarks/metal_full_benchmark/metal_coordination_analysis.png)
-
-#### Metal Complexity Effects
-![Metal Complexity](benchmarks/metal_full_benchmark/metal_complexity_effects.png)
-
-#### Algorithm Metal Specialization
-![Engine Specialization](benchmarks/metal_full_benchmark/engine_metal_specialization.png)
-
-</details>
-
-##  Performance Summary
-
-### Validation Scale
-- **5,316 protein-ligand complexes** from complete PDBbind database
-- **15,948 total docking runs** (3 algorithms × 5,316 complexes)
-- **Molecular diversity**: Ligands ranging from 15-79 heavy atoms
-- **Affinity range**: 4.00 - 10.50 pKd/pKi units
-- **Comprehensive coverage**: Represents largest molecular docking benchmark to date
-
-### Algorithm Excellence
-- **PandaML leads in affinity prediction**: R² = 0.845, Pearson R = 0.919
-- **Consistent pose accuracy**: All algorithms achieve ~47-49% success rates (RMSD < 2Å)
-- **Optimal computational efficiency**: PandaML delivers best speed/accuracy ratio at 26.7s per complex
-- **Robust performance**: Maintained across complete molecular diversity spectrum
-
-### Metal vs Non-Metal Specialization
-- **Comprehensive metal coverage**: 1,982 metal complexes (37.3%) analyzed across 16 metal types
-- **PandaPhysics metal excellence**: 56.6% success rate for metals vs 49.6% for non-metals
-- **PandaML versatility**: Balanced performance across both metal (47.8%) and non-metal (51.2%) systems
-- **Metal coordination mastery**: Superior coordination scoring with physics-based modeling
-- **Diverse metal chemistry**: Zinc (40.0%), Calcium (21.7%), Magnesium (15.0%) dominate dataset
+### **Complete Workflow Integration**
+- **Multi-format Input**: SMILES, SDF, MOL2, PDB support
+- **Flexible Docking**: Side-chain flexibility with rotamer sampling
+- **Batch Processing**: High-throughput virtual screening capabilities
+- **Interactive Reports**: HTML reports with 3D pose visualization
 
 ##  Contributing
 
