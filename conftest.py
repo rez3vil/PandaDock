@@ -31,10 +31,6 @@ except ImportError:
     ScoringFunctions = None
 
 
-# Test configuration
-pytest_plugins = ["pytest_mock"]
-
-
 def pytest_configure(config):
     """Configure pytest with custom markers."""
     config.addinivalue_line(
@@ -285,23 +281,27 @@ def physics_engine(test_config):
     return PhysicsEngine(test_config)
 
 
-# Mock fixtures for testing without dependencies
+# Simple mock fixtures for testing without dependencies
 @pytest.fixture
-def mock_torch_model(mocker):
+def mock_torch_model():
     """Mock PyTorch model for ML testing."""
-    mock_model = mocker.MagicMock()
-    mock_model.eval.return_value = mock_model
-    mock_model.forward.return_value = mocker.MagicMock()
-    return mock_model
+    class MockModel:
+        def eval(self):
+            return self
+        def forward(self, *args, **kwargs):
+            return None
+    return MockModel()
 
 
 @pytest.fixture
-def mock_rdkit_mol(mocker):
+def mock_rdkit_mol():
     """Mock RDKit molecule for chemistry testing."""
-    mock_mol = mocker.MagicMock()
-    mock_mol.GetNumAtoms.return_value = 7
-    mock_mol.GetConformers.return_value = []
-    return mock_mol
+    class MockMol:
+        def GetNumAtoms(self):
+            return 7
+        def GetConformers(self):
+            return []
+    return MockMol()
 
 
 # Performance testing fixtures
