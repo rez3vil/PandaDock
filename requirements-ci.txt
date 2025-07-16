@@ -11,7 +11,6 @@ twine
 pytest>=7.0.0
 pytest-cov>=4.0.0
 pytest-xdist>=3.0.0
-pytest-mock>=3.8.0
 coverage[toml]>=6.0.0
 
 # Core runtime dependencies (minimal for CI)
