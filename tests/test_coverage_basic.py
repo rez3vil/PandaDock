@@ -341,15 +341,18 @@ def test_scoring_edge_cases():
         config = PandaDockConfig()
         scoring = ScoringFunctions(config)
         
-        # Test with very close atoms (should give high clash score)
-        close_coords = np.array([[0, 0, 0], [0.1, 0, 0]])
+        # Test with close but non-bonded atoms (should give clash score)
+        # Distance of 2.5 Å is above bonded cutoff (2.0 Å) but below VdW cutoff (2.8 Å)
+        close_coords = np.array([[0, 0, 0], [2.5, 0, 0]])
         clash_score = scoring.calculate_clash_score(close_coords)
         assert clash_score >= 0  # Clash score should be non-negative
         
-        # Test with well-separated atoms (should give low clash score)
+        # Test with well-separated atoms (should give no clash score)
         separated_coords = np.array([[0, 0, 0], [5, 0, 0]])
         clash_score_low = scoring.calculate_clash_score(separated_coords)
         assert clash_score >= clash_score_low  # Close atoms should have higher or equal clash score
+        assert isinstance(clash_score, (int, float))
+        assert isinstance(clash_score_low, (int, float))
         
         # Test Vina scoring
         vina_score = scoring.calculate_vina_score(separated_coords)
