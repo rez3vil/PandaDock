@@ -50,7 +50,7 @@ requirements = read_requirements()
 
 setup(
     name="pandadock",
-    version="3.0.0",
+    version="2.2.0",
     author="Pritam Kumar Panda",
     author_email="pritam@stanford.edu",
     description="Modular, Multi-Strategy, High-Performance Molecular Docking Software",
@@ -149,9 +149,9 @@ setup(
         ],
     },
     project_urls={
-        "Documentation": "https://pandadock.readthedocs.io/",
-        "Source": "https://github.com/pandadock/pandadock",
-        "Tracker": "https://github.com/pandadock/pandadock/issues",
+        "Documentation": "https://pandadock.readthedocs.io/en/latest/",
+        "Source": "https://github.com/pritampkp15/pandadock",
+        "Tracker": "https://github.com/pritampkp15/pandadock/issues",
     },
     keywords=[
         "molecular docking",

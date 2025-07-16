@@ -10,7 +10,7 @@ Email: pritam@stanford.edu
 Version: 3.0.0
 """
 
-__version__ = "3.0.0"
+__version__ = "2.2.0"
 __author__ = "Pritam Kumar Panda"
 __email__ = "pritam@stanford.edu"
 

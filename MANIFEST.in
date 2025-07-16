@@ -1,0 +1,134 @@
+# Include the README and license files
+include README.md
+include LICENSE
+include CHANGELOG.md
+include CONTRIBUTING.md
+include INSTALL.md
+
+# Include the algorithms wiki
+include PANDADOCK_ALGORITHMS_WIKI.md
+
+# Include package configuration files
+include pyproject.toml
+include setup.py
+include requirements.txt
+include requirements-ci.txt
+
+# Include documentation files
+recursive-include docs *
+include docs/Makefile
+include docs/requirements.txt
+
+# Include all package data
+recursive-include pandadock/data *
+recursive-include pandadock/templates *
+recursive-include pandadock/examples *
+
+# Include test files
+recursive-include tests *
+include conftest.py
+
+# Include benchmark data and scripts
+recursive-include benchmarks *
+include benchmarks/*.py
+include benchmarks/*.md
+include benchmarks/*.csv
+include benchmarks/*.log
+
+# Include example data files
+include examples/*.py
+include examples/*.pdf
+include examples/*.png
+
+# Include demo output files (plots and analysis)
+recursive-include demo_plots_output *
+
+# Include logo and branding
+recursive-include logo *
+
+# Include GitHub workflows and configuration
+include .github/workflows/*.yml
+include .github/ISSUE_TEMPLATE/*
+include .github/PULL_REQUEST_TEMPLATE.md
+
+# Include development and CI configuration
+include .pre-commit-config.yaml
+include .gitignore
+include .editorconfig
+
+# Include shell scripts
+include *.sh
+include test_pandadock_commands.sh
+
+# Exclude compiled Python files
+global-exclude *.py[cod]
+global-exclude __pycache__
+global-exclude *.so
+global-exclude .DS_Store
+global-exclude *.egg-info
+
+# Exclude temporary and cache files
+global-exclude .tox
+global-exclude .coverage
+global-exclude .pytest_cache
+global-exclude .mypy_cache
+global-exclude .ruff_cache
+global-exclude htmlcov
+
+# Exclude IDE files
+global-exclude .vscode
+global-exclude .idea
+global-exclude *.swp
+global-exclude *.swo
+
+# Exclude build artifacts
+global-exclude build
+global-exclude dist
+
+# Include specific data files that are important
+include pandadock/data/*.json
+include pandadock/data/*.csv
+include pandadock/data/*.yaml
+include pandadock/data/*.yml
+
+# Include HTML templates
+include pandadock/templates/*.html
+include pandadock/templates/*.css
+include pandadock/templates/*.js
+
+# Include example molecular files
+include pandadock/examples/*.pdb
+include pandadock/examples/*.sdf
+include pandadock/examples/*.mol2
+include pandadock/examples/*.smiles
+
+# Include configuration examples
+include pandadock/examples/configs/*.json
+include pandadock/examples/configs/*.yaml
+
+# Include documentation source files
+include docs/source/*.rst
+include docs/source/*.md
+include docs/source/conf.py
+recursive-include docs/source/_static *
+recursive-include docs/source/_templates *
+
+# Include algorithm-specific documentation
+include docs/CDOCKER_IMPLEMENTATION.md
+include docs/COMPREHENSIVE_PLOTTING_GUIDE.md
+include docs/PANDAMAP_INTEGRATION_GUIDE.md
+include docs/COMMAND_LINE_PLOTTING_GUIDE.md
+
+# Include benchmark result files
+include benchmarks/scripts/rmsd_excellence_results/*.png
+include benchmarks/scripts/rmsd_excellence_results/*.csv
+include benchmarks/scripts/rmsd_excellence_results/*.json
+include benchmarks/scripts/rmsd_excellence_results/*.md
+
+# Include test data
+include tests/data/*.pdb
+include tests/data/*.sdf
+include tests/data/*.mol2
+
+# Version file
+include pandadock/_version.py
