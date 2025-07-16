@@ -70,3 +70,26 @@ nglview>=3.0.0
 # Optional enhanced features (install separately if needed)
 # openeye-toolkits>=2021.10.0
 # schrodinger-suite>=2021.4
+
+# CI-specific requirements for building and testing PandaDock
+# These are minimal dependencies needed for CI/CD pipeline
+
+# Build system requirements
+setuptools>=61.0
+wheel
+build
+twine
+
+# Core testing dependencies
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-xdist>=3.0.0
+pytest-mock>=3.8.0
+coverage[toml]>=6.0.0
+# Code quality tools
+black>=22.0.0
+ruff>=0.1.0
+mypy>=1.0.0
+
+# Documentation (minimal for CI builds)
+sphinx>=5.0.0
