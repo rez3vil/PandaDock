@@ -244,7 +244,7 @@ class GAEngine(DockingEngine):
                 score=0.0,
                 energy=0.0,
                 ligand_name=ligand_name,
-                pose_id=f"ga_pose_{random.randint(1000000000, 9999999999)}",
+                pose_id=f"ga_pose_{i}",
                 confidence=0.0
             )
             poses.append(pose)
