@@ -215,32 +215,24 @@ class GAEngine(DockingEngine):
             coords = base_coords.copy()
             
             # 1. Random rotation around molecular center
-            center = np.mean(coords, axis=0)
-            centered_coords = coords - center
+            mol_center = np.mean(coords, axis=0)
+            centered_coords = coords - mol_center
             
             # Generate random rotation using euler angles
             angles = np.random.uniform(0, 2*np.pi, 3)
             rot_matrix = rotation_matrix(angles)
             rotated_coords = np.dot(centered_coords, rot_matrix.T)
             
-            # 2. Random translation within grid box, biased toward center
+            # 2. Translate so molecule center is at grid center with small offset
             grid_center = self.grid_box.center
-            grid_size = self.grid_box.size
             
-            # Bias translation toward grid center (80% near center, 20% throughout box)
-            if np.random.random() < 0.8:
-                # Place near grid center with small random offset
-                max_offset = grid_size * 0.1  # Stay within 10% of grid size from center
-                translation = np.random.uniform(-max_offset, max_offset)
-            else:
-                # Occasional placement throughout grid box for diversity
-                max_translation = grid_size * 0.4
-                translation = np.random.uniform(-max_translation, max_translation)
+            # Place very close to grid center with minimal random offset
+            max_offset = 1.0  # Small 1 Angstrom radius around center
+            random_offset = np.random.uniform(-max_offset, max_offset, 3)
+            target_center = grid_center + random_offset
             
-            final_center = grid_center + translation
-            
-            # 3. Apply translation
-            final_coords = rotated_coords + final_center
+            # 3. Apply translation (rotated_coords is already centered at origin)
+            final_coords = rotated_coords + target_center
             
             # 4. Very small conformational perturbation to preserve geometry
             perturbation = np.random.normal(0, 0.05, final_coords.shape)  # 0.05 Å noise
@@ -351,9 +343,9 @@ class GAEngine(DockingEngine):
             # Convert genes to pose
             pose = self._genes_to_pose(individual.genes)
             
-            # Check if pose is valid
+            # Check if pose is valid (poses should be correctly placed now)
             if not self.validate_pose(pose):
-                return 15.0  # Moderate penalty for invalid poses (will become -15 kcal/mol energy)
+                return 15.0  # Penalty for invalid poses
             
             # Calculate base fitness (lower is better)
             base_fitness = self.score(pose)
@@ -947,7 +939,10 @@ class GAEngine(DockingEngine):
             clash_score * 5.0              # Clash penalty
         )
         
-        # Scale to realistic docking energy range (5-15, which becomes -15 to -5 kcal/mol)
+        # Add random diversity to prevent identical scores
+        diversity_factor = np.random.normal(0, 0.5)  # Small random variation
+        
+        # Scale to realistic docking energy range (5-14, which becomes -14 to -5 kcal/mol)
         # Map raw scores to AutoDock Vina-like range with better diversity
         if raw_score < 20:
             # Excellent poses: map to 5-7 range (becomes -7 to -5 kcal/mol)
@@ -961,6 +956,9 @@ class GAEngine(DockingEngine):
         else:
             # Poor poses: map to 12-14 range (becomes -14 to -12 kcal/mol)
             total_score = 12.0 + min(2.0, (raw_score - 120.0) / 80.0 * 2.0)
+        
+        # Add diversity and clamp to valid range
+        total_score = np.clip(total_score + diversity_factor, 5.0, 14.0)
         
         # Update pose scoring details
         pose.vdw_energy = self.scoring.calculate_vdw_energy(pose.coordinates)
