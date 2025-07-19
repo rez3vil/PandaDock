@@ -578,9 +578,16 @@ class DockingEngine(ABC):
         self.grid_box = None
         self.poses = []
         
-        # Initialize grid box from config
+        # Initialize grid box from config - handle both center formats
+        if hasattr(config, 'center') and config.center is not None:
+            # Use command-line --center format
+            center = np.array(config.center)
+        else:
+            # Use config.io format
+            center = np.array([config.io.center_x, config.io.center_y, config.io.center_z])
+        
         self.grid_box = GridBox(
-            center=np.array([config.io.center_x, config.io.center_y, config.io.center_z]),
+            center=center,
             size=np.array([config.io.size_x, config.io.size_y, config.io.size_z])
         )
     
@@ -895,16 +902,18 @@ class DockingEngine(ABC):
             f.write(f"REMARK IC50: {pose.get_ic50(units='uM'):.2e} μM\n")
             f.write(f"REMARK EC50: {pose.get_ec50(units='uM'):.2e} μM\n")
             
-            # Get atom types from ligand if available
+            # Get atom types - prioritize pose data, then ligand data
             atom_types = []
-            if hasattr(self, 'ligand') and self.ligand and 'atom_types' in self.ligand:
+            if hasattr(pose, 'atom_types') and pose.atom_types:
+                atom_types = pose.atom_types
+            elif hasattr(self, 'ligand') and self.ligand and 'atom_types' in self.ligand:
                 atom_types = self.ligand['atom_types']
             
             # Write coordinates with proper atom types
             for i, coord in enumerate(pose.coordinates):
                 # Use actual atom type if available, otherwise default to carbon
                 atom_type = atom_types[i] if i < len(atom_types) else 'C'
-                atom_symbol = atom_type[:1]  # First character for element symbol
+                atom_symbol = atom_type[:1] if atom_type else 'C'  # First character for element symbol
                 
                 f.write(f"HETATM{i+1:5d}  {atom_symbol:<3s} LIG A   1    "
                        f"{coord[0]:8.3f}{coord[1]:8.3f}{coord[2]:8.3f}"
@@ -918,14 +927,20 @@ class DockingEngine(ABC):
             f.write("  PandaDock generated structure\n")
             f.write("\n")
             
-            # Get atom types and bonds from ligand if available
+            # Get atom types and bonds - prioritize pose data, then ligand data
             atom_types = []
             bonds = []
-            if hasattr(self, 'ligand') and self.ligand:
-                if 'atom_types' in self.ligand:
-                    atom_types = self.ligand['atom_types']
-                if 'bonds' in self.ligand:
-                    bonds = self.ligand['bonds']
+            
+            # Check if pose has molecular data (from GA engine)
+            if hasattr(pose, 'atom_types') and pose.atom_types:
+                atom_types = pose.atom_types
+            elif hasattr(self, 'ligand') and self.ligand and 'atom_types' in self.ligand:
+                atom_types = self.ligand['atom_types']
+            
+            if hasattr(pose, 'bonds') and pose.bonds:
+                bonds = pose.bonds
+            elif hasattr(self, 'ligand') and self.ligand and 'bonds' in self.ligand:
+                bonds = self.ligand['bonds']
             
             # If no bonds available, generate basic connectivity based on distance
             if not bonds and len(pose.coordinates) > 1:
@@ -940,6 +955,8 @@ class DockingEngine(ABC):
             for i, coord in enumerate(pose.coordinates):
                 # Use actual atom type if available, otherwise default to carbon
                 atom_type = atom_types[i] if i < len(atom_types) else 'C'
+                if not atom_type:  # Handle empty strings
+                    atom_type = 'C'
                 f.write(f"{coord[0]:10.4f}{coord[1]:10.4f}{coord[2]:10.4f} {atom_type:<3s} 0  0  0  0  0  0  0  0  0  0  0  0\n")
             
             # Bond block
@@ -989,14 +1006,19 @@ class DockingEngine(ABC):
                 f.write("  PandaDock generated structure\n")
                 f.write("\n")
                 
-                # Get atom types and bonds from ligand if available
+                # Get atom types and bonds - prioritize pose data, then ligand data
                 atom_types = []
                 bonds = []
-                if hasattr(self, 'ligand') and self.ligand:
-                    if 'atom_types' in self.ligand:
-                        atom_types = self.ligand['atom_types']
-                    if 'bonds' in self.ligand:
-                        bonds = self.ligand['bonds']
+                
+                if hasattr(pose, 'atom_types') and pose.atom_types:
+                    atom_types = pose.atom_types
+                elif hasattr(self, 'ligand') and self.ligand and 'atom_types' in self.ligand:
+                    atom_types = self.ligand['atom_types']
+                
+                if hasattr(pose, 'bonds') and pose.bonds:
+                    bonds = pose.bonds
+                elif hasattr(self, 'ligand') and self.ligand and 'bonds' in self.ligand:
+                    bonds = self.ligand['bonds']
                 
                 # If no bonds available, generate basic bonds based on distances
                 if not bonds:

@@ -201,6 +201,7 @@ def create_config_from_args(args: argparse.Namespace) -> PandaDockConfig:
     
     if args.center:
         config.io.center_x, config.io.center_y, config.io.center_z = args.center
+        config.center = args.center  # Also set for base engine compatibility
     if args.size:
         config.io.size_x, config.io.size_y, config.io.size_z = args.size
     
