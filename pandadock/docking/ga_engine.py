@@ -210,6 +210,10 @@ class GAEngine(DockingEngine):
         poses = []
         ligand_name = self.ligand['name'] if self.ligand else 'unknown'
         
+        # Get grid box bounds for safer placement
+        min_bounds, max_bounds = self.grid_box.get_bounds()
+        grid_center = self.grid_box.center
+        
         for i in range(num_samples):
             # Start from actual ligand coordinates
             coords = base_coords.copy()
@@ -223,20 +227,20 @@ class GAEngine(DockingEngine):
             rot_matrix = rotation_matrix(angles)
             rotated_coords = np.dot(centered_coords, rot_matrix.T)
             
-            # 2. Translate so molecule center is at grid center with small offset
-            grid_center = self.grid_box.center
+            # 2. **FIXED**: Intelligent placement strictly within grid box bounds
+            # The ligand's center of mass is placed randomly within the binding box
+            random_translation = np.random.uniform(min_bounds, max_bounds)
             
-            # Place very close to grid center with minimal random offset
-            max_offset = 1.0  # Small 1 Angstrom radius around center
-            random_offset = np.random.uniform(-max_offset, max_offset, 3)
-            target_center = grid_center + random_offset
+            # 3. Apply translation
+            final_coords = rotated_coords + random_translation
             
-            # 3. Apply translation (rotated_coords is already centered at origin)
-            final_coords = rotated_coords + target_center
-            
-            # 4. Very small conformational perturbation to preserve geometry
-            perturbation = np.random.normal(0, 0.05, final_coords.shape)  # 0.05 Å noise
+            # 4. Small conformational perturbation
+            perturbation = np.random.normal(0, 0.03, final_coords.shape)  # Reduced noise
             final_coords += perturbation
+            
+            # 5. **FIXED**: Final bounds check and correction
+            # This ensures all atoms of the ligand are inside the box.
+            final_coords = self._ensure_within_bounds(final_coords, min_bounds, max_bounds)
             
             # Create pose
             pose = Pose(
@@ -251,6 +255,16 @@ class GAEngine(DockingEngine):
         
         return poses
     
+    def _ensure_within_bounds(self, coords: np.ndarray, min_bounds: np.ndarray, max_bounds: np.ndarray) -> np.ndarray:
+        """Ensure coordinates are strictly within grid bounds"""
+        coords = np.clip(coords, min_bounds, max_bounds)
+        
+        # If any coordinates are still out of bounds, re-center them
+        for i in range(len(coords)):
+            if np.any(coords[i] < min_bounds) or np.any(coords[i] > max_bounds):
+                coords[i] = (min_bounds + max_bounds) / 2
+        
+        return coords
     def _pose_to_genes(self, pose: Pose) -> np.ndarray:
         """Convert pose to gene representation"""
         genes = np.zeros(self.total_genes)
@@ -343,9 +357,10 @@ class GAEngine(DockingEngine):
             # Convert genes to pose
             pose = self._genes_to_pose(individual.genes)
             
-            # Check if pose is valid (poses should be correctly placed now)
+            # **FIXED**: Instead of trying to fix, apply a heavy penalty for invalid poses.
             if not self.validate_pose(pose):
-                return 15.0  # Penalty for invalid poses
+                self.logger.debug(f"Invalid pose generated, applying high penalty.")
+                return 100.0  # High penalty for being outside the box
             
             # Calculate base fitness (lower is better)
             base_fitness = self.score(pose)
@@ -357,7 +372,7 @@ class GAEngine(DockingEngine):
             
         except Exception as e:
             self.logger.warning(f"Error evaluating individual: {e}")
-            return 12.0  # Error penalty (will become -12 kcal/mol energy)
+            return 150.0  # Even higher penalty for unexpected errors
     
     def _calculate_fitness_sharing(self, population: List[Individual]):
         """Apply fitness sharing to maintain diversity"""
@@ -384,14 +399,21 @@ class GAEngine(DockingEngine):
         return np.linalg.norm(ind1.genes - ind2.genes)
     
     def _genes_to_pose(self, genes: np.ndarray) -> Pose:
-        """Convert genes to pose coordinates"""
+        """Convert genes to pose coordinates with improved bounds checking"""
         # Extract gene components
         position = genes[:3]
         quaternion = genes[3:7]
         torsions = genes[7:]
         
         # Normalize quaternion
-        quaternion = quaternion / np.linalg.norm(quaternion)
+        if np.linalg.norm(quaternion) > 0:
+            quaternion = quaternion / np.linalg.norm(quaternion)
+        else:
+            quaternion = np.array([1.0, 0.0, 0.0, 0.0])  # Default quaternion
+        
+        # **FIXED**: Ensure position is strictly within grid bounds
+        min_bounds, max_bounds = self.grid_box.get_bounds()
+        position = np.clip(position, min_bounds, max_bounds)
         
         # Generate ligand coordinates from torsions
         coords = self._build_ligand_from_torsions(torsions)
@@ -402,6 +424,9 @@ class GAEngine(DockingEngine):
         
         # Apply translation
         final_coords = rotated_coords + position
+        
+        # **FIXED**: Ensure final coordinates are within bounds
+        final_coords = self._ensure_within_bounds(final_coords, min_bounds, max_bounds)
         
         # Create pose with truly unique ID
         import time
@@ -811,6 +836,10 @@ class GAEngine(DockingEngine):
             perturbed_genes[3:7] += np.random.normal(0, 0.05, 4)  # Orientation
             perturbed_genes[3:7] = perturbed_genes[3:7] / np.linalg.norm(perturbed_genes[3:7])
             perturbed_genes[7:] += np.random.normal(0, 0.1, self.num_torsion_genes)  # Torsions
+            
+            # **FIXED**: Clip genes to stay within bounds during local search
+            pos_min, pos_max = self.gene_bounds['position']
+            perturbed_genes[:3] = np.clip(perturbed_genes[:3], pos_min, pos_max)
             
             # Evaluate
             perturbed_individual = Individual(perturbed_genes)
