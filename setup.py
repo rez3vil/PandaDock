@@ -50,7 +50,7 @@ requirements = read_requirements()
 
 setup(
     name="pandadock",
-    version="2.3.0",
+    version="2.4.0",
     author="Pritam Kumar Panda",
     author_email="pritam@stanford.edu",
     description="Modular, Multi-Strategy, High-Performance Molecular Docking Software",
