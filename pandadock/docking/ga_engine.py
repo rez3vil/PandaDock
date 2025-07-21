@@ -82,6 +82,46 @@ class GAEngine(DockingEngine):
         
         self.logger.info("Initialized GAEngine (Vina-style)")
     
+    # def dock(self, protein_file: str, ligand_file: str) -> List[Pose]:
+    #     """
+    #     Main docking method using genetic algorithm
+        
+    #     Steps:
+    #     1. Prepare receptor and ligand
+    #     2. Initialize population
+    #     3. Evolve population over generations
+    #     4. Apply local search to best individuals
+    #     5. Return top poses
+    #     """
+    #     self.logger.info(f"Starting GA-based docking: {protein_file} + {ligand_file}")
+        
+    #     # Prepare structures
+    #     self.prepare_receptor(protein_file)
+    #     self.prepare_ligand(ligand_file)
+        
+    #     # Initialize gene encoding
+    #     self._setup_gene_encoding()
+        
+    #     # Initialize population
+    #     population = self._initialize_population()
+    #     self.logger.info(f"Initialized population of {len(population)} individuals")
+        
+    #     # Evolve population
+    #     best_individuals = self._evolve_population(population)
+        
+    #     # Convert best individuals to poses
+    #     final_poses = []
+    #     for individual in best_individuals:
+    #         pose = self._individual_to_pose(individual)
+    #         final_poses.append(pose)
+        
+    #     # Sort by score and take top poses
+    #     final_poses.sort(key=lambda x: x.score)
+    #     final_poses = final_poses[:self.config.docking.num_poses]
+        
+    #     self.logger.info(f"Final result: {len(final_poses)} poses")
+    #     return final_poses
+
     def dock(self, protein_file: str, ligand_file: str) -> List[Pose]:
         """
         Main docking method using genetic algorithm
@@ -115,11 +155,22 @@ class GAEngine(DockingEngine):
             pose = self._individual_to_pose(individual)
             final_poses.append(pose)
         
-        # Sort by score and take top poses
+        # Sort by score to determine final ranking
         final_poses.sort(key=lambda x: x.score)
-        final_poses = final_poses[:self.config.docking.num_poses]
         
-        self.logger.info(f"Final result: {len(final_poses)} poses")
+        # Limit to the number of poses requested by the configuration
+        num_poses_to_return = getattr(self.config.docking, 'num_poses', 10)
+        final_poses = final_poses[:num_poses_to_return]
+        
+        # === FIX START: Overwrite pose IDs for clean, sequential filenames ===
+        # After all sorting and selection, we re-label the final list of poses
+        # with simple, human-readable IDs based on their final rank (1, 2, 3...).
+        # This ensures the output files are named 'pose_1.sdf', 'pose_2.sdf', etc.
+        for i, pose in enumerate(final_poses):
+            pose.pose_id = f"pose_{i + 1}"
+        # === FIX END ===
+        
+        self.logger.info(f"Final result: {len(final_poses)} poses with clean, sequential IDs")
         return final_poses
     
     def _setup_gene_encoding(self):
@@ -128,11 +179,18 @@ class GAEngine(DockingEngine):
         # and determine rotatable bonds
         self.num_torsion_genes = 6  # Placeholder
         
-        # Set gene bounds
+        # Set gene bounds centered around binding site
+        # Use reasonable sampling radius instead of entire grid box
+        sampling_radius = min(8.0, np.min(self.grid_box.size) / 4.0)  # Max 8Å or 1/4 of smallest dimension
+        center = self.grid_box.center
+        
+        # Position bounds: center ± sampling radius, but constrained to grid box
         min_bounds, max_bounds = self.grid_box.get_bounds()
+        pos_min = np.maximum(center - sampling_radius, min_bounds)
+        pos_max = np.minimum(center + sampling_radius, max_bounds)
         
         self.gene_bounds = {
-            'position': (min_bounds, max_bounds),
+            'position': (pos_min, pos_max),
             'orientation': (np.array([-1, -1, -1, -1]), np.array([1, 1, 1, 1])),
             'torsions': (np.array([-np.pi] * self.num_torsion_genes), 
                         np.array([np.pi] * self.num_torsion_genes))
@@ -157,9 +215,14 @@ class GAEngine(DockingEngine):
         """Generate random genes within bounds"""
         genes = np.zeros(self.total_genes)
         
-        # Position genes
+        # Position genes - sample around grid center with bias toward center
         pos_min, pos_max = self.gene_bounds['position']
-        genes[:3] = np.random.uniform(pos_min, pos_max)
+        # Use normal distribution centered on grid center for better clustering
+        center_pos = (pos_min + pos_max) / 2
+        spread = (pos_max - pos_min) / 6  # 3-sigma covers the bounds
+        genes[:3] = np.random.normal(center_pos, spread)
+        # Ensure within bounds
+        genes[:3] = np.clip(genes[:3], pos_min, pos_max)
         
         # Orientation genes (quaternion)
         quat = np.random.randn(4)
@@ -212,35 +275,35 @@ class GAEngine(DockingEngine):
         
         # Get grid box bounds for safer placement
         min_bounds, max_bounds = self.grid_box.get_bounds()
-        grid_center = self.grid_box.center
         
         for i in range(num_samples):
-            # Start from actual ligand coordinates
-            coords = base_coords.copy()
+            # ### FIX START: Correct 3D Rigid Body Transformation ###
+            # 1. Center the molecule at the origin
+            mol_center = np.mean(base_coords, axis=0)
+            centered_coords = base_coords - mol_center
             
-            # 1. Random rotation around molecular center
-            mol_center = np.mean(coords, axis=0)
-            centered_coords = coords - mol_center
-            
-            # Generate random rotation using euler angles
+            # 2. Apply rotation to the centered molecule
             angles = np.random.uniform(0, 2*np.pi, 3)
             rot_matrix = rotation_matrix(angles)
             rotated_coords = np.dot(centered_coords, rot_matrix.T)
             
-            # 2. **FIXED**: Intelligent placement strictly within grid box bounds
-            # The ligand's center of mass is placed randomly within the binding box
-            random_translation = np.random.uniform(min_bounds, max_bounds)
+            # 3. Pick a new random center location near the grid center
+            # Sample around the binding site center with reasonable radius
+            sampling_radius = min(8.0, np.min(self.grid_box.size) / 4.0)  # Max 8Å or 1/4 of smallest dimension
+            random_offset = np.random.normal(0, sampling_radius/3, 3)  # 3-sigma gives ~99% within radius
+            target_center = self.grid_box.center + random_offset
             
-            # 3. Apply translation
-            final_coords = rotated_coords + random_translation
+            # Ensure target center is still within bounds
+            min_bounds, max_bounds = self.grid_box.get_bounds()
+            target_center = np.clip(target_center, min_bounds, max_bounds)
             
-            # 4. Small conformational perturbation
-            perturbation = np.random.normal(0, 0.03, final_coords.shape)  # Reduced noise
+            # 4. Translate the rotated molecule to the new target center
+            final_coords = rotated_coords + target_center
+            # ### FIX END ###
+
+            # Small conformational perturbation
+            perturbation = np.random.normal(0, 0.1, final_coords.shape)
             final_coords += perturbation
-            
-            # 5. **FIXED**: Final bounds check and correction
-            # This ensures all atoms of the ligand are inside the box.
-            final_coords = self._ensure_within_bounds(final_coords, min_bounds, max_bounds)
             
             # Create pose
             pose = Pose(
@@ -248,7 +311,7 @@ class GAEngine(DockingEngine):
                 score=0.0,
                 energy=0.0,
                 ligand_name=ligand_name,
-                pose_id=f"ga_pose_{i}",
+                pose_id=f"internal_pose_{i}",
                 confidence=0.0
             )
             poses.append(pose)
@@ -399,34 +462,30 @@ class GAEngine(DockingEngine):
         return np.linalg.norm(ind1.genes - ind2.genes)
     
     def _genes_to_pose(self, genes: np.ndarray) -> Pose:
-        """Convert genes to pose coordinates with improved bounds checking"""
-        # Extract gene components
+        """Convert genes to a 3D Pose, ensuring correct geometry."""
         position = genes[:3]
         quaternion = genes[3:7]
         torsions = genes[7:]
         
-        # Normalize quaternion
-        if np.linalg.norm(quaternion) > 0:
-            quaternion = quaternion / np.linalg.norm(quaternion)
-        else:
-            quaternion = np.array([1.0, 0.0, 0.0, 0.0])  # Default quaternion
+        base_coords = self.ligand['coordinates'].copy()
         
-        # **FIXED**: Ensure position is strictly within grid bounds
-        min_bounds, max_bounds = self.grid_box.get_bounds()
-        position = np.clip(position, min_bounds, max_bounds)
+        # This is a placeholder for real torsional rotation logic.
+        # For now, it just adds minor noise.
+        current_coords = self._apply_conformational_torsions(base_coords, torsions)
+
+        # ### FIX START: Correct 3D Rigid Body Transformation ###
+        # 1. Center the molecule at the origin
+        mol_center = np.mean(current_coords, axis=0)
+        centered_coords = current_coords - mol_center
         
-        # Generate ligand coordinates from torsions
-        coords = self._build_ligand_from_torsions(torsions)
+        # 2. Apply rotation to the centered molecule
+        norm_quat = quaternion / np.linalg.norm(quaternion) if np.linalg.norm(quaternion) > 0 else np.array([1,0,0,0])
+        rotation = quaternion_to_matrix(norm_quat)
+        rotated_coords = np.dot(centered_coords, rotation.T)
         
-        # Apply rotation
-        rotation_matrix = quaternion_to_matrix(quaternion)
-        rotated_coords = np.dot(coords, rotation_matrix.T)
-        
-        # Apply translation
+        # 3. Translate the rotated molecule to its final gene-defined position
         final_coords = rotated_coords + position
-        
-        # **FIXED**: Ensure final coordinates are within bounds
-        final_coords = self._ensure_within_bounds(final_coords, min_bounds, max_bounds)
+        # ### FIX END ###
         
         # Create pose with truly unique ID
         import time
@@ -447,7 +506,7 @@ class GAEngine(DockingEngine):
             score=0.0,  # Will be updated by _individual_to_pose
             energy=0.0,  # Will be updated by _individual_to_pose  
             ligand_name=ligand_name,
-            pose_id=f"ga_pose_{unique_id}"
+            pose_id="internal_pose"
         )
         
         # Store actual molecular data from input ligand in pose for proper file formatting
