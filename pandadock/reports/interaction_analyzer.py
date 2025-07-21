@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 2D Interaction Map Generator for PandaDock
 ==========================================

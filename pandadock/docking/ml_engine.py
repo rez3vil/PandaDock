@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Machine Learning-based docking engine (DiffDock/Boltz-style)
 Implements deep learning approaches for pose prediction

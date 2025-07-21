@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 HTML report generation for PandaDock results
 """

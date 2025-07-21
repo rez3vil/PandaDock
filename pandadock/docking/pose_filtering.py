@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Pose filtering and validation module
 """

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Configuration management for PandaDock
 """
@@ -96,7 +97,7 @@ class PandaDockConfig:
         """Load configuration from JSON file"""
         import json
         
-        with open(config_file, 'r') as f:
+        with open(config_file, 'r', encoding='utf-8') as f:
             config_dict = json.load(f)
         
         return cls.from_dict(config_dict)
@@ -144,7 +145,7 @@ class PandaDockConfig:
         """Save configuration to JSON file"""
         import json
         
-        with open(config_file, 'w') as f:
+        with open(config_file, 'w', encoding='utf-8') as f:
             json.dump(self.to_dict(), f, indent=2)
     
     def validate(self) -> bool:

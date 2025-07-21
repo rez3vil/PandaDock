@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Comprehensive scoring functions for molecular docking
 Implements various energy terms and empirical scoring functions

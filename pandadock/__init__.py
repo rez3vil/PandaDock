@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 PandaDock: Modular, Multi-Strategy, High-Performance Molecular Docking Software
 
@@ -7,10 +8,11 @@ algorithm-based approaches.
 
 Author: Pritam Kumar Panda
 Email: pritam@stanford.edu
-Version: 3.0.0
+Version: 2.4.0
 """
 
-__version__ = "2.2.0"
+from .version import __version__
+
 __author__ = "Pritam Kumar Panda"
 __email__ = "pritam@stanford.edu"
 

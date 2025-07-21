@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Flexible docking module for side-chain sampling and optimization
 """

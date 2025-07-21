@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Ligand preparation module for PandaDock
 Handles ligand preprocessing, conformer generation, and 3D structure preparation

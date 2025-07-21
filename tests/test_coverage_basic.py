@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Basic tests to improve code coverage for CI.
 These tests exercise core functionality without requiring heavy dependencies.

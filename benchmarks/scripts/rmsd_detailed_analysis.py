@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Detailed RMSD Analysis for PandaDock - Publication Quality
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Rotamer library for flexible side-chain docking
 """

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Docking engines for PandaDock
 """

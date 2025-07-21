@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Scoring functions for PandaDock
 """

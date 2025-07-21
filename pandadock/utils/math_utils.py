@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Mathematical utility functions for PandaDock
 """

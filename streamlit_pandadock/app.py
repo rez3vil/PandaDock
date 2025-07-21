@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Streamlit PandaDock: Web interface for PandaDock molecular docking
 """

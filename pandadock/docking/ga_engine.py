@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Genetic Algorithm-based docking engine (AutoDock Vina-style)
 Implements fast virtual screening using evolutionary algorithms

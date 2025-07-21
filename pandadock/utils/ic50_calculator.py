@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 IC50 and binding affinity calculator
 """

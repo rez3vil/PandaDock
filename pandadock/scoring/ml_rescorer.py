@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Machine Learning-based rescoring module
 Implements various ML approaches for pose rescoring and ranking

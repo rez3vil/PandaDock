@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 PandaDock: Main entry point for molecular docking
 """
 
-import argparse
 import argparse
 import sys
 import os
@@ -23,6 +23,7 @@ from pandadock.docking.physics_engine import PhysicsEngine
 from pandadock.docking.ml_engine import MLEngine
 from pandadock.docking.ga_engine import GAEngine
 from pandadock.reports.html_report import HTMLReportGenerator
+from pandadock.version import __version__, check_and_notify_updates
 
 
 def setup_logging(verbose: bool, debug: bool):
@@ -165,8 +166,13 @@ Examples:
     parser.add_argument('--gpu', action='store_true',
                        help='Use GPU acceleration if available')
     
+    # Version
+    parser.add_argument('--version', '-v', action='version', 
+                       version=f'PandaDock {__version__}',
+                       help='Show version and exit')
+    
     # Logging
-    parser.add_argument('--verbose', '-v', action='store_true',
+    parser.add_argument('--verbose', action='store_true',
                        help='Verbose output')
     parser.add_argument('--debug', action='store_true',
                        help='Debug output')
@@ -447,6 +453,12 @@ def main():
     # Setup logging
     setup_logging(args.verbose, args.debug)
     logger = logging.getLogger(__name__)
+    
+    # Check for updates (non-blocking)
+    try:
+        check_and_notify_updates(silent=False)
+    except Exception:
+        pass  # Don't let update check fail the main program
     
     try:
         # Create configuration

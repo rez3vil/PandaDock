@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Metal vs Non-Metal Comprehensive Benchmark for PandaDock
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Physics-based docking engine (Glide-style)
 Implements detailed molecular mechanics scoring and flexible docking
