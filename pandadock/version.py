@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 import logging
 
-__version__ = "2.4.0"
+__version__ = "2.5.0"
 
 logger = logging.getLogger(__name__)
 

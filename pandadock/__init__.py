@@ -8,7 +8,7 @@ algorithm-based approaches.
 
 Author: Pritam Kumar Panda
 Email: pritam@stanford.edu
-Version: 2.4.0
+Version: 2.5.0
 """
 
 from .version import __version__
