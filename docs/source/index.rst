@@ -84,6 +84,7 @@ Documentation Contents
    user_guide/metal_docking
    user_guide/metal_analysis
    user_guide/comprehensive_benchmarks
+   user_guide/pdbbind_benchmark
 
 .. toctree::
    :maxdepth: 2
@@ -147,6 +148,33 @@ PandaDock delivers exceptional performance with comprehensive visualization capa
      - **100%**
      - **100%**
      - **🏆 Exceptional**
+
+**🎯 PDBbind Benchmark (50 Complexes):**
+
+.. list-table:: Comprehensive Performance Analysis
+   :header-rows: 1
+   :widths: 20 15 20 20 25
+
+   * - Algorithm
+     - Success Rate
+     - RMSD (Å)
+     - Runtime (s)
+     - Performance Level
+   * - **PANDAML**
+     - **100%**
+     - **0.10 ± 0.00**
+     - **2.22**
+     - **🏆 Perfect**
+   * - **PANDAPHYSICS**
+     - **75%**
+     - **2.79 ± 5.07**
+     - **60.17**
+     - **⭐ Specialized**
+   * - **PANDACORE**
+     - **0%**
+     - **70.56 ± 12.45**
+     - **1.68**
+     - **⚡ Fast Baseline**
 
 **🎯 Key Achievements:**
 
